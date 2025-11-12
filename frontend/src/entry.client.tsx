@@ -6,7 +6,7 @@
  */
 
 import { HydratedRouter } from "react-router/dom";
-import { startTransition, StrictMode, Suspense } from "react";
+import { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import "./i18n";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -34,12 +34,11 @@ prepareApp().then(() =>
           <HydratedRouter />
         </QueryClientProvider>
         <div id="modal-portal-exit" />
-        <Suspense />
       </StrictMode>,
       {
-        onCaughtError: (error, errorInfo) => { },
-        onRecoverableError: (error, errorInfo) => { },
-        onUncaughtError(error, errorInfo) { },
+        onCaughtError: () => {},
+        onRecoverableError: () => {},
+        onUncaughtError: () => {},
       },
     );
   }),
