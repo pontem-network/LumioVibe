@@ -170,6 +170,7 @@ export function ConversationTabs() {
         "relative w-full",
         "flex flex-row justify-start lg:justify-end items-center gap-4.5",
       )}
+      id="conversation_head_right"
     >
       {visibleTabs.map(
         (
