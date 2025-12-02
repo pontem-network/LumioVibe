@@ -13,8 +13,8 @@ export function RandomTip() {
   }, []);
 
   return (
-    <p>
-      <h4 className="font-bold">{t(I18nKey.TIPS$PROTIP)}:</h4>
+    <div>
+      <span className="font-bold">{t(I18nKey.TIPS$PROTIP)}:</span>{" "}
       {t(randomTip.key)}
       {randomTip.link && (
         <>
@@ -29,6 +29,6 @@ export function RandomTip() {
           </a>
         </>
       )}
-    </p>
+    </div>
   );
 }

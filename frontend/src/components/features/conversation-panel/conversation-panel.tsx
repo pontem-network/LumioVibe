@@ -134,7 +134,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           scrollContainerRef.current = node;
       }}
       data-testid="conversation-panel"
-      className="w-full md:w-[400px] h-full border border-[#525252] bg-[#25272D] rounded-lg overflow-y-auto absolute custom-scrollbar-always"
+      className="w-full md:w-[400px] h-full border border-[#2a2a2a] bg-[#0a0a0a]/95 backdrop-blur-sm rounded-lg overflow-y-auto absolute custom-scrollbar-always"
     >
       {isFetching && conversations.length === 0 && (
         <div className="w-full h-full absolute flex justify-center items-center">

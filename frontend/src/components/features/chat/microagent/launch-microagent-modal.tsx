@@ -112,8 +112,8 @@ export function LaunchMicroagentModal({
                   placeholder={t("MICROAGENT$DESCRIBE_WHAT_TO_ADD")}
                   rows={6}
                   className={cn(
-                    "bg-tertiary border border-[#717888] w-full rounded p-2 placeholder:italic placeholder:text-tertiary-alt resize-none",
-                    "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
+                    "bg-tertiary border border-[#2a2a2a] w-full rounded p-2 placeholder:italic placeholder:text-tertiary-alt resize-none",
+                    "disabled:bg-[#1a1a1a] disabled:border-[#1a1a1a] disabled:cursor-not-allowed",
                   )}
                 />
               )}

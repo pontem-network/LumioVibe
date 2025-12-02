@@ -30,8 +30,8 @@ export function StartTaskCard({ task, onClick }: StartTaskCardProps) {
       data-testid="start-task-card"
       onClick={onClick}
       className={cn(
-        "relative h-auto w-full p-3.5 border-b border-neutral-600 cursor-pointer",
-        "hover:bg-[#454545]",
+        "relative h-auto w-full p-3.5 border-b border-[#2a2a2a] cursor-pointer transition-all duration-300",
+        "hover:bg-[#1a1a1a]",
       )}
     >
       <div className="flex items-center justify-between w-full">

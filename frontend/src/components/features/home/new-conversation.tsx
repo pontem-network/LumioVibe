@@ -23,20 +23,17 @@ export function NewConversation() {
     isPending || isSuccess || isCreatingConversationElsewhere;
 
   return (
-    <section className="w-full min-h-[286px] md:min-h-auto flex flex-col rounded-[12px] p-[20px] gap-[10px] border border-[#727987] bg-[#26282D] relative">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-[10px]">
-          <PlusIcon width={17} height={14} />
-          <span className="leading-5 font-bold text-base text-white">
-            {t(I18nKey.COMMON$START_FROM_SCRATCH)}
-          </span>
-        </div>
-      </div>
-      <div>
-        <span className="leading-[22px] text-sm font-normal text-white">
-          {t(I18nKey.HOME$NEW_PROJECT_DESCRIPTION)}
+    <section className="w-full min-h-[286px] md:min-h-auto flex flex-col rounded-[12px] p-[20px] border border-[#2a2a2a] bg-[#0a0a0a] transition-all duration-300 hover:border-[#3a3a3a]">
+      <div className="flex items-center gap-[10px] mb-[10px]">
+        <PlusIcon width={17} height={14} />
+        <span className="leading-5 font-bold text-base text-white">
+          {t(I18nKey.COMMON$START_FROM_SCRATCH)}
         </span>
       </div>
+      <p className="leading-[22px] text-sm font-normal text-white mb-4">
+        {t(I18nKey.HOME$NEW_PROJECT_DESCRIPTION)}
+      </p>
+      <div className="flex-grow" />
       <BrandButton
         testId="launch-new-conversation-button"
         variant="primary"
@@ -51,7 +48,7 @@ export function NewConversation() {
           )
         }
         isDisabled={isCreatingConversation}
-        className="w-auto absolute bottom-5 left-5 right-5 font-semibold"
+        className="w-full font-semibold"
       >
         {!isCreatingConversation && t("COMMON$NEW_CONVERSATION")}
         {isCreatingConversation && t("HOME$LOADING")}

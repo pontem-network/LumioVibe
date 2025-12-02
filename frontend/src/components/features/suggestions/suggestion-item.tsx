@@ -34,13 +34,13 @@ export function SuggestionItem({ suggestion, onClick }: SuggestionItemProps) {
   return (
     <button
       type="button"
-      className="list-none border border-[#525252] rounded-[15px] hover:bg-tertiary flex-1 flex items-center justify-center cursor-pointer gap-[10px] h-[55px] px-4"
+      className="list-none border border-[#2a2a2a] rounded-[15px] hover:bg-[#1a1a1a] hover:border-[#3a3a3a] flex-1 flex items-center justify-center cursor-pointer gap-[10px] h-[55px] px-4 transition-all duration-300"
       onClick={() => onClick(suggestion.value)}
     >
       {itemIcon}
       <span
         data-testid="suggestion"
-        className="text-[15px] font-normal leading-5 text-[#DEDFE0] text-center cursor-pointer"
+        className="text-[15px] font-normal leading-5 text-white/90 text-center cursor-pointer"
       >
         {t(suggestion.label)}
       </span>

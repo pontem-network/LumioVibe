@@ -12,7 +12,7 @@ export function MobileLayout({ isRightPanelShown }: MobileLayoutProps) {
       {/* Chat area - shrinks when panel slides up */}
       <div
         className={cn(
-          "bg-base overflow-hidden",
+          "overflow-hidden",
           isRightPanelShown ? "h-160" : "flex-1",
         )}
       >

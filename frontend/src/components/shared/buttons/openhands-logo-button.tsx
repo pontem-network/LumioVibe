@@ -12,7 +12,7 @@ export function OpenHandsLogoButton() {
       ariaLabel={t(I18nKey.BRANDING$OPENHANDS_LOGO)}
       navLinkTo="/"
     >
-      <OpenHandsLogo width={46} height={30} />
+      <OpenHandsLogo width={40} height={40} />
     </TooltipButton>
   );
 }
