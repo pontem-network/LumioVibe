@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "#/utils/utils";
 
 const cardVariants = cva(
-  "w-full flex flex-col rounded-[12px] p-[20px] border border-[#2a2a2a] bg-[#0a0a0a]/80 backdrop-blur-sm relative transition-all duration-300 hover:border-[#3a3a3a]",
+  "w-full flex flex-col rounded-[12px] p-[20px] border border-[#2a2a2a] bg-[#0a0a0a]/95 relative transition-all duration-300 hover:border-[#3a3a3a]",
   {
     variants: {
       gap: {
