@@ -27,10 +27,7 @@ fi
 
 cd "$CONTRACT_DIR"
 
-ACCOUNT_ADDRESS=$(lumio account lookup-address 2>/dev/null | grep -oE '0x[a-fA-F0-9]+' | head -1)
-if [ -z "$ACCOUNT_ADDRESS" ]; then
-    ACCOUNT_ADDRESS="0x$(grep 'account:' "$CONTRACT_DIR/.lumio/config.yaml" 2>/dev/null | awk '{print $2}')"
-fi
+ACCOUNT_ADDRESS="0x$(grep 'account:' "$CONTRACT_DIR/.lumio/config.yaml" 2>/dev/null | awk '{print $2}')"
 
 if [ -z "$ACCOUNT_ADDRESS" ] || [ "$ACCOUNT_ADDRESS" == "0x" ]; then
     echo -e "${RED}Error: Could not determine account address${NC}"
@@ -74,16 +71,22 @@ update_env_var() {
     fi
 }
 
-# Determine RPC URL based on network
+# Determine RPC URL and Chain ID based on network
 if [ "$NETWORK" == "mainnet" ]; then
     RPC_URL="https://api.lumio.io/"
+    CHAIN_ID="1"
+elif [ "$NETWORK" == "local" ]; then
+    RPC_URL="http://127.0.0.1:8080/"
+    CHAIN_ID="4"
 else
     RPC_URL="https://api.testnet.lumio.io/"
+    CHAIN_ID="2"
 fi
 
 # Update frontend env
 update_env_var "$FRONTEND_ENV_FILE" "VITE_VIBE_BALANCE_CONTRACT" "$PACKAGE_ADDRESS"
 update_env_var "$FRONTEND_ENV_FILE" "VITE_LUMIO_RPC_URL" "$RPC_URL"
+update_env_var "$FRONTEND_ENV_FILE" "VITE_LUMIO_CHAIN_ID" "$CHAIN_ID"
 
 # Update server env (create if not exists)
 if [ ! -f "$SERVER_ENV_FILE" ]; then
@@ -91,6 +94,7 @@ if [ ! -f "$SERVER_ENV_FILE" ]; then
 fi
 update_env_var "$SERVER_ENV_FILE" "VIBE_BALANCE_CONTRACT" "$PACKAGE_ADDRESS"
 update_env_var "$SERVER_ENV_FILE" "LUMIO_RPC_URL" "$RPC_URL"
+update_env_var "$SERVER_ENV_FILE" "LUMIO_CHAIN_ID" "$CHAIN_ID"
 
 if [[ "$1" == "--init" ]]; then
     echo -e "\n${YELLOW}Initializing...${NC}"

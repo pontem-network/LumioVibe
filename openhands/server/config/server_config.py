@@ -11,6 +11,7 @@ class ServerConfig(ServerConfigInterface):
     posthog_client_key = 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
     github_client_id = os.environ.get('GITHUB_APP_CLIENT_ID', '')
     lumio_rpc_url = os.environ.get('LUMIO_RPC_URL', 'https://api.testnet.lumio.io/')
+    lumio_chain_id = int(os.environ.get('LUMIO_CHAIN_ID', '2'))
     vibe_balance_contract = os.environ.get('VIBE_BALANCE_CONTRACT', '')
     enable_billing = os.environ.get('ENABLE_BILLING', 'false') == 'true'
     hide_llm_settings = os.environ.get('HIDE_LLM_SETTINGS', 'false') == 'true'
