@@ -233,15 +233,26 @@ export default function MainApp() {
     <div
       data-testid="root-layout"
       className={cn(
-        "h-screen lg:min-w-[1024px] flex flex-col md:flex-row bg-base",
+        "h-screen lg:min-w-[1024px] flex flex-col md:flex-row bg-base relative",
         pathname === "/" ? "p-0" : "p-0 md:p-3 md:pl-0",
         isMobileDevice() && "overflow-hidden",
       )}
     >
+      {/* Lumio background glow effect */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background: `
+            radial-gradient(ellipse 80% 50% at 20% 20%, rgba(174, 121, 147, 0.15) 0%, transparent 50%),
+            radial-gradient(ellipse 60% 40% at 80% 80%, rgba(14, 105, 169, 0.15) 0%, transparent 50%),
+            radial-gradient(ellipse 50% 30% at 50% 50%, rgba(174, 121, 147, 0.05) 0%, transparent 40%)
+          `,
+        }}
+      />
       <WalletPanel />
       <Sidebar />
 
-      <div className="flex flex-col w-full h-[calc(100%-50px)] md:h-full gap-3">
+      <div className="flex flex-col w-full h-[calc(100%-50px)] md:h-full gap-3 z-10">
         {config.data?.MAINTENANCE && (
           <MaintenanceBanner startTime={config.data.MAINTENANCE.startTime} />
         )}

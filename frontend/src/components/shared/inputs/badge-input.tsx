@@ -43,7 +43,7 @@ export function BadgeInput({
   return (
     <div
       className={cn(
-        "bg-tertiary border border-[#717888] rounded w-full p-2 placeholder:italic placeholder:text-tertiary-alt",
+        "bg-tertiary border border-[#2a2a2a] rounded w-full p-2 placeholder:italic placeholder:text-tertiary-alt",
         "flex flex-wrap items-center gap-2",
       )}
     >

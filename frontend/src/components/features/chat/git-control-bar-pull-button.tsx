@@ -39,8 +39,8 @@ export function GitControlBarPullButton({
       className={cn(
         "flex flex-row gap-1 items-center justify-center px-0.5 py-1 rounded-[100px] w-[76px] min-w-[76px]",
         isButtonEnabled
-          ? "bg-[#25272D] hover:bg-[#454545] cursor-pointer"
-          : "bg-[rgba(71,74,84,0.50)] cursor-not-allowed",
+          ? "bg-[#1a1a1a] hover:bg-[#2a2a2a] cursor-pointer transition-colors duration-300"
+          : "bg-[#2a2a2a]/50 cursor-not-allowed",
       )}
     >
       <div className="w-3 h-3 flex items-center justify-center">

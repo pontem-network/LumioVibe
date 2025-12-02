@@ -9,23 +9,76 @@
   preferredstrategy: "pseudoelements";
 }
 
-/* OLD TAILWIND STYLES */
+/* LUMIO STYLE COLORS */
 @theme {
-  --color-primary: #c9b974;
-  --color-logo: #cfb755;
-  --color-base: #0d0f11;
-  --color-base-secondary: #24272e;
+  /* Primary gradient colors from Lumio */
+  --color-primary: #AE7993;
+  --color-primary-alt: #0E69A9;
+  --color-logo: #AE7993;
+
+  /* Dark backgrounds */
+  --color-base: #0a0a0a;
+  --color-base-secondary: #141414;
+  --color-base-tertiary: #1a1a1a;
+
+  /* Status colors */
   --color-danger: #e76a5e;
-  --color-success: #a5e75e;
-  --color-basic: #9099ac;
-  --color-tertiary: #454545;
-  --color-tertiary-light: #b7bdc2;
-  --color-content: #ecedee;
+  --color-success: #4ade80;
+
+  /* Text colors */
+  --color-basic: rgba(255, 255, 255, 0.5);
+  --color-tertiary: #2a2a2a;
+  --color-tertiary-light: rgba(255, 255, 255, 0.7);
+  --color-content: #ffffff;
   --color-content-2: #f9fbfe;
+
+  /* Border colors */
+  --color-border: #2a2a2a;
+  --color-border-light: #3a3a3a;
+
+  /* Gradient */
+  --gradient-lumio: linear-gradient(to right, #AE7993, #0E69A9);
 }
 
 .button-base {
-  @apply bg-tertiary border border-neutral-600 rounded-xs;
+  @apply bg-tertiary border border-neutral-600 rounded-lg;
+}
+
+/* Lumio gradient border button */
+.button-gradient {
+  position: relative;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background-image: linear-gradient(#0a0a0a, #0a0a0a), linear-gradient(to right, #AE7993, #0E69A9);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  transition: all 0.3s ease;
+}
+
+.button-gradient:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Lumio gradient text */
+.text-gradient {
+  background: linear-gradient(to right, #AE7993, #0E69A9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Lumio card style */
+.lumio-card {
+  background: #0a0a0a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.lumio-card:hover {
+  border-color: #3a3a3a;
 }
 
 .skeleton {
@@ -212,34 +265,34 @@
 }
 
 .loader {
-  background: #c9b974;
+  background: #AE7993;
   animation: l5 1s infinite linear alternate;
 }
 
 @keyframes l5 {
   0% {
     box-shadow:
-      20px 0 #c9b974,
-      -20px 0 rgba(201, 185, 116, 0.1);
-    background: #c9b974;
+      20px 0 #AE7993,
+      -20px 0 rgba(174, 121, 147, 0.1);
+    background: #AE7993;
   }
   33% {
     box-shadow:
-      20px 0 #c9b974,
-      -20px 0 rgba(201, 185, 116, 0.1);
-    background: rgba(201, 185, 116, 0.1);
+      20px 0 #0E69A9,
+      -20px 0 rgba(174, 121, 147, 0.1);
+    background: rgba(174, 121, 147, 0.1);
   }
   66% {
     box-shadow:
-      20px 0 rgba(201, 185, 116, 0.1),
-      -20px 0 #c9b974;
-    background: rgba(201, 185, 116, 0.1);
+      20px 0 rgba(14, 105, 169, 0.1),
+      -20px 0 #0E69A9;
+    background: rgba(14, 105, 169, 0.1);
   }
   100% {
     box-shadow:
-      20px 0 rgba(201, 185, 116, 0.1),
-      -20px 0 #c9b974;
-    background: #c9b974;
+      20px 0 rgba(14, 105, 169, 0.1),
+      -20px 0 #AE7993;
+    background: #0E69A9;
   }
 }
 
@@ -344,7 +397,7 @@
 }
 
 .git-external-link-icon {
-  background: linear-gradient(90deg, rgba(69, 69, 69, 0) 0.35%, #454545 41.39%);
+  background: linear-gradient(90deg, rgba(26, 26, 26, 0) 0.35%, #1a1a1a 41.39%);
 }
 
 .api-configuration-modal {

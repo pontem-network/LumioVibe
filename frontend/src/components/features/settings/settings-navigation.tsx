@@ -56,7 +56,7 @@ export function SettingsNavigation({
           <button
             type="button"
             onClick={onCloseMobileMenu}
-            className="md:hidden p-0.5 hover:bg-[#454545] rounded-md transition-colors cursor-pointer"
+            className="md:hidden p-0.5 hover:bg-[#1a1a1a] rounded-md transition-colors cursor-pointer"
             aria-label="Close navigation menu"
           >
             <CloseIcon width={32} height={32} />
@@ -72,8 +72,10 @@ export function SettingsNavigation({
               onClick={onCloseMobileMenu}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 p-1 sm:px-[14px] sm:py-2 rounded-md transition-colors",
-                  isActive ? "bg-[#454545]" : "hover:bg-[#454545]",
+                  "flex items-center gap-3 p-1 sm:px-[14px] sm:py-2 rounded-lg transition-all duration-300",
+                  isActive
+                    ? "bg-[#1a1a1a] border border-[#2a2a2a]"
+                    : "hover:bg-[#1a1a1a]",
                 )
               }
             >

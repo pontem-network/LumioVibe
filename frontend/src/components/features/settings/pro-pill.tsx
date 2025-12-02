@@ -12,7 +12,7 @@ export function ProPill({ className }: ProPillProps) {
   return (
     <span
       className={cn(
-        "bg-[#3a3c45] border border-[#ffeeaa] text-[#ffeeaa] text-[8px] font-medium px-1.5 py-0.5 rounded-full whitespace-nowrap",
+        "bg-gradient-to-r from-[#AE7993]/20 to-[#0E69A9]/20 border border-[#AE7993] text-[#AE7993] text-[8px] font-medium px-1.5 py-0.5 rounded-full whitespace-nowrap",
         className,
       )}
     >

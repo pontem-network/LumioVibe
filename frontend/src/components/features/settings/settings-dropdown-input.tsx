@@ -76,12 +76,12 @@ export function SettingsDropdownInput({
         isRequired={required}
         className="w-full"
         classNames={{
-          popoverContent: "bg-tertiary rounded-xl border border-[#717888]",
+          popoverContent: "bg-[#0a0a0a] rounded-xl border border-[#2a2a2a]",
         }}
         inputProps={{
           classNames: {
             inputWrapper: cn(
-              "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic",
+              "bg-[#141414] border border-[#2a2a2a] h-10 w-full rounded-lg p-2.5 placeholder:italic transition-all duration-300",
               inputWrapperClassName,
             ),
             input: inputClassName,

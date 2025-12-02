@@ -33,9 +33,9 @@ export function DropdownItem<T>({
         : "px-2 py-2 cursor-pointer text-sm rounded-md mx-0 my-0.5",
       "text-white focus:outline-none font-normal",
       {
-        "bg-[#C9B974] text-black": isSelected,
-        "hover:bg-[#5C5D62]": !isSelected,
-        "hover:bg-[#C9B974] hover:text-black": isSelected,
+        "bg-gradient-to-r from-[#AE7993] to-[#0E69A9] text-white": isSelected,
+        "hover:bg-[#2a2a2a]": !isSelected,
+        "hover:from-[#AE7993]/90 hover:to-[#0E69A9]/90": isSelected,
       },
       itemClassName,
     ),

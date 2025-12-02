@@ -17,20 +17,27 @@ export function ConversationTabNav({
   className,
 }: ConversationTabNavProps) {
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => {
         onClick();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
       }}
       className={cn(
         "flex items-center gap-2 rounded-md cursor-pointer",
         "pl-1.5 pr-2 py-1",
-        "text-[#9299AA] bg-[#0D0F11]",
-        isActive && "bg-[#25272D] text-white",
+        "text-white/60",
+        isActive && "bg-[#1a1a1a]/50 text-white",
         isActive
-          ? "hover:text-white hover:bg-tertiary"
-          : "hover:text-white hover:bg-[#0D0F11]",
-        isActive ? "focus-within:text-white" : "focus-within:text-[#9299AA]",
+          ? "hover:text-white hover:bg-[#2a2a2a]/50"
+          : "hover:text-white hover:bg-[#1a1a1a]/50",
+        isActive ? "focus-within:text-white" : "focus-within:text-white/60",
         className,
       )}
     >
@@ -38,6 +45,6 @@ export function ConversationTabNav({
       {isActive && label && (
         <span className="text-sm font-medium whitespace-nowrap">{label}</span>
       )}
-    </button>
+    </div>
   );
 }
