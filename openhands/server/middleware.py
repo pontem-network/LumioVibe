@@ -129,3 +129,31 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return False
         # Put Other non rate limited checks here
         return True
+
+
+class TokenRateLimitMiddleware(BaseHTTPMiddleware):
+    """Stricter rate limiting for token-related endpoints to prevent brute force attacks."""
+
+    def __init__(self, app: ASGIApp):
+        super().__init__(app)
+        # 20 requests per 60 seconds for token endpoints
+        self.rate_limiter = InMemoryRateLimiter(
+            requests=20, seconds=60, sleep_seconds=0
+        )
+
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        if not request.url.path.startswith('/api/token'):
+            return await call_next(request)
+
+        ok = await self.rate_limiter(request)
+        if not ok:
+            return JSONResponse(
+                status_code=429,
+                content={
+                    'message': 'Too many authentication attempts. Please try again later.'
+                },
+                headers={'Retry-After': '60'},
+            )
+        return await call_next(request)

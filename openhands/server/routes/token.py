@@ -1,4 +1,7 @@
 import uuid
+import hashlib
+import time
+import secrets
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from nacl.signing import VerifyKey
@@ -26,12 +29,47 @@ def get_lumio_service() -> LumioService:
 class SignToken(BaseModel):
     address: str | None = None
     application: str | None = None
-    chainId: int | None = None
+    chainId: int | str | None = None
     fullMessage: str | None = None
     nonce: str | None = None
     prefix: str | None = None
     message: str | None = None
     signature: list[int] | None = None
+    publicKey: str | None = None
+
+
+def verify_public_key_matches_address(public_key_hex: str, address_hex: str) -> bool:
+    """Verify that public key corresponds to the given address.
+
+    In Aptos/Lumio, the address is derived from the public key using:
+    address = sha3_256(public_key | 0x00) where 0x00 is the single-key scheme identifier.
+
+    Args:
+        public_key_hex: The public key in hex format (with or without 0x prefix)
+        address_hex: The address in hex format (with or without 0x prefix)
+
+    Returns:
+        True if public key matches address, False otherwise
+    """
+    try:
+        # Normalize hex strings
+        if public_key_hex.startswith('0x'):
+            public_key_hex = public_key_hex[2:]
+        if address_hex.startswith('0x'):
+            address_hex = address_hex[2:]
+
+        public_key_bytes = bytes.fromhex(public_key_hex)
+
+        # Aptos single-key scheme: sha3_256(public_key || 0x00)
+        hasher = hashlib.sha3_256()
+        hasher.update(public_key_bytes)
+        hasher.update(b'\x00')  # Single-key scheme identifier
+        derived_address = hasher.hexdigest()
+
+        return derived_address.lower() == address_hex.lower()
+    except Exception as e:
+        logger.error(f'Error verifying public key matches address: {e}')
+        return False
 
 
 def verify_ed25519_signature(
@@ -92,6 +130,8 @@ async def new_token(
     user_setting.wallet = AuthWallet()
     user_setting.wallet.account = token.account
     user_setting.wallet.token = str(uuid.uuid4())
+    user_setting.wallet.created_at = time.time()
+    user_setting.wallet.nonce = secrets.token_hex(16)  # 32 character hex string
     await user_settings_store.store(user_setting)
 
     return user_setting.wallet
@@ -103,6 +143,7 @@ async def verify_token(
     user_settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> AuthWallet:
     """Verify the signed token from wallet."""
+
     if sign_token.message is None:
         raise HTTPException(status_code=400, detail='Message is required')
 
@@ -111,6 +152,16 @@ async def verify_token(
 
     if sign_token.address is None:
         raise HTTPException(status_code=400, detail='Address is required')
+
+    if sign_token.publicKey is None:
+        raise HTTPException(status_code=400, detail='Public key is required')
+
+    # Verify that public key corresponds to the claimed address
+    if not verify_public_key_matches_address(sign_token.publicKey, sign_token.address):
+        logger.warning(
+            f'Public key does not match address: pk={sign_token.publicKey}, addr={sign_token.address}'
+        )
+        raise HTTPException(status_code=400, detail='Public key does not match address')
 
     input_token = AuthWallet.model_validate_json(sign_token.message)
     user_setting: Settings | None = await user_settings_store.load()
@@ -122,12 +173,20 @@ async def verify_token(
         input_token.verified_token = False
         return input_token
 
-    # Verify signature
+    # Verify nonce matches server-generated nonce
+    if user_setting.wallet.nonce is None or sign_token.nonce != user_setting.wallet.nonce:
+        logger.warning(
+            f'Nonce mismatch: expected {user_setting.wallet.nonce}, got {sign_token.nonce}'
+        )
+        input_token.verified_token = False
+        return input_token
+
+    # Verify signature using public key
     full_message = sign_token.fullMessage or sign_token.message
     if not verify_ed25519_signature(
         message=full_message,
         signature=sign_token.signature,
-        public_key_hex=sign_token.address,
+        public_key_hex=sign_token.publicKey,
     ):
         logger.warning(f'Signature verification failed for address: {sign_token.address}')
         input_token.verified_token = False
@@ -152,6 +211,23 @@ async def status_token(
     if user_setting.wallet != input_token:
         input_token.verified_token = False
         return input_token
+
+    # Check if token has expired
+    if user_setting.wallet.is_expired():
+        logger.info(f'Token expired for account: {user_setting.wallet.account}')
+        user_setting.wallet.verified_token = False
+        await user_settings_store.store(user_setting)
+        return user_setting.wallet
+
+    # Re-check whitelist status
+    if user_setting.wallet.account:
+        lumio_service = get_lumio_service()
+        is_whitelisted = await lumio_service.is_whitelisted(user_setting.wallet.account)
+        if not is_whitelisted:
+            logger.info(f'Account removed from whitelist: {user_setting.wallet.account}')
+            user_setting.wallet.verified_token = False
+            await user_settings_store.store(user_setting)
+            return user_setting.wallet
 
     return user_setting.wallet
 
