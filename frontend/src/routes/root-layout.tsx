@@ -82,9 +82,7 @@ export default function MainApp() {
     isError: isAuthError,
   } = useIsAuthed();
 
-  const walletAuth = useAuthWallet();
-  const isWalletAuth = walletAuth.connected;
-  const isWalletInitialized = walletAuth.initialized;
+  const isWalletAuth = useAuthWallet().connected;
 
   // Always call the hook, but we'll only use the result when not on TOS page
   const gitHubAuthUrl = useGitHubAuthUrl({
@@ -128,13 +126,12 @@ export default function MainApp() {
   }, [settings, isOnTosPage]);
 
   React.useEffect(() => {
-    if (!isWalletInitialized) return;
     if (!isWalletAuth && pathname !== "/auth") {
       navigate("/auth");
     } else if (isWalletAuth && pathname === "/auth") {
       navigate("/");
     }
-  }, [isWalletAuth, isWalletInitialized, pathname]);
+  }, [isWalletAuth, pathname]);
 
   React.useEffect(() => {
     // Don't migrate user consent when on TOS page
@@ -219,15 +216,6 @@ export default function MainApp() {
     !isOnTosPage &&
     config.data?.APP_MODE === "saas" &&
     loginMethodExists;
-
-  // Don't render anything until wallet auth is initialized
-  if (!isWalletInitialized) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-base">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
-      </div>
-    );
-  }
 
   return (
     <div

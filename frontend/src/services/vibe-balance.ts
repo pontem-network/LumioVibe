@@ -1,11 +1,15 @@
-interface LumioConfig {
+export interface LumioConfig {
   rpcUrl: string;
-  contractAddress: string;
+  contractAddress: string | null;
 }
 
-const getConfig = (): LumioConfig => ({
-  rpcUrl: import.meta.env.VITE_LUMIO_RPC_URL || "https://api.testnet.lumio.io/",
-  contractAddress: import.meta.env.VITE_VIBE_BALANCE_CONTRACT || "",
+export const getConfig = (): LumioConfig => ({
+  rpcUrl: (
+    import.meta.env.VITE_LUMIO_RPC_URL || "https://api.testnet.lumio.io/"
+  ).replaceAll('"', ""),
+  contractAddress: (
+    import.meta.env.VITE_VIBE_BALANCE_CONTRACT || null
+  )?.replaceAll('"', ""),
 });
 
 const buildViewRequest = (functionName: string, args: string[] = []) => {
