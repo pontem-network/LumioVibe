@@ -1,3 +1,6 @@
+include frontend/.env.sample
+export
+
 SHELL=/usr/bin/env bash
 # Makefile for OpenHands project
 

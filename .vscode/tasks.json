@@ -1,0 +1,141 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        // build project
+        {
+            "label": "build project",
+            "type": "shell",
+            "command": "make build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "clear": true
+            },
+        },
+        {
+            "label": "echo",
+            "type": "shell",
+            "command": "echo test",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "clear": true
+            },
+        },
+        // run: backend
+        {
+            "label": "run: backend",
+            "type": "shell",
+            "command": "make start-backend",
+            "group": {
+                "kind": "none",
+                "isDefault": true
+            },
+            "presentation": {
+                "clear": true
+            },
+        },
+        // run: frontend
+        {
+            "label": "run: frontend",
+            "type": "shell",
+            "command": "make start-frontend",
+            "presentation": {
+                "clear": true
+            },
+            "group": {
+                "kind": "none",
+                "isDefault": true
+            },
+        },
+        // run: lumio
+        {
+            "label": "run: lumio",
+            "type": "shell",
+            "command": "lumio node run-localnet --with-faucet --test-dir .local_node --assume-yes",
+            "options": {
+                "env": {
+                    "RUST_LOG": "debug"
+                }
+            },
+            "presentation": {
+                "clear": true
+            },
+            "group": {
+                "kind": "none",
+                "isDefault": true
+            },
+        },
+        // mint
+        {
+            "label": "mint",
+            "type": "shell",
+            "command": [
+                "echo '\n# # # OWNER # # #\n';",
+                "lumio account balance;",
+                "lumio account fund-with-faucet --amount 10000000;",
+                "lumio account balance;",
+                "echo '\n# # # Wallet # # #\n';",
+                "lumio account balance --account 0xe6c88958b7a01cc9949325a032337ab8ea8cc20e8c4353561e7a9ff1fc55f3c4;",
+                "lumio account fund-with-faucet --amount 10000000  --account 0xe6c88958b7a01cc9949325a032337ab8ea8cc20e8c4353561e7a9ff1fc55f3c4;",
+                "lumio account balance --account 0xe6c88958b7a01cc9949325a032337ab8ea8cc20e8c4353561e7a9ff1fc55f3c4;",
+            ],
+            "options": {
+                "cwd": "contracts/vibe-balance/"
+            },
+            "presentation": {
+                "clear": true
+            },
+            "group": {
+                "kind": "none",
+                "isDefault": true
+            },
+        },
+        // contract: deploy
+        {
+            "label": "contract: deploy",
+            "type": "shell",
+            "command": [
+                "./scripts/deploy.sh;",
+            ],
+            "options": {
+                "cwd": "contracts/vibe-balance/",
+                "env": {
+                    "LUMIO_NETWORK": "local"
+                }
+            },
+            "presentation": {
+                "clear": true
+            },
+            "group": {
+                "kind": "none",
+                "isDefault": true
+            },
+        },
+        // contract: init
+        {
+            "label": "contract: init",
+            "type": "shell",
+            "command": [
+                "./scripts/deploy.sh --init;",
+            ],
+            "options": {
+                "cwd": "contracts/vibe-balance/",
+                "env": {
+                    "LUMIO_NETWORK": "local"
+                }
+            },
+            "presentation": {
+                "clear": true
+            },
+            "group": {
+                "kind": "none",
+                "isDefault": true
+            },
+        },
+    ]
+}

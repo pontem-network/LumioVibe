@@ -5,46 +5,15 @@ import {
   SignMessagePayload,
   SignMessageResponse,
 } from "@pontem/aptos-wallet-adapter";
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext } from "react";
+import { getConfig, LumioConfig } from "#/services/vibe-balance";
 
 declare const window: PontemWindow;
 
-const LUMIO_RPC =
-  import.meta.env.VITE_LUMIO_RPC_URL || "https://api.testnet.lumio.io/";
-const LUMIO_RPC_V1 = LUMIO_RPC.endsWith("/")
-  ? `${LUMIO_RPC}v1`
-  : `${LUMIO_RPC}/v1`;
-const CHAIN_ID = parseInt(import.meta.env.VITE_LUMIO_CHAIN_ID || "2", 10);
 const DECIMALS = 8;
 const NUMBER_OF_DECIMALS = 4;
-const COIN_TYPE = "0x1::lumio_coin::LumioCoin";
 
 type SignMessageWithoutSignature = Omit<SignMessageResponse, "signature">;
-
-async function lumioBalance(account: string): Promise<number> {
-  const balanceResponse: number[] = await fetch(`${LUMIO_RPC_V1}/view`, {
-    method: "POST",
-    body: JSON.stringify({
-      function: "0x1::coin::balance",
-      type_arguments: [COIN_TYPE],
-      arguments: [account],
-    }),
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  }).then((r) => r.json());
-
-  if (balanceResponse.constructor === Array) {
-    const balance: number =
-      Math.round(balanceResponse[0] / 10 ** (DECIMALS - NUMBER_OF_DECIMALS)) /
-      10 ** NUMBER_OF_DECIMALS;
-
-    return balance;
-  }
-
-  return 0.0;
-}
 
 class Message implements SignMessagePayload {
   address: boolean = true; // Should we include the address of the account in the message
@@ -62,6 +31,20 @@ class Message implements SignMessagePayload {
     this.nonce = nonce;
   }
 }
+async function fetchWithProc<T>(
+  input: string | URL | Request,
+  init?: RequestInit,
+): Promise<T> {
+  const response = await fetch(input, init);
+  let ans: object | string = await response.json();
+
+  if (!response.ok) {
+    if (typeof ans === "object" && "detail" in ans) ans = ans.detail as string;
+    throw new Error(`${response.status}: ${ans}`);
+  }
+
+  return ans as T;
+}
 
 class AuthToken {
   static STORAGE_NAME: string = "auth_token";
@@ -72,7 +55,7 @@ class AuthToken {
 
   verified_token: boolean | false = false;
 
-  nonce: string | null = null;
+  nonce: string = "";
 
   constructor(load: boolean = true) {
     if (!load) return;
@@ -104,30 +87,12 @@ class AuthToken {
   }
 
   async check(): Promise<boolean> {
-    if (this.token === null) {
+    if (this.token === null || this.account === null) {
       this.set_defaults();
       return false;
     }
-    const token: AuthToken = await fetch("/api/token/status", {
-      method: "POST",
-      body: JSON.stringify(this),
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    }).then((r) => r.json());
 
-    Object.assign(this, token);
-    return this.verified_token;
-  }
-
-  async new(): Promise<boolean> {
-    this.set_defaults();
-
-    if (!window.pontem) return false;
-    this.account = await window.pontem?.account();
-
-    const response = await fetch("/api/token/new", {
+    const token: AuthToken = await fetchWithProc("/api/token/status", {
       method: "POST",
       body: JSON.stringify(this),
       headers: {
@@ -136,23 +101,32 @@ class AuthToken {
       },
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || "Failed to create token");
-    }
+    Object.assign(this, token);
+    return this.verified_token;
+  }
 
-    const newToken: AuthToken = await response.json();
+  protected async new(): Promise<boolean> {
+    this.set_defaults();
+
+    if (!window.pontem) return false;
+    this.account = await window.pontem?.account();
+
+    const newToken: AuthToken = await fetchWithProc("/api/token/new", {
+      method: "POST",
+      body: JSON.stringify(this),
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    });
 
     Object.assign(this, newToken);
     this.save();
 
     const newTokenString = JSON.stringify(newToken);
 
-    // Use server-generated nonce for signing
-    const serverNonce = newToken.nonce || "";
-
     const { success, result: signMessage } = await window.pontem.signMessage(
-      new Message(newTokenString, serverNonce),
+      new Message(newTokenString, newToken.nonce),
       {
         useNewFormat: true,
       },
@@ -173,7 +147,7 @@ class AuthToken {
       };
     })();
 
-    const verifyResponse = await fetch("/api/token/verify", {
+    const verifyToken: AuthToken = await fetchWithProc("/api/token/verify", {
       method: "POST",
       body: JSON.stringify(signNormalize),
       headers: {
@@ -182,19 +156,8 @@ class AuthToken {
       },
     });
 
-    if (!verifyResponse.ok) {
-      const error = await verifyResponse.json();
-      throw new Error(error.detail || "Failed to verify signature");
-    }
-
-    const verifyToken: AuthToken = await verifyResponse.json();
-
     Object.assign(this, verifyToken);
     this.save();
-
-    if (!verifyToken.verified_token) {
-      throw new Error("Signature verification failed");
-    }
 
     return verifyToken.verified_token;
   }
@@ -217,24 +180,17 @@ class AuthToken {
 export class AuthState {
   connected: boolean = false;
 
-  initialized: boolean = false;
-
   token: AuthToken = new AuthToken(true);
+
+  lumio_settings: LumioConfig = getConfig();
 
   async init(): Promise<AuthState> {
     const { pontem } = window;
 
-    if (!pontem || !(await pontem.isConnected())) {
-      this.initialized = true;
-      return this;
-    }
-    if (!(await this.token.check())) {
-      this.initialized = true;
-      return this;
-    }
+    if (!pontem || !(await pontem.isConnected())) return this;
+    if (!(await this.token.check())) return this;
 
     this.connected = true;
-    this.initialized = true;
 
     return this;
   }
@@ -255,9 +211,9 @@ export class AuthState {
     const { pontem } = window;
     if (pontem) await pontem.disconnect();
 
-    const success: boolean = await fetch("/api/token", {
+    const success: boolean = await fetchWithProc("/api/token", {
       method: "DELETE",
-    }).then((response) => response.json());
+    });
     if (success) Object.assign(this, new AuthState());
   }
 
@@ -266,7 +222,33 @@ export class AuthState {
     if (!this.connected || !pontem) return 0;
     const { account } = this.token;
 
-    return account ? lumioBalance(account.toString()) : 0.0;
+    if (!account) return 0.0;
+
+    const balanceResponse: number[] = await fetchWithProc(
+      `${this.lumio_settings.rpcUrl}v1/view`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          function: `${this.lumio_settings.contractAddress}::vibe_balance::get_balance`,
+          type_arguments: [],
+          arguments: [this.token.account],
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      },
+    );
+
+    if (balanceResponse.constructor === Array) {
+      const balance: number =
+        Math.round(balanceResponse[0] / 10 ** (DECIMALS - NUMBER_OF_DECIMALS)) /
+        10 ** NUMBER_OF_DECIMALS;
+
+      return balance;
+    }
+
+    return 0.0;
   }
 
   async topUpBalance(): Promise<void> {
@@ -274,49 +256,22 @@ export class AuthState {
     if (!this.connected || !pontem) return;
     const network = await pontem.network();
 
-    const normalizedNetworkApi = network.api?.endsWith("/")
-      ? network.api.slice(0, -1)
-      : network.api;
-    const normalizedLumioRpc = LUMIO_RPC.endsWith("/")
-      ? LUMIO_RPC.slice(0, -1)
-      : LUMIO_RPC;
-
-    if (
-      normalizedNetworkApi !== normalizedLumioRpc ||
-      !network.chainId ||
-      parseInt(network.chainId, 10) !== CHAIN_ID
-    ) {
+    if (network.api?.indexOf(this.lumio_settings.rpcUrl) === -1) {
       throw new Error(
         `Please connect to the Lumio network and switch to the correct chain.
 
-        RPC: ${LUMIO_RPC}
-        CHAIN ID: ${CHAIN_ID}`,
+        RPC: ${this.lumio_settings.rpcUrl}`,
       );
     }
 
-    // const result = await pontem.signTransaction({
-    //   function: "0x1::coin::transfer",
-    //   type_arguments: [COIN_TYPE],
-    //   arguments: ["0x1", "100"],
-    // });
+    const { success } = await pontem.signAndSubmit({
+      function: `${this.lumio_settings.contractAddress}::vibe_balance::deposit`,
+      arguments: ["10000"],
+    });
+
+    if (!success) throw new Error("Failed to top up the balance");
   }
 }
 
-const authState = new AuthState();
-
-const AuthContext = createContext<AuthState>(authState);
-
-export const useAuthWallet = (): AuthState => {
-  const auth = useContext(AuthContext);
-  const [, forceUpdate] = useState(0);
-
-  useEffect(() => {
-    if (!auth.initialized) {
-      auth.init().then(() => {
-        forceUpdate((n) => n + 1);
-      });
-    }
-  }, []);
-
-  return auth;
-};
+const AuthContext = createContext<AuthState>(await new AuthState().init());
+export const useAuthWallet = (): AuthState => useContext(AuthContext);
