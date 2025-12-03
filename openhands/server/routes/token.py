@@ -170,8 +170,7 @@ async def verify_token(
 
     # Verify token matches stored token
     if user_setting.wallet.token is None or user_setting.wallet != input_token:
-        input_token.verified_token = False
-        return input_token
+        raise HTTPException(status_code=500, detail='Invalid token')
 
     # Verify nonce matches server-generated nonce
     if user_setting.wallet.nonce is None or sign_token.nonce != user_setting.wallet.nonce:
@@ -188,9 +187,7 @@ async def verify_token(
         signature=sign_token.signature,
         public_key_hex=sign_token.publicKey,
     ):
-        logger.warning(f'Signature verification failed for address: {sign_token.address}')
-        input_token.verified_token = False
-        return input_token
+        raise HTTPException(status_code=500, detail='Signature verification failed')
 
     user_setting.wallet.verified_token = True
     await user_settings_store.store(user_setting)
