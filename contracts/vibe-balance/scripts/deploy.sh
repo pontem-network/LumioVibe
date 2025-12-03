@@ -16,6 +16,7 @@ NETWORK="${LUMIO_NETWORK:-testnet}"
 
 INITIAL_WHITELIST=(
     "0xac1f48e2c77b95f2646c37ff629dbd27fa1a1f0857f7260ddf59ed14a13063fb"
+    "0xe6c88958b7a01cc9949325a032337ab8ea8cc20e8c4353561e7a9ff1fc55f3c4"
 )
 
 echo -e "${YELLOW}======== Vibe Balance Deployment (${NETWORK}) ========${NC}"
