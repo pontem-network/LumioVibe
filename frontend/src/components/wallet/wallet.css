@@ -10,7 +10,8 @@
   z-index: 99;
 }
 
-.wallet_panel button {
+.wallet_panel button,
+.wallet_panel input {
   padding: 10px 16px;
   border-radius: 8px;
   font-weight: 500;
@@ -21,6 +22,16 @@
   border: 1px solid #2a2a2a;
   background-color: #0a0a0a;
   color: #ffffff;
+}
+
+.wallet_panel input:focus {
+  border-color: transparent;
+  box-shadow: 0px 0px 5px #AE7993;
+  outline: none;
+}
+
+.wallet_panel button.submit {
+  background-image: linear-gradient(#f03f78, #d02f67);
 }
 
 .wallet_panel button:hover {
@@ -40,16 +51,6 @@
   fill: #ffffff;
 }
 
-.wallet_panel .top_up_balance {
-  background-color: #0a0a0a;
-  border: 1px solid #2a2a2a;
-  color: #ffffff;
-}
-
-.wallet_panel .top_up_balance:hover {
-  background-color: #1a1a1a;
-  border-color: #3a3a3a;
-}
 
 .wallet_panel .wallet_view_balance {
   display: flex;
@@ -66,4 +67,63 @@
 .wallet_panel .wallet_view_balance .value {
   font-weight: 600;
   color: #AE7993;
+}
+
+.wallet_panel .top_up {
+  position: relative;
+}
+
+
+.wallet_panel .top_up .top_up_balance {
+  background-color: #0a0a0a;
+  border: 1px solid #2a2a2a;
+  color: #ffffff;
+}
+
+.wallet_panel .top_up .top_up_balance:hover {
+  background-color: #1a1a1a;
+  border-color: #3a3a3a;
+}
+
+.wallet_panel .top_up .top_up_modal {
+  position: absolute;
+  right: -100px;
+  top: 60px;
+  width: 350px;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 20px;
+
+  background-color: color-mix(in oklab, #0a0a0a 95%, transparent);
+
+  display: flex;
+  flex-direction: column;
+
+  text-align: center;
+  row-gap: 15px;
+  text-size-adjust: 100%;
+  transition-duration: 0.3s;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1)
+}
+
+.wallet_panel .top_up .top_up_modal label {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.wallet_panel .top_up .top_up_modal input {
+  text-align: right;
+  color: #AE7993
+}
+
+.wallet_panel .top_up .top_up_modal .foot {
+  display: flex;
+  margin: 0 -10px;
+}
+
+.wallet_panel .top_up .top_up_modal .foot button {
+  width: auto;
+  flex-grow: 1;
+  margin: 0 10px;
 }

@@ -251,7 +251,7 @@ export class AuthState {
     return 0.0;
   }
 
-  async topUpBalance(): Promise<void> {
+  async topUpBalance(amount: number = 1000): Promise<void> {
     const { pontem } = window;
     if (!this.connected || !pontem) return;
     const network = await pontem.network();
@@ -266,7 +266,7 @@ export class AuthState {
 
     const { success } = await pontem.signAndSubmit({
       function: `${this.lumio_settings.contractAddress}::vibe_balance::deposit`,
-      arguments: ["10000"],
+      arguments: [amount.toString()],
     });
 
     if (!success) throw new Error("Failed to top up the balance");
