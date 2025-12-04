@@ -25,7 +25,6 @@ import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { useAutoLogin } from "#/hooks/use-auto-login";
 import { useAuthCallback } from "#/hooks/use-auth-callback";
 import { useReoTracking } from "#/hooks/use-reo-tracking";
-import { useSyncPostHogConsent } from "#/hooks/use-sync-posthog-consent";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
@@ -106,7 +105,10 @@ export default function MainApp() {
   useReoTracking();
 
   // Sync PostHog opt-in/out state with backend setting on mount
-  useSyncPostHogConsent();
+  // useSyncPostHogConsent();
+  React.useEffect(() => {
+    if (pathname.indexOf("/settings") === 0) navigate("/");
+  }, [pathname]);
 
   React.useEffect(() => {
     // Don't change language when on TOS page

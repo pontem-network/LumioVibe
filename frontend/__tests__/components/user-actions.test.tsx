@@ -1,9 +1,9 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, test, vi, afterEach, beforeEach } from "vitest";
+import { screen } from "@testing-library/react";
+import { describe, expect, it, vi, afterEach, beforeEach } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { UserActions } from "#/components/features/sidebar/user-actions";
 import { MemoryRouter } from "react-router";
 import { ReactElement } from "react";
+import { UserActions } from "#/components/features/sidebar/user-actions";
 import { renderWithProviders } from "../../test-utils";
 
 // Create mocks for all the hooks we need
@@ -38,9 +38,8 @@ describe("UserActions", () => {
   const onLogoutMock = vi.fn();
 
   // Create a wrapper with MemoryRouter and renderWithProviders
-  const renderWithRouter = (ui: ReactElement) => {
-    return renderWithProviders(<MemoryRouter>{ui}</MemoryRouter>);
-  };
+  const renderWithRouter = (ui: ReactElement) =>
+    renderWithProviders(<MemoryRouter>{ui}</MemoryRouter>);
 
   beforeEach(() => {
     // Reset all mocks to default values before each test
@@ -276,7 +275,7 @@ describe("UserActions", () => {
       <UserActions
         onLogout={onLogoutMock}
         user={{ avatar_url: "https://example.com/avatar.png" }}
-        isLoading={true}
+        isLoading
       />,
     );
 

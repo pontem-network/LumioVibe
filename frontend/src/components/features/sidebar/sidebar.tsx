@@ -1,7 +1,5 @@
 import React from "react";
 import { useLocation } from "react-router";
-import { useGitUser } from "#/hooks/query/use-git-user";
-import { UserActions } from "./user-actions";
 import { OpenHandsLogoButton } from "#/components/shared/buttons/openhands-logo-button";
 import { NewProjectButton } from "#/components/shared/buttons/new-project-button";
 import { ConversationPanelButton } from "#/components/shared/buttons/conversation-panel-button";
@@ -9,7 +7,6 @@ import { SettingsModal } from "#/components/shared/modals/settings/settings-moda
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
-import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { MicroagentManagementButton } from "#/components/shared/buttons/microagent-management-button";
@@ -17,7 +14,7 @@ import { cn } from "#/utils/utils";
 
 export function Sidebar() {
   const location = useLocation();
-  const user = useGitUser();
+  // const user = useGitUser();
   const { data: config } = useConfig();
   const {
     data: settings,
@@ -25,7 +22,7 @@ export function Sidebar() {
     isError: settingsIsError,
     isFetching: isFetchingSettings,
   } = useSettings();
-  const { mutate: logout } = useLogout();
+  // const { mutate: logout } = useLogout();
 
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
 
@@ -95,13 +92,13 @@ export function Sidebar() {
           </div>
 
           <div className="flex flex-row md:flex-col md:items-center gap-[26px]">
-            <UserActions
+            {/* <UserActions
               user={
                 user.data ? { avatar_url: user.data.avatar_url } : undefined
               }
               onLogout={logout}
               isLoading={user.isFetching}
-            />
+            /> */}
           </div>
         </nav>
 
