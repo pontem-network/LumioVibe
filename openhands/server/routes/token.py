@@ -1,8 +1,9 @@
+from typing import Any, Optional
 import uuid
 import hashlib
 import time
 import secrets
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
@@ -12,6 +13,7 @@ from openhands.server.dependencies import get_dependencies
 from openhands.server.user_auth import get_user_settings_store
 from openhands.server.shared import server_config
 from openhands.server.services.lumio_service import LumioService
+from openhands.server.user_auth.default_user_auth import DefaultUserAuth
 from openhands.storage.data_models.settings import AuthWallet, Settings
 from openhands.storage.settings.settings_store import SettingsStore
 
@@ -110,14 +112,9 @@ def verify_ed25519_signature(
 
 @app.post('/new')
 async def new_token(
+    request: Request,
     token: AuthWallet,
-    user_settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> AuthWallet:
-    """Create a new authentication token for wallet."""
-    user_setting: Settings | None = await user_settings_store.load()
-    if user_setting is None:
-        raise HTTPException(status_code=500, detail='Settings not found')
-
     if not token.account:
         raise HTTPException(status_code=400, detail='Account address is required')
 
@@ -127,8 +124,17 @@ async def new_token(
     if not is_whitelisted:
         raise HTTPException(status_code=403, detail='Account is not whitelisted')
 
+    session = await request.state.session.get_session()
+    session['user_id'] = token.account
+    await request.state.session.save_session()
+
+    user_auth = DefaultUserAuth(user_id=token.account)
+    user_settings_store: SettingsStore = await user_auth.get_user_settings_store()
+    user_setting: Settings  = (await user_settings_store.load()) or Settings()
+
     user_setting.wallet = AuthWallet()
     user_setting.wallet.account = token.account
+    """Create a new authentication token for wallet."""
     user_setting.wallet.token = str(uuid.uuid4())
     user_setting.wallet.created_at = time.time()
     user_setting.wallet.nonce = secrets.token_hex(16)  # 32 character hex string
@@ -201,9 +207,7 @@ async def status_token(
     user_settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> AuthWallet:
     """Check the status of an authentication token."""
-    user_setting: Settings | None = await user_settings_store.load()
-    if user_setting is None:
-        raise HTTPException(status_code=500, detail='Settings not found')
+    user_setting: Settings = await user_settings_store.load() or Settings()
 
     if user_setting.wallet != input_token:
         input_token.verified_token = False

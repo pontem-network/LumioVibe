@@ -45,7 +45,7 @@ async def get_secrets(request: Request) -> Secrets | None:
     return user_secrets
 
 
-async def get_user_settings_store(request: Request) -> SettingsStore | None:
+async def get_user_settings_store(request: Request) -> SettingsStore:
     user_auth = await get_user_auth(request)
     user_settings_store = await user_auth.get_user_settings_store()
     return user_settings_store

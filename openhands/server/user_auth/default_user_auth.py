@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any,Optional
 
 from fastapi import Request
 from pydantic import SecretStr
@@ -15,15 +16,15 @@ from openhands.storage.settings.settings_store import SettingsStore
 @dataclass
 class DefaultUserAuth(UserAuth):
     """Default user authentication mechanism"""
-
-    _settings: Settings | None = None
-    _settings_store: SettingsStore | None = None
+    # auth_type: AuthType = AuthType.COOKIE
+    user_id: str | None = None
+    settings: Settings | None = None
+    settings_store: SettingsStore | None = None
     _secrets_store: SecretsStore | None = None
     _secrets: Secrets | None = None
 
     async def get_user_id(self) -> str | None:
-        """The default implementation does not support multi tenancy, so user_id is always None"""
-        return None
+        return self.user_id
 
     async def get_user_email(self) -> str | None:
         """The default implementation does not support multi tenancy, so email is always None"""
@@ -34,7 +35,7 @@ class DefaultUserAuth(UserAuth):
         return None
 
     async def get_user_settings_store(self) -> SettingsStore:
-        settings_store = self._settings_store
+        settings_store = self.settings_store
         if settings_store:
             return settings_store
         user_id = await self.get_user_id()
@@ -43,21 +44,23 @@ class DefaultUserAuth(UserAuth):
         )
         if settings_store is None:
             raise ValueError('Failed to get settings store instance')
-        self._settings_store = settings_store
+
+        self.settings_store = settings_store
         return settings_store
 
     async def get_user_settings(self) -> Settings | None:
-        settings = self._settings
-        if settings:
-            return settings
+        if self.settings:
+            return self.settings
+
         settings_store = await self.get_user_settings_store()
-        settings = await settings_store.load()
+        settings: Settings = (await settings_store.load()) or Settings()
+
 
         # Merge config.toml settings with stored settings
         if settings:
             settings = settings.merge_with_config_settings()
 
-        self._settings = settings
+        self.settings = settings
         return settings
 
     async def get_secrets_store(self) -> SecretsStore:
@@ -93,10 +96,11 @@ class DefaultUserAuth(UserAuth):
 
     @classmethod
     async def get_instance(cls, request: Request) -> UserAuth:
-        user_auth = DefaultUserAuth()
-        return user_auth
+        session = await request.state.session.get_session()
+
+        return DefaultUserAuth(user_id=session.get('user_id'))
 
     @classmethod
     async def get_for_user(cls, user_id: str) -> UserAuth:
         assert user_id == 'root'
-        return DefaultUserAuth()
+        return DefaultUserAuth(user_id=user_id)
