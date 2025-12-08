@@ -64,6 +64,9 @@ async def get_conversation_store(request: Request) -> ConversationStore | None:
     if conversation_store:
         return conversation_store
     user_id = await get_user_id(request)
+    if user_id is None:
+        return None
+
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     request.state.conversation_store = conversation_store
     return conversation_store
