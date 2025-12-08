@@ -43,22 +43,22 @@ class AuthWallet(BaseModel):
 class Settings(BaseModel):
     """Persisted settings for OpenHands sessions"""
 
-    language: str | None = None
-    agent: str | None = None
+    language: str | None = "en"
+    agent: str | None = "CodeActAgent"
     max_iterations: int | None = None
     security_analyzer: str | None = None
-    confirmation_mode: bool | None = None
-    llm_model: str | None = None
-    llm_api_key: SecretStr | None = None
-    llm_base_url: str | None = None
-    remote_runtime_resource_factor: int | None = None
+    confirmation_mode: bool | None = "false"
+    llm_model: str | None = "ollama/deepseek-r1:1.5b" # @todo
+    llm_api_key: SecretStr | None = "-" # @todo
+    llm_base_url: str | None = "http://192.168.3.4:11434" # @todo
+    remote_runtime_resource_factor: int | None = 1
     # Planned to be removed from settings
     secrets_store: Secrets = Field(default_factory=Secrets, frozen=True)
     enable_default_condenser: bool = True
     enable_sound_notifications: bool = False
-    enable_proactive_conversation_starters: bool = True
-    enable_solvability_analysis: bool = True
-    user_consents_to_analytics: bool | None = None
+    enable_proactive_conversation_starters: bool = False
+    enable_solvability_analysis: bool = False
+    user_consents_to_analytics: bool | None = True
     sandbox_base_container_image: str | None = None
     sandbox_runtime_container_image: str | None = None
     mcp_config: MCPConfig | None = None

@@ -15,6 +15,7 @@ from openhands.server.shared import server_config
 from openhands.server.services.lumio_service import LumioService
 from openhands.server.user_auth.default_user_auth import DefaultUserAuth
 from openhands.storage.data_models.settings import AuthWallet, Settings
+from openhands.storage.session import delete_session_file, get_session_id_from_usid_token, load_session_file
 from openhands.storage.settings.settings_store import SettingsStore
 
 app = APIRouter(prefix='/api/token', dependencies=get_dependencies())
@@ -203,6 +204,7 @@ async def verify_token(
 
 @app.post('/status')
 async def status_token(
+    request: Request,
     input_token: AuthWallet,
     user_settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> AuthWallet:
@@ -246,6 +248,12 @@ async def delete_token(
 
     user_setting.wallet = AuthWallet()
     await user_settings_store.store(user_setting)
+
+    usid = request.cookies.get('usid')
+    session_id = get_session_id_from_usid_token(usid)
+
+    if session_id is not None:
+        delete_session_file(session_id)
 
     await request.state.session.clear_session()
 

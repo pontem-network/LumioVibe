@@ -322,9 +322,13 @@ async def search_conversations(
             title='If True, include sub-conversations in the results. If False (default), exclude all sub-conversations.'
         ),
     ] = False,
-    conversation_store: ConversationStore = Depends(get_conversation_store),
+    conversation_store: ConversationStore | None = Depends(get_conversation_store),
     app_conversation_service: AppConversationService = app_conversation_service_dependency,
 ) -> ConversationInfoResultSet:
+
+    if conversation_store is None:
+        return ConversationInfoResultSet()
+
     # Parse combined page_id to extract separate page_ids for each source
     v0_page_id = None
     v1_page_id = None
@@ -452,9 +456,12 @@ async def search_conversations(
 @app.get('/conversations/{conversation_id}')
 async def get_conversation(
     conversation_id: str = Depends(validate_conversation_id),
-    conversation_store: ConversationStore = Depends(get_conversation_store),
+    conversation_store: ConversationStore | None = Depends(get_conversation_store),
     app_conversation_service: AppConversationService = app_conversation_service_dependency,
 ) -> ConversationInfo | None:
+    if conversation_store is None:
+        return None
+
     try:
         # Shim to add V1 conversations
         try:
