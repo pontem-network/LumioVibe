@@ -235,6 +235,7 @@ async def status_token(
 
 @app.delete('')
 async def delete_token(
+    request: Request,
     user_settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> bool:
     """Delete the current authentication token."""
@@ -245,5 +246,7 @@ async def delete_token(
 
     user_setting.wallet = AuthWallet()
     await user_settings_store.store(user_setting)
+
+    await request.state.session.clear_session()
 
     return True
