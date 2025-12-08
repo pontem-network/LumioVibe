@@ -132,9 +132,9 @@ async def new_token(
     user_settings_store: SettingsStore = await user_auth.get_user_settings_store()
     user_setting: Settings  = (await user_settings_store.load()) or Settings()
 
+    """Create a new authentication token for wallet."""
     user_setting.wallet = AuthWallet()
     user_setting.wallet.account = token.account
-    """Create a new authentication token for wallet."""
     user_setting.wallet.token = str(uuid.uuid4())
     user_setting.wallet.created_at = time.time()
     user_setting.wallet.nonce = secrets.token_hex(16)  # 32 character hex string

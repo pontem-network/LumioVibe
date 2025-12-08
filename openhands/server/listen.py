@@ -34,7 +34,7 @@ base_app.add_middleware(
     http_only=True,
     secure=False,
     max_age=0,
-    session_cookie='sid',
+    session_cookie='usid',
     session_object='session',
 )
 

@@ -16,7 +16,6 @@ from openhands.storage.settings.settings_store import SettingsStore
 @dataclass
 class DefaultUserAuth(UserAuth):
     """Default user authentication mechanism"""
-    # auth_type: AuthType = AuthType.COOKIE
     user_id: str | None = None
     settings: Settings | None = None
     settings_store: SettingsStore | None = None
