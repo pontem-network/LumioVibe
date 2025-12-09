@@ -35,7 +35,7 @@ class ConversationValidator:
         cookie = SimpleCookie()
         cookie.load(cookies_str)
 
-        usid = cookie.get("usid");
+        usid = cookie.get("usid")
 
         if usid is None and usid.value is not None:
             logger.warning(
