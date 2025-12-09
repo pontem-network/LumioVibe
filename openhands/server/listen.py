@@ -34,7 +34,7 @@ base_app.add_middleware(
     store=MemoryIOSession(),
     http_only=False,
     secure=False,
-    max_age=0,
+    max_age=3600,
     session_cookie='usid',
     session_object='session',
 )

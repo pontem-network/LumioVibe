@@ -35,9 +35,8 @@ class ConversationValidator:
         cookie = SimpleCookie()
         cookie.load(cookies_str)
 
-        usid = cookie.get("usid")
-
-        if usid is None and usid.value is not None:
+        usid = cookie.get("usid", None)
+        if usid is None or usid.value is None:
             logger.warning(
                 "usid cookie not found in cookies_str: %s", cookies_str
             )
