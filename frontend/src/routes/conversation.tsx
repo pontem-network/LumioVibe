@@ -17,7 +17,6 @@ import { useTaskPolling } from "#/hooks/query/use-task-polling";
 
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
-import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
 import { useUserProviders } from "#/hooks/use-user-providers";
 
@@ -30,6 +29,7 @@ import { useErrorMessageStore } from "#/stores/error-message-store";
 import { useUnifiedResumeConversationSandbox } from "#/hooks/mutation/use-unified-start-conversation";
 import { I18nKey } from "#/i18n/declaration";
 import { useEventStore } from "#/stores/use-event-store";
+import { useAuthWallet } from "#/hooks/use-auth";
 
 function AppContent() {
   useConversationConfig();
@@ -44,7 +44,7 @@ function AppContent() {
   const { data: conversation, isFetched, refetch } = useActiveConversation();
   const { mutate: startConversation, isPending: isStarting } =
     useUnifiedResumeConversationSandbox();
-  const { data: isAuthed } = useIsAuthed();
+  const isAuthed = useAuthWallet().connected;
   const { providers } = useUserProviders();
   const { resetConversationState } = useConversationStore();
   const navigate = useNavigate();

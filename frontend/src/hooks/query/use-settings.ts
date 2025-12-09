@@ -3,7 +3,7 @@ import SettingsService from "#/settings-service/settings-service.api";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { Settings } from "#/types/settings";
-import { useIsAuthed } from "./use-is-authed";
+import { useAuthWallet } from "../use-auth";
 
 const getSettingsQueryFn = async (): Promise<Settings> => {
   const apiSettings = await SettingsService.getSettings();
@@ -41,7 +41,7 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
 
 export const useSettings = () => {
   const isOnTosPage = useIsOnTosPage();
-  const { data: userIsAuthenticated } = useIsAuthed();
+  const userIsAuthenticated = useAuthWallet().connected;
 
   const query = useQuery({
     queryKey: ["settings"],

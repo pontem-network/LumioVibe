@@ -97,6 +97,11 @@ async def load_settings(
     },
 )
 async def reset_settings() -> JSONResponse:
+    return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={'message': 'The action is prohibited'},
+        )
+
     """Resets user settings. (Deprecated)"""
     logger.warning('Deprecated endpoint /api/reset-settings called by user')
     return JSONResponse(
@@ -142,6 +147,10 @@ async def store_settings(
     settings: Settings,
     settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> JSONResponse:
+    return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={'message': 'The action is prohibited'},
+        )
     # Check provider tokens are valid
     try:
         existing_settings = await settings_store.load()

@@ -33,9 +33,11 @@ class FileSettingsStore(SettingsStore):
     async def get_instance(
         cls, config: OpenHandsConfig, user_id: str | None
     ) -> FileSettingsStore:
+        if user_id is None:
+            user_id = 'default'
         file_store = get_file_store(
             file_store_type=config.file_store,
-            file_store_path=config.file_store_path,
+            file_store_path=config.file_store_path + '/' + user_id,
             file_store_web_hook_url=config.file_store_web_hook_url,
             file_store_web_hook_headers=config.file_store_web_hook_headers,
             file_store_web_hook_batch=config.file_store_web_hook_batch,

@@ -19,6 +19,8 @@ from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 
+OPENHANDS_DIR = os.path.expanduser('~/.openhands')
+SESSION_SECRET_KEY=os.environ.get('SESSION_SECRET_KEY', 'MNMC-toqC-j2rd-aaU8')
 
 class OpenHandsConfig(BaseModel):
     """Configuration for the app.
@@ -70,7 +72,7 @@ class OpenHandsConfig(BaseModel):
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     runtime: str = Field(default='docker')
     file_store: str = Field(default='local')
-    file_store_path: str = Field(default='~/.openhands')
+    file_store_path: str = Field(default=OPENHANDS_DIR)
     file_store_web_hook_url: str | None = Field(default=None)
     file_store_web_hook_headers: dict | None = Field(default=None)
     file_store_web_hook_batch: bool = Field(default=False)

@@ -1,4 +1,5 @@
 import os
+from http.cookies import SimpleCookie
 from datetime import datetime, timezone
 
 from openhands.core.config.utils import load_openhands_config
@@ -6,6 +7,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.server.config.server_config import ServerConfig
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.session import get_session_id_from_usid_token, load_session_file
 from openhands.utils.conversation_summary import get_default_conversation_title
 from openhands.utils.import_utils import get_impl
 
@@ -30,7 +32,21 @@ class ConversationValidator:
         cookies_str: str,
         authorization_header: str | None = None,
     ) -> str | None:
-        user_id = None
+        cookie = SimpleCookie()
+        cookie.load(cookies_str)
+
+        usid = cookie.get("usid", None)
+        if usid is None or usid.value is None:
+            logger.warning(
+                "usid cookie not found in cookies_str: %s", cookies_str
+            )
+            return None
+
+        session_id = get_session_id_from_usid_token(usid.value)
+        user_id = load_session_file(session_id).get("store",{}).get("user_id")
+        if user_id is None:
+            return None
+
         metadata = await self._ensure_metadata_exists(conversation_id, user_id)
         return metadata.user_id
 
