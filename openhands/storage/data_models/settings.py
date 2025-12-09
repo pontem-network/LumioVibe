@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 
 from pydantic import (
     BaseModel,
@@ -48,9 +49,9 @@ class Settings(BaseModel):
     max_iterations: int | None = None
     security_analyzer: str | None = None
     confirmation_mode: bool | None = "false"
-    llm_model: str | None = "ollama/deepseek-r1:1.5b" # @todo
-    llm_api_key: SecretStr | None = "-" # @todo
-    llm_base_url: str | None = "http://192.168.3.4:11434" # @todo
+    llm_model: str | None = os.environ.get('LLM_MODEL',"ollama/deepseek-r1:1.5b")
+    llm_api_key: SecretStr | None = os.environ.get('LLM_API_KEY',"-")
+    llm_base_url: str | None = os.environ.get('LLM_BASE_URL',"http://127.0.0.1:11434")
     remote_runtime_resource_factor: int | None = 1
     # Planned to be removed from settings
     secrets_store: Secrets = Field(default_factory=Secrets, frozen=True)
