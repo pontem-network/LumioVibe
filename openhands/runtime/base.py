@@ -1078,35 +1078,9 @@ fi
         This method is called automatically during setup_initial_env() to ensure
         git configuration is applied to the runtime environment.
         """
-        # Get git configuration from config
-        git_user_name = self.config.git_user_name
-        git_user_email = self.config.git_user_email
-
-        # Skip git configuration for CLI runtime to preserve user's local git settings
-        is_cli_runtime = self.config.runtime == 'cli'
-        if is_cli_runtime:
-            logger.debug(
-                "Skipping git configuration for CLI runtime - using user's local git config"
-            )
-            return
-
-        # All runtimes (except CLI) use global git config
-        cmd = f'git config --global user.name "{git_user_name}" && git config --global user.email "{git_user_email}"'
-
-        # Execute git configuration command
-        try:
-            action = CmdRunAction(command=cmd)
-            obs = self.run(action)
-            if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
-                logger.warning(
-                    f'Git config command failed: {cmd}, error: {obs.content}'
-                )
-            else:
-                logger.info(
-                    f'Successfully configured git: name={git_user_name}, email={git_user_email}'
-                )
-        except Exception as e:
-            logger.warning(f'Failed to execute git config command: {cmd}, error: {e}')
+        logger.debug(
+            "Skipping global git configuration to preserve user's local git settings"
+        )
 
     @abstractmethod
     def get_mcp_config(
