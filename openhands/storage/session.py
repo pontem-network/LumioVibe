@@ -16,7 +16,11 @@ class MemoryIOSession(MemoryIO):
     def __init__(self) -> None:
         super().__init__()
 
-        for child in Path(session_dir()).iterdir():
+        sess_dir = Path(session_dir())
+        if not sess_dir.exists():
+            sess_dir.mkdir(parents=True, exist_ok=True)
+
+        for child in sess_dir.iterdir():
             if child.is_file() and child.suffix == '.json':
                 with open(child, 'r') as f:
                     json_str = f.read()

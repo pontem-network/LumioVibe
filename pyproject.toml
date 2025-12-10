@@ -127,6 +127,7 @@ pg8000 = "^1.31.5"
 asyncpg = "^0.30.0"
 deprecation = "^2.1.0"
 lmnr = "^0.7.20"
+authx-extra = "^1.2.0"
 
 [tool.poetry.extras]
 third_party_runtimes = [ "e2b-code-interpreter", "modal", "runloop-api-client", "daytona" ]

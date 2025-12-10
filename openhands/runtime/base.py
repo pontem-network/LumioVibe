@@ -914,6 +914,13 @@ fi
         microagents_dir = self.workspace_root / '.openhands' / 'microagents'
         repo_root = None
 
+        # Load system-level microagents from /openhands/microagents/ (hidden from user)
+        system_microagents_dir = Path('/openhands/microagents')
+        system_microagents = self._load_microagents_from_directory(
+            system_microagents_dir, 'system'
+        )
+        loaded_microagents.extend(system_microagents)
+
         # Check for user/org level microagents if a repository is selected
         if selected_repository:
             # Load microagents from the org/user level repository

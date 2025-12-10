@@ -48,10 +48,11 @@ class Settings(BaseModel):
     agent: str | None = "CodeActAgent"
     max_iterations: int | None = None
     security_analyzer: str | None = None
-    confirmation_mode: bool | None = "false"
-    llm_model: str | None = os.environ.get('LLM_MODEL',"ollama/deepseek-r1:1.5b")
-    llm_api_key: SecretStr | None = os.environ.get('LLM_API_KEY',"-")
-    llm_base_url: str | None = os.environ.get('LLM_BASE_URL',"http://127.0.0.1:11434")
+    confirmation_mode: bool | None = False
+    # LLM settings are loaded from config.toml, not stored per-user
+    llm_model: str | None = None
+    llm_api_key: SecretStr | None = None
+    llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = 1
     # Planned to be removed from settings
     secrets_store: Secrets = Field(default_factory=Secrets, frozen=True)
@@ -183,15 +184,23 @@ class Settings(BaseModel):
     def merge_with_config_settings(self) -> "Settings":
         """Merge config.toml settings with stored settings.
 
-        Config.toml takes priority for MCP settings, but they are merged rather than replaced.
+        Config.toml takes priority for LLM and MCP settings.
         This method can be used by both server mode and CLI mode.
         """
         # Get config.toml settings
         config_settings = Settings.from_config()
-        if not config_settings or not config_settings.mcp_config:
+        if not config_settings:
             return self
 
+        # LLM settings always come from config.toml (not stored per-user)
+        self.llm_model = config_settings.llm_model
+        self.llm_api_key = config_settings.llm_api_key
+        self.llm_base_url = config_settings.llm_base_url
+
         # If stored settings don't have MCP config, use config.toml MCP config
+        if not config_settings.mcp_config:
+            return self
+
         if not self.mcp_config:
             self.mcp_config = config_settings.mcp_config
             return self

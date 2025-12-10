@@ -21,6 +21,5 @@ export default [
       route("api-keys", "routes/api-keys.tsx"),
     ]),
     route("conversations/:conversationId", "routes/conversation.tsx"),
-    route("microagent-management", "routes/microagent-management.tsx"),
   ]),
 ] satisfies RouteConfig;

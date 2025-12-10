@@ -1,0 +1,9 @@
+export interface {{RESOURCE_NAME}} {
+  owner: string;
+  created_at: string;
+}
+
+export interface {{EVENT_NAME}} {
+  owner: string;
+  timestamp: string;
+}

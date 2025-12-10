@@ -50,9 +50,17 @@ RUN apt-get update && \
 
 {% if (('ubuntu' in base_image) or ('mswebench' in base_image)) %}
 RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
-    npm install -g corepack && corepack enable yarn && \
+    npm install -g corepack && corepack enable yarn && corepack enable pnpm && \
     curl -fsSL --compressed https://install.python-poetry.org | python -
 {% endif %}
+
+# Pre-install LumioVibe dependencies globally for faster project setup
+RUN npm install -g typescript vite @vitejs/plugin-react vitest && \
+    mkdir -p /opt/lumiovibe-cache && \
+    cd /opt/lumiovibe-cache && \
+    echo '{"dependencies":{"@aptos-labs/ts-sdk":"^1.33.1","@aptos-labs/wallet-adapter-react":"^3.7.2","@pontem/wallet-adapter-plugin":"^0.2.1","react":"^18.3.1","react-dom":"^18.3.1","react-router-dom":"^6.28.0"},"devDependencies":{"@types/react":"^18.3.12","@types/react-dom":"^18.3.1","autoprefixer":"^10.4.20","postcss":"^8.4.49","tailwindcss":"^3.4.16","typescript":"^5.7.2","@types/node":"^22.10.1","vitest":"^2.1.8"}}' > package.json && \
+    pnpm install && \
+    rm -rf /opt/lumiovibe-cache
 
 # Install uv (required by MCP)
 RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/openhands/bin" sh
@@ -187,6 +195,17 @@ RUN mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-hello-world && \
 
 RUN mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-memory-monitor && \
     cp -r /openhands/code/openhands/runtime/utils/vscode-extensions/memory-monitor/* ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-memory-monitor/
+
+# Install extensions from VS Code Marketplace
+ENV PATH="${OPENVSCODE_SERVER_ROOT}/bin:${PATH}"
+RUN ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server --install-extension dbaeumer.vscode-eslint && \
+    ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server --install-extension esbenp.prettier-vscode && \
+    ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server --install-extension ecmel.vscode-html-css && \
+    ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server --install-extension movingco.aptos-move-analyzer && \
+    ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server --install-extension bradlc.vscode-tailwindcss && \
+    ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server --install-extension dsznajder.es7-react-js-snippets && \
+    ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server --install-extension ms-vscode.vscode-typescript-next && \
+    ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server --install-extension styled-components.vscode-styled-components
 
 # Some extension dirs are removed because they trigger false positives in vulnerability scans.
 RUN rm -rf ${OPENVSCODE_SERVER_ROOT}/extensions/{handlebars,pug,json,diff,grunt,ini,npm}
@@ -342,6 +361,51 @@ COPY --chown=openhands:openhands ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py && \
     chown -R openhands:openhands /openhands/code
 
+# ================================================================
+# Install lumio-cli binary from GitHub release (architecture-specific)
+# ================================================================
+RUN mkdir -p /openhands/bin && \
+    LUMIO_VERSION="7.8.0" && \
+    ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+        LUMIO_ARCH="aarch64"; \
+    elif [ "$ARCH" = "x86_64" ]; then \
+        LUMIO_ARCH="x86_64"; \
+    else \
+        echo "Unsupported architecture: $ARCH" && exit 1; \
+    fi && \
+    echo "Downloading Lumio CLI ${LUMIO_VERSION} for ${LUMIO_ARCH}..." && \
+    cd /tmp && \
+    curl -L -o lumio-cli.zip "https://github.com/pontem-network/lumio-cli/releases/download/lumio-cli-v${LUMIO_VERSION}/lumio-cli-${LUMIO_VERSION}-Linux-${LUMIO_ARCH}.zip" && \
+    unzip -q lumio-cli.zip && \
+    mv lumio /openhands/bin/lumio && \
+    chmod +x /openhands/bin/lumio && \
+    rm -f lumio-cli.zip && \
+    echo "Lumio CLI ${LUMIO_VERSION} (${LUMIO_ARCH}) installed successfully"
+
+# ================================================================
+# Copy LumioVibe microagents and templates (hidden from user workspace)
+# ================================================================
+RUN mkdir -p /openhands/microagents && rm -rf /workspace/.openhands
+COPY --chown=openhands:openhands ./code/.openhands/microagents /openhands/microagents
+RUN chown -R openhands:openhands /openhands/microagents
+
+# Copy project templates to /openhands/templates (not visible in /workspace)
+COPY --chown=openhands:openhands ./code/templates /openhands/templates
+RUN chmod +x /openhands/templates/scaffold.sh 2>/dev/null || true
+
+# ================================================================
+# Initialize Lumio CLI as openhands user (must run AFTER lumio binary is installed)
+# ================================================================
+USER openhands
+WORKDIR /home/openhands
+RUN PRIVATE_KEY=$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 64 | head -n 1) && \
+    /openhands/bin/lumio init --assume-yes --network testnet --private-key "$PRIVATE_KEY" && \
+    # Verify config was created with correct permissions
+    ls -la /home/openhands/.lumio/ && \
+    cat /home/openhands/.lumio/config.yaml
+USER root
+
 
 # ================================================================
 # END: Build from versioned image
@@ -361,9 +425,11 @@ RUN {{ extra_deps }}
 # Set up environment for openhands user
 USER root
 RUN \
-    # Set up environment for openhands user
-    echo 'export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/openhands/micromamba/bin:$PATH"' >> /home/openhands/.bashrc && \
+    # Set up environment for openhands user (.bashrc for non-login shells)
+    echo 'export PATH="/openhands/bin:/usr/bin:/bin:/usr/sbin:/sbin:/openhands/micromamba/bin:$PATH"' >> /home/openhands/.bashrc && \
     echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /home/openhands/.bashrc && \
     echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /home/openhands/.bashrc && \
     echo 'micromamba activate openhands 2>/dev/null || true' >> /home/openhands/.bashrc && \
-    chown openhands:openhands /home/openhands/.bashrc
+    # Also add to .profile for login shells
+    echo 'export PATH="/openhands/bin:$PATH"' >> /home/openhands/.profile && \
+    chown openhands:openhands /home/openhands/.bashrc /home/openhands/.profile

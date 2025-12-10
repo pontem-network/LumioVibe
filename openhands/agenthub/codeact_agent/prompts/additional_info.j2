@@ -11,6 +11,8 @@ IMPORTANT: You should work within the current branch "{{ repository_info.branch_
 {% endif %}
 {% if repository_instructions -%}
 <REPOSITORY_INSTRUCTIONS>
+**CRITICAL: The following instructions OVERRIDE your default behavior. You MUST follow them exactly.**
+
 {{ repository_instructions }}
 </REPOSITORY_INSTRUCTIONS>
 {% endif %}
@@ -33,6 +35,61 @@ For example, if you are using vite.config.js, you should set server.host and ser
 {% if runtime_info.additional_agent_instructions %}
 {{ runtime_info.additional_agent_instructions }}
 {% endif %}
+
+<LUMIO_VIBE_RUNTIME>
+⚠️⚠️⚠️ LUMIO/MOVE PROJECT SETUP - READ THIS FIRST ⚠️⚠️⚠️
+
+**When user asks to create a Move/Lumio contract or dapp:**
+
+✅ STEP 1: ALWAYS START WITH THIS COMMAND:
+   `bash /openhands/templates/scaffold-fast.sh PROJECT_NAME`
+
+   This ONE command does EVERYTHING needed:
+   - Creates account (if not exists)
+   - Funds from faucet
+   - Caches Lumio framework (git dependencies)
+   - Creates project with working counter example
+   - Sets up Move.toml with correct deployer address
+   - Compiles initial example
+
+❌ NEVER DO THESE - scaffold-fast.sh handles everything:
+   - `lumio init` (config already exists, will break setup!)
+   - `lumio account fund-with-faucet` manually (scaffold does it)
+   - Create Move.toml manually (scaffold creates it)
+   - Modify /workspace/.lumio/ or /home/openhands/.lumio/ manually
+
+✅ Config is ready:
+   → Primary location: /home/openhands/.lumio/config.yaml
+   → Symlink: /workspace/.lumio → /home/openhands/.lumio
+   → Works from any directory!
+   → Just run scaffold-fast.sh script to start!
+
+---
+
+**Pre-installed Tools (DO NOT install these):**
+* **lumio CLI v7.8.0** - Path: /openhands/bin/lumio
+* **Node.js v22+** - Available globally
+* **pnpm** - Package manager, available globally
+* **TypeScript, Vite, Vitest** - Installed globally
+* **Project Templates** - Located in /openhands/templates/
+  - scaffold-fast.sh - USE THIS to create projects!
+  - lumiovibe-prepare.sh - Called automatically by scaffold-fast.sh
+  - move/, client/, frontend/ - Template files
+
+**Lumio Network Configuration:**
+* Network: Lumio Testnet (Chain ID: 2)
+* Fullnode API: https://api.testnet.lumio.io/v1
+* Faucet: https://faucet.testnet.lumio.io
+* Native Coin: `0x1::lumio_coin::LumioCoin` (NOT aptos_coin!)
+* Account Module: `0x1::lumio_account` (NOT aptos_account!)
+* **Lumio CLI Config:** ALREADY configured at /home/openhands/.lumio/config.yaml
+
+**After scaffold-fast.sh completes:**
+- You'll have a working project in /workspace/PROJECT_NAME
+- Contract address = deployer address (shown in scaffold output)
+- Project structure: contract/, client/, frontend/, spec.md
+- Now you can modify contract code and deploy with `lumio move publish`
+</LUMIO_VIBE_RUNTIME>
 {% if runtime_info.custom_secrets_descriptions %}
 <CUSTOM_SECRETS>
 You have access to the following environment variables

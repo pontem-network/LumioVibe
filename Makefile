@@ -299,6 +299,20 @@ docker-run:
 		docker compose up $(OPTIONS); \
 	fi
 
+# Build runtime image with force rebuild (includes lumio-cli)
+build-runtime:
+	@echo "$(YELLOW)Building runtime image...$(RESET)"
+	@docker rmi -f $$(docker images -q "ghcr.io/openhands/runtime") 2>/dev/null || true
+	@IMAGE_NAME=$$(poetry run python -m openhands.runtime.utils.runtime_build --force_rebuild 2>&1 | grep -oE 'ghcr.io/openhands/runtime:[a-zA-Z0-9_.-]+' | tail -1); \
+	if [ -n "$$IMAGE_NAME" ]; then \
+		echo "$(GREEN)Runtime image built: $$IMAGE_NAME$(RESET)"; \
+		if [ -f $(CONFIG_FILE) ]; then \
+			python3 -c "import re; c = open('$(CONFIG_FILE)').read(); c = re.sub(r'runtime_container_image = \"[^\"]*\"', 'runtime_container_image = \"$$IMAGE_NAME\"', c) if 'runtime_container_image' in c else c.replace('[sandbox]', '[sandbox]\nruntime_container_image = \"$$IMAGE_NAME\"') if '[sandbox]' in c else c; c = c.replace('force_rebuild_runtime = true', 'force_rebuild_runtime = false'); open('$(CONFIG_FILE)', 'w').write(c)"; \
+			echo "$(GREEN)Updated config.toml with runtime image$(RESET)"; \
+		fi; \
+	else \
+		echo "$(RED)Failed to get runtime image name$(RESET)"; \
+	fi
 
 # Setup config.toml
 setup-config:

@@ -9,7 +9,6 @@ import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
 import { useConfig } from "#/hooks/query/use-config";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { MicroagentManagementButton } from "#/components/shared/buttons/microagent-management-button";
 import { cn } from "#/utils/utils";
 
 export function Sidebar() {
@@ -84,9 +83,6 @@ export function Sidebar() {
                   ? null
                   : setConversationPanelIsOpen((prev) => !prev)
               }
-              disabled={settings?.EMAIL_VERIFIED === false}
-            />
-            <MicroagentManagementButton
               disabled={settings?.EMAIL_VERIFIED === false}
             />
           </div>

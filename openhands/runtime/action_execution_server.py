@@ -298,11 +298,14 @@ class ActionExecutor:
         self.browser_init_task = asyncio.create_task(self._init_browser_async())
         logger.debug('Browser initialization started in background')
 
+        logger.info(
+            f'Starting initialization of {len(self.plugins_to_load)} plugins: {[p.name for p in self.plugins_to_load]}'
+        )
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
             timeout=int(os.environ.get('INIT_PLUGIN_TIMEOUT', '120')),
         )
-        logger.debug('All plugins initialized')
+        logger.info('All plugins initialized successfully')
 
         # This is a temporary workaround
         # TODO: refactor AgentSkills to be part of JupyterPlugin
@@ -328,6 +331,7 @@ class ActionExecutor:
 
     async def _init_plugin(self, plugin: Plugin):
         assert self.bash_session is not None
+        logger.info(f'Initializing plugin: {plugin.name}')
         # VSCode plugin needs runtime_id for path-based routing when using Gateway API
         if isinstance(plugin, VSCodePlugin):
             runtime_id = os.environ.get('RUNTIME_ID')
@@ -335,7 +339,7 @@ class ActionExecutor:
         else:
             await plugin.initialize(self.username)
         self.plugins[plugin.name] = plugin
-        logger.debug(f'Initializing plugin: {plugin.name}')
+        logger.info(f'Plugin {plugin.name} initialized successfully')
 
         if isinstance(plugin, JupyterPlugin):
             # Escape backslashes in Windows path

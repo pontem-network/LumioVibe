@@ -97,16 +97,10 @@ async def load_settings(
     },
 )
 async def reset_settings() -> JSONResponse:
-    return JSONResponse(
-            status_code=status.HTTP_403_FORBIDDEN,
-            content={'message': 'The action is prohibited'},
-        )
-
     """Resets user settings. (Deprecated)"""
-    logger.warning('Deprecated endpoint /api/reset-settings called by user')
     return JSONResponse(
-        status_code=status.HTTP_410_GONE,
-        content={'error': 'Reset settings functionality has been removed.'},
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={'message': 'The action is prohibited'},
     )
 
 
@@ -151,54 +145,54 @@ async def store_settings(
             status_code=status.HTTP_403_FORBIDDEN,
             content={'message': 'The action is prohibited'},
         )
-    # Check provider tokens are valid
-    try:
-        existing_settings = await settings_store.load()
-
-        # Convert to Settings model and merge with existing settings
-        if existing_settings:
-            settings = await store_llm_settings(settings, settings_store)
-
-            # Keep existing analytics consent if not provided
-            if settings.user_consents_to_analytics is None:
-                settings.user_consents_to_analytics = (
-                    existing_settings.user_consents_to_analytics
-                )
-
-        # Update sandbox config with new settings
-        if settings.remote_runtime_resource_factor is not None:
-            config.sandbox.remote_runtime_resource_factor = (
-                settings.remote_runtime_resource_factor
-            )
-
-        # Update git configuration with new settings
-        git_config_updated = False
-        if settings.git_user_name is not None:
-            config.git_user_name = settings.git_user_name
-            git_config_updated = True
-        if settings.git_user_email is not None:
-            config.git_user_email = settings.git_user_email
-            git_config_updated = True
-
-        # Note: Git configuration will be applied when new sessions are initialized
-        # Existing sessions will continue with their current git configuration
-        if git_config_updated:
-            logger.info(
-                f'Updated global git configuration: name={config.git_user_name}, email={config.git_user_email}'
-            )
-
-        settings = convert_to_settings(settings)
-        await settings_store.store(settings)
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={'message': 'Settings stored'},
-        )
-    except Exception as e:
-        logger.warning(f'Something went wrong storing settings: {e}')
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': 'Something went wrong storing settings'},
-        )
+    # # Check provider tokens are valid
+    # try:
+    #     existing_settings = await settings_store.load()
+    #
+    #     # Convert to Settings model and merge with existing settings
+    #     if existing_settings:
+    #         settings = await store_llm_settings(settings, settings_store)
+    #
+    #         # Keep existing analytics consent if not provided
+    #         if settings.user_consents_to_analytics is None:
+    #             settings.user_consents_to_analytics = (
+    #                 existing_settings.user_consents_to_analytics
+    #             )
+    #
+    #     # Update sandbox config with new settings
+    #     if settings.remote_runtime_resource_factor is not None:
+    #         config.sandbox.remote_runtime_resource_factor = (
+    #             settings.remote_runtime_resource_factor
+    #         )
+    #
+    #     # Update git configuration with new settings
+    #     git_config_updated = False
+    #     if settings.git_user_name is not None:
+    #         config.git_user_name = settings.git_user_name
+    #         git_config_updated = True
+    #     if settings.git_user_email is not None:
+    #         config.git_user_email = settings.git_user_email
+    #         git_config_updated = True
+    #
+    #     # Note: Git configuration will be applied when new sessions are initialized
+    #     # Existing sessions will continue with their current git configuration
+    #     if git_config_updated:
+    #         logger.info(
+    #             f'Updated global git configuration: name={config.git_user_name}, email={config.git_user_email}'
+    #         )
+    #
+    #     settings = convert_to_settings(settings)
+    #     await settings_store.store(settings)
+    #     return JSONResponse(
+    #         status_code=status.HTTP_200_OK,
+    #         content={'message': 'Settings stored'},
+    #     )
+    # except Exception as e:
+    #     logger.warning(f'Something went wrong storing settings: {e}')
+    #     return JSONResponse(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         content={'error': 'Something went wrong storing settings'},
+    #     )
 
 
 def convert_to_settings(settings_with_token_data: Settings) -> Settings:

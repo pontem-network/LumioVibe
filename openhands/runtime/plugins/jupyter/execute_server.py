@@ -121,7 +121,7 @@ class JupyterKernel:
         ws_req = HTTPRequest(
             url='{}/api/kernels/{}/channels'.format(
                 self.base_ws_url, url_escape(self.kernel_id)
-            )
+            ),
         )
         self.ws = await websocket_connect(ws_req)
         logging.info('Connected to kernel websocket')

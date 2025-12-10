@@ -4,7 +4,6 @@ import { validateFiles } from "#/utils/file-validation";
 import { CustomChatInput } from "./custom-chat-input";
 import { AgentState } from "#/types/agent-state";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
-import { GitControlBar } from "./git-control-bar";
 import { useConversationStore } from "#/state/conversation-store";
 import { useAgentState } from "#/hooks/use-agent-state";
 import { processFiles, processImages } from "#/utils/file-processing";
@@ -138,10 +137,6 @@ export function InteractiveChatBox({ onSubmit }: InteractiveChatBoxProps) {
     clearAllFiles();
   };
 
-  const handleSuggestionsClick = (suggestion: string) => {
-    handleSubmit(suggestion);
-  };
-
   const isDisabled =
     curAgentState === AgentState.LOADING ||
     curAgentState === AgentState.AWAITING_USER_CONFIRMATION ||
@@ -155,9 +150,6 @@ export function InteractiveChatBox({ onSubmit }: InteractiveChatBoxProps) {
         onFilesPaste={handleUpload}
         conversationStatus={conversation?.status || null}
       />
-      <div className="mt-4">
-        <GitControlBar onSuggestionsClick={handleSuggestionsClick} />
-      </div>
     </div>
   );
 }
