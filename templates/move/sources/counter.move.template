@@ -1,0 +1,65 @@
+module {{PROJECT_NAME}}::counter {
+    use std::signer;
+
+    // Errors
+    const E_NOT_INITIALIZED: u64 = 1;
+    const E_ALREADY_INITIALIZED: u64 = 2;
+
+    // Resource stored at user's address
+    struct Counter has key {
+        value: u64,
+    }
+
+    // Initialize counter for user
+    public entry fun initialize(account: &signer) {
+        let addr = signer::address_of(account);
+        assert!(!exists<Counter>(addr), E_ALREADY_INITIALIZED);
+
+        move_to(account, Counter { value: 0 });
+    }
+
+    // Increment counter by 1
+    public entry fun increment(account: &signer) acquires Counter {
+        let addr = signer::address_of(account);
+        assert!(exists<Counter>(addr), E_NOT_INITIALIZED);
+
+        let counter = borrow_global_mut<Counter>(addr);
+        counter.value = counter.value + 1;
+    }
+
+    // Get counter value
+    #[view]
+    public fun get_value(addr: address): u64 acquires Counter {
+        assert!(exists<Counter>(addr), E_NOT_INITIALIZED);
+        borrow_global<Counter>(addr).value
+    }
+
+    // Check if counter exists
+    #[view]
+    public fun exists_at(addr: address): bool {
+        exists<Counter>(addr)
+    }
+
+    // Tests
+    #[test_only]
+    use lumio_framework::timestamp;
+
+    #[test(user = @0x123, framework = @0x1)]
+    fun test_counter(user: &signer, framework: &signer) acquires Counter {
+        timestamp::set_time_has_started_for_testing(framework);
+
+        let addr = signer::address_of(user);
+
+        // Initialize
+        initialize(user);
+        assert!(exists_at(addr), 0);
+        assert!(get_value(addr) == 0, 1);
+
+        // Increment
+        increment(user);
+        assert!(get_value(addr) == 1, 2);
+
+        increment(user);
+        assert!(get_value(addr) == 2, 3);
+    }
+}

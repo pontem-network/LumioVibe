@@ -1,0 +1,24 @@
+[package]
+name = "{{PROJECT_NAME}}"
+version = "1.0.0"
+authors = []
+
+[addresses]
+{{PROJECT_NAME}} = "{{DEPLOYER_ADDRESS}}"
+
+[dependencies.LumioFramework]
+git = "https://github.com/pontem-network/lumio-framework"
+rev = "mainnet"
+subdir = "lumio-framework"
+
+[dependencies.LumioStdlib]
+git = "https://github.com/pontem-network/lumio-framework"
+rev = "mainnet"
+subdir = "lumio-stdlib"
+
+[dependencies.MoveStdlib]
+git = "https://github.com/pontem-network/lumio-framework"
+rev = "mainnet"
+subdir = "move-stdlib"
+
+[dev-dependencies]

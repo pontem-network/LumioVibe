@@ -1,0 +1,129 @@
+.wallet_panel {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 12px;
+  z-index: 99;
+}
+
+.wallet_panel button,
+.wallet_panel input {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid #2a2a2a;
+  background-color: #0a0a0a;
+  color: #ffffff;
+}
+
+.wallet_panel input:focus {
+  border-color: transparent;
+  box-shadow: 0px 0px 5px #AE7993;
+  outline: none;
+}
+
+.wallet_panel button.submit {
+  background-image: linear-gradient(#f03f78, #d02f67);
+}
+
+.wallet_panel button:hover {
+  background-color: #1a1a1a;
+  border-color: #3a3a3a;
+}
+
+.pontem_wallet_button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pontem_wallet_button svg {
+  height: 16px;
+  width: 16px;
+  fill: #ffffff;
+}
+
+
+.wallet_panel .wallet_view_balance {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.wallet_panel .wallet_view_balance .label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.wallet_panel .wallet_view_balance .value {
+  font-weight: 600;
+  color: #AE7993;
+}
+
+.wallet_panel .top_up {
+  position: relative;
+}
+
+
+.wallet_panel .top_up .top_up_balance {
+  background-color: #0a0a0a;
+  border: 1px solid #2a2a2a;
+  color: #ffffff;
+}
+
+.wallet_panel .top_up .top_up_balance:hover {
+  background-color: #1a1a1a;
+  border-color: #3a3a3a;
+}
+
+.wallet_panel .top_up .top_up_modal {
+  position: absolute;
+  right: -100px;
+  top: 60px;
+  width: 350px;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 20px;
+
+  background-color: color-mix(in oklab, #0a0a0a 95%, transparent);
+
+  display: flex;
+  flex-direction: column;
+
+  text-align: center;
+  row-gap: 15px;
+  text-size-adjust: 100%;
+  transition-duration: 0.3s;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1)
+}
+
+.wallet_panel .top_up .top_up_modal label {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.wallet_panel .top_up .top_up_modal input {
+  text-align: right;
+  color: #AE7993
+}
+
+.wallet_panel .top_up .top_up_modal .foot {
+  display: flex;
+  margin: 0 -10px;
+}
+
+.wallet_panel .top_up .top_up_modal .foot button {
+  width: auto;
+  flex-grow: 1;
+  margin: 0 10px;
+}

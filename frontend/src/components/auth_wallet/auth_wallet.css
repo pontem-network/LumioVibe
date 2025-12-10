@@ -1,0 +1,19 @@
+#wallet_page {
+  text-align: center;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+#wallet_page a {
+  text-decoration: underline;
+}
+
+#wallet_page p {
+  margin: 10px 0;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+}

@@ -1,0 +1,102 @@
+/* Lumio Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
+
+:root {
+  /* Lumio dark backgrounds */
+  --bg-dark: #000000;
+  --bg-light: #0a0a0a;
+  --bg-input: #141414;
+  --bg-workspace: #0a0a0a;
+  --border: #2a2a2a;
+  --text-editor-base: rgba(255, 255, 255, 0.5);
+  --text-editor-active: rgba(255, 255, 255, 0.9);
+  --bg-editor-sidebar: #0a0a0a;
+  --bg-editor-active: #1a1a1a;
+  --border-editor-sidebar: #2a2a2a;
+  background-color: #000000 !important;
+  --bg-neutral-muted: rgba(255, 255, 255, 0.1);
+
+  /* Lumio gradient */
+  --lumio-gradient: linear-gradient(to right, #AE7993, #0E69A9);
+  --lumio-pink: #AE7993;
+  --lumio-blue: #0E69A9;
+}
+
+body {
+  margin: 0;
+  font-family: "Montserrat", "Inter", "Work Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #000000;
+  color: #ffffff;
+  position: relative;
+  min-height: 100vh;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(174, 121, 147, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(14, 105, 169, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 30% at 50% 50%, rgba(174, 121, 147, 0.05) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+code {
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+.markdown-body code {
+  padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 85%;
+  white-space: break-spaces;
+  background-color: #141414;
+  border-radius: 6px;
+  color: #ffffff;
+  border: 1px solid #2a2a2a;
+  letter-spacing: -0.2px;
+}
+
+.markdown-body pre code {
+  padding: 0;
+  background-color: inherit;
+}
+
+.markdown-body {
+  white-space: pre-wrap; /* Handles line breaks */
+}
+
+.markdown-body th {
+  text-align: left;
+}
+
+.markdown-body th,
+.markdown-body td {
+  padding: 0.1rem 1rem;
+}
+
+/* Fast smooth scrolling for chat interface */
+.fast-smooth-scroll {
+  scroll-behavior: smooth;
+  scroll-timeline: 100ms;
+}
+
+#conversation_head {
+  margin-top: 15px;
+  align-items: start;
+}
+
+#conversation_head_right {
+  margin-top: 65px;
+}

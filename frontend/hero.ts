@@ -1,0 +1,68 @@
+import { heroui } from "@heroui/react";
+
+export default heroui({
+  defaultTheme: "dark",
+  layout: {
+    radius: {
+      small: "6px",
+      medium: "10px",
+      large: "16px",
+    },
+  },
+  themes: {
+    dark: {
+      colors: {
+        background: "#000000",
+        foreground: "#ffffff",
+        primary: {
+          50: "#fdf2f7",
+          100: "#fbe8f0",
+          200: "#f9d0e2",
+          300: "#f5a9c9",
+          400: "#ed6fa3",
+          500: "#AE7993",
+          600: "#9c5f7d",
+          700: "#844c66",
+          800: "#6e4155",
+          900: "#5d3949",
+          DEFAULT: "#AE7993",
+          foreground: "#ffffff",
+        },
+        secondary: {
+          50: "#e8f4fc",
+          100: "#d1e9f9",
+          200: "#a3d3f3",
+          300: "#4fa8e3",
+          400: "#2590d4",
+          500: "#0E69A9",
+          600: "#0b5488",
+          700: "#094067",
+          800: "#072c47",
+          900: "#051c2e",
+          DEFAULT: "#0E69A9",
+          foreground: "#ffffff",
+        },
+        default: {
+          50: "#1a1a1a",
+          100: "#2a2a2a",
+          200: "#3a3a3a",
+          300: "#4a4a4a",
+          400: "#5a5a5a",
+          500: "#6a6a6a",
+          600: "#8a8a8a",
+          700: "#aaaaaa",
+          800: "#cacaca",
+          900: "#eaeaea",
+          DEFAULT: "#2a2a2a",
+          foreground: "#ffffff",
+        },
+        content1: "#0a0a0a",
+        content2: "#141414",
+        content3: "#1a1a1a",
+        content4: "#2a2a2a",
+        divider: "#2a2a2a",
+        focus: "#AE7993",
+      },
+    },
+  },
+});
