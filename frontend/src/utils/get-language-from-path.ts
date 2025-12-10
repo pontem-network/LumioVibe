@@ -43,6 +43,8 @@ export const getLanguageFromPath = (path: string): string => {
       return "php";
     case "sql":
       return "sql";
+    case "move":
+      return "move";
     default:
       return "text";
   }

@@ -325,7 +325,6 @@ async def search_conversations(
     conversation_store: ConversationStore | None = Depends(get_conversation_store),
     app_conversation_service: AppConversationService = app_conversation_service_dependency,
 ) -> ConversationInfoResultSet:
-
     if conversation_store is None:
         return ConversationInfoResultSet()
 
@@ -1380,74 +1379,6 @@ def _create_combined_page_id(
     }
 
     return base64.b64encode(json.dumps(next_page_data).encode()).decode()
-
-
-@app.get('/microagent-management/conversations')
-async def get_microagent_management_conversations(
-    selected_repository: str,
-    page_id: str | None = None,
-    limit: int = 20,
-    conversation_store: ConversationStore = Depends(get_conversation_store),
-    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
-    app_conversation_service: AppConversationService = app_conversation_service_dependency,
-) -> ConversationInfoResultSet:
-    """Get conversations for the microagent management page with pagination support.
-
-    This endpoint returns conversations with conversation_trigger = 'microagent_management'
-    and only includes conversations with active PRs. Pagination is supported.
-
-    Args:
-        page_id: Optional page ID for pagination
-        limit: Maximum number of results per page (default: 20)
-        selected_repository: Repository filter to limit results to a specific repository
-        conversation_store: Conversation store dependency
-        provider_tokens: Provider tokens for checking PR status
-        app_conversation_service: App conversation service for V1 conversations
-
-    Returns:
-        ConversationInfoResultSet with filtered and paginated results
-    """
-    # Parse page_id to extract V0 and V1 components
-    v0_page_id, v1_page_id = _parse_combined_page_id(page_id)
-
-    # Fetch V0 conversations
-    conversation_metadata_result_set = await conversation_store.search(
-        v0_page_id, limit
-    )
-
-    # Fetch V1 conversations (with graceful error handling)
-    v1_conversations, v1_next_page_id = await _fetch_v1_conversations_safe(
-        app_conversation_service, v1_page_id, limit
-    )
-
-    # Process V0 conversations
-    v0_conversations = await _process_v0_conversations(conversation_metadata_result_set)
-
-    # Apply microagent-specific filters
-    provider_handler = ProviderHandler(provider_tokens)
-    v0_filtered = await _apply_microagent_filters(
-        v0_conversations, selected_repository, provider_handler
-    )
-    v1_filtered = await _apply_microagent_filters(
-        v1_conversations, selected_repository, provider_handler
-    )
-
-    # Combine and sort results
-    all_conversations = v0_filtered + v1_filtered
-    all_conversations.sort(
-        key=lambda x: x.created_at or datetime.min.replace(tzinfo=timezone.utc),
-        reverse=True,
-    )
-
-    # Limit to requested number of results
-    final_results = all_conversations[:limit]
-
-    # Create combined page_id for pagination
-    next_page_id = _create_combined_page_id(
-        conversation_metadata_result_set.next_page_id, v1_next_page_id
-    )
-
-    return ConversationInfoResultSet(results=final_results, next_page_id=next_page_id)
 
 
 def _to_conversation_info(app_conversation: AppConversation) -> ConversationInfo:

@@ -43,6 +43,8 @@ class ConversationValidator:
             return None
 
         session_id = get_session_id_from_usid_token(usid.value)
+        if session_id is None:
+            return None
         user_id = load_session_file(session_id).get("store",{}).get("user_id")
         if user_id is None:
             return None

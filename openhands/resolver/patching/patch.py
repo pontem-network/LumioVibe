@@ -46,7 +46,7 @@ default_change = re.compile('^([><]) (.*)$')
 # Headers
 
 # git has a special index header and no end part
-# git_diffcmd_header = re.compile('^diff --git a/(.+) b/(.+)$')
+git_diffcmd_header = re.compile('^diff --git a/(.+) b/(.+)$')
 git_header_index = re.compile(r'^index ([a-f0-9]+)..([a-f0-9]+) ?(\d*)$')
 git_header_old_line = re.compile('^--- (.+)$')
 git_header_new_line = re.compile(r'^\+\+\+ (.+)$')

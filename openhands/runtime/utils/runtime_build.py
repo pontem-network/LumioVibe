@@ -210,6 +210,7 @@ def build_runtime_image_in_folder(
                 versioned_tag,
                 platform,
                 extra_build_args=extra_build_args,
+                force_rebuild=True,
             )
         return hash_image_name
 
@@ -284,6 +285,31 @@ def prep_build_folder(
 
     # Copy the 'skills' directory (Skills)
     shutil.copytree(Path(project_root, 'skills'), Path(build_folder, 'code', 'skills'))
+
+    # Copy the 'bins' directory (CLI binaries like lumio-cli)
+    bins_src = Path(project_root, 'bins')
+    if bins_src.exists():
+        shutil.copytree(
+            bins_src,
+            Path(build_folder, 'code', 'bins'),
+            ignore=shutil.ignore_patterns('.*', '.DS_Store'),
+        )
+
+    # Copy the '.openhands/microagents' directory (LumioVibe microagents)
+    microagents_src = Path(project_root, '.openhands', 'microagents')
+    if microagents_src.exists():
+        shutil.copytree(
+            microagents_src,
+            Path(build_folder, 'code', '.openhands', 'microagents'),
+        )
+
+    # Copy the 'templates' directory (LumioVibe project templates)
+    templates_src = Path(project_root, 'templates')
+    if templates_src.exists():
+        shutil.copytree(
+            templates_src,
+            Path(build_folder, 'code', 'templates'),
+        )
 
     # Copy pyproject.toml and poetry.lock files
     for file in ['pyproject.toml', 'poetry.lock']:
@@ -367,6 +393,7 @@ def _build_sandbox_image(
     versioned_tag: str | None,
     platform: str | None = None,
     extra_build_args: list[str] | None = None,
+    force_rebuild: bool = False,
 ) -> str:
     """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist."""
     names = [
@@ -375,7 +402,8 @@ def _build_sandbox_image(
     ]
     if versioned_tag is not None:
         names.append(f'{runtime_image_repo}:{versioned_tag}')
-    names = [name for name in names if not runtime_builder.image_exists(name, False)]
+    if not force_rebuild:
+        names = [name for name in names if not runtime_builder.image_exists(name, False)]
 
     image_name = runtime_builder.build(
         path=str(build_folder),

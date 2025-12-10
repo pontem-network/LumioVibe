@@ -1,0 +1,2 @@
+export { {{CLIENT_CLASS_NAME}} } from './client';
+export * from './types';

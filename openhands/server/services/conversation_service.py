@@ -93,6 +93,8 @@ async def start_conversation(
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
+    if settings:
+        settings = settings.merge_with_config_settings()
     logger.info('Settings loaded')
 
     session_init_args: dict[str, Any] = {}
@@ -230,6 +232,8 @@ async def setup_init_conversation_settings(
     """
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
+    if settings:
+        settings = settings.merge_with_config_settings()
 
     secrets_store = await SecretsStoreImpl.get_instance(config, user_id)
     user_secrets: Secrets | None = await secrets_store.load()
