@@ -1,86 +1,139 @@
-<a name="readme-top"></a>
-
 <div align="center">
-  <img src="https://raw.githubusercontent.com/OpenHands/docs/main/openhands/static/img/logo.png" alt="Logo" width="200">
-  <h1 align="center" style="border-bottom: none">OpenHands: AI-Driven Development</h1>
+  <h1>🌟 LumioVibe</h1>
+  <p><strong>AI-Powered Development for Lumio Network</strong></p>
+  <p>Vibe coding tool for building Move smart contracts and React frontends</p>
 </div>
 
-
 <div align="center">
-  <a href="https://github.com/OpenHands/OpenHands/blob/main/LICENSE"><img src="https://img.shields.io/badge/LICENSE-MIT-20B2AA?style=for-the-badge" alt="MIT License"></a>
-  <a href="https://docs.google.com/spreadsheets/d/1wOUdFCMyY6Nt0AIqF705KN4JKOWgeI4wUGUP60krXXs/edit?gid=811504672#gid=811504672"><img src="https://img.shields.io/badge/SWEBench-72.8-00cc00?logoColor=FFE165&style=for-the-badge" alt="Benchmark Score"></a>
-  <br/>
-  <a href="https://docs.openhands.dev/sdk"><img src="https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge" alt="Check out the documentation"></a>
-  <a href="https://arxiv.org/abs/2511.03690"><img src="https://img.shields.io/badge/Paper-000?logoColor=FFE165&logo=arxiv&style=for-the-badge" alt="Tech Report"></a>
-
-
-  <!-- Keep these links. Translations will automatically update with the README. -->
-  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=de">Deutsch</a> |
-  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=es">Español</a> |
-  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=fr">français</a> |
-  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=ja">日本語</a> |
-  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=ko">한국어</a> |
-  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=pt">Português</a> |
-  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=ru">Русский</a> |
-  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=zh">中文</a>
-
+  <a href="https://lumio.io"><img src="https://img.shields.io/badge/Lumio-Network-6B46C1?style=for-the-badge" alt="Lumio Network"></a>
+  <a href="https://github.com/OpenHands/OpenHands"><img src="https://img.shields.io/badge/Fork_of-OpenHands-20B2AA?style=for-the-badge" alt="Fork of OpenHands"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/LICENSE-MIT-green?style=for-the-badge" alt="MIT License"></a>
 </div>
 
 <hr>
 
-🙌 Welcome to OpenHands, a [community](COMMUNITY.md) focused on AI-driven development. We’d love for you to [join us on Slack](https://dub.sh/openhands).
+## 🚀 What is LumioVibe?
 
-There are a few ways to work with OpenHands:
+LumioVibe is a specialized AI development tool for the [Lumio Network](https://lumio.io) ecosystem. Built on top of [OpenHands](https://github.com/OpenHands/OpenHands), it focuses exclusively on:
 
-### OpenHands Software Agent SDK
-The SDK is a composable Python library that contains all of our agentic tech. It's the engine that powers everything else below.
+- ✨ **Move Smart Contracts** - Create and deploy Move contracts to Lumio testnet
+- 🔧 **TypeScript Clients** - Auto-generate type-safe clients with tests
+- 🎨 **React Frontends** - Build beautiful UIs with Pontem Wallet integration
+- 📚 **Auto Documentation** - Every contract gets a documentation page
 
-Define agents in code, then run them locally, or scale to 1000s of agents in the cloud.
+## ⚡ Quick Start
 
-[Check out the docs](https://docs.openhands.dev/sdk) or [view the source](https://github.com/OpenHands/software-agent-sdk/)
+```bash
+# Clone the repository
+git clone https://github.com/pontem-network/lumiovibe.git
+cd lumiovibe
 
-### OpenHands CLI
-The CLI is the easiest way to start using OpenHands. The experience will be familiar to anyone who has worked
-with e.g. Claude Code or Codex. You can power it with Claude, GPT, or any other LLM.
+# Build the project
+make build
 
-[Check out the docs](https://docs.openhands.dev/openhands/usage/run-openhands/cli-mode) or [view the source](https://github.com/OpenHands/OpenHands-CLI)
+# Run LumioVibe
+make run
+```
 
-### OpenHands Local GUI
-Use the Local GUI for running agents on your laptop. It comes with a REST API and a single-page React application.
-The experience will be familiar to anyone who has used Devin or Jules.
+Then open http://localhost:3001 and start building!
 
-[Check out the docs](https://docs.openhands.dev/openhands/usage/run-openhands/local-setup) or view the source in this repo.
+## 🎯 What Makes LumioVibe Special?
 
-### OpenHands Cloud
-This is a deployment of OpenHands GUI, running on hosted infrastructure.
+### 🔄 Iterative Development
+The AI doesn't stop at errors - it analyzes, fixes, and retries until success.
 
-You can try it with a free $10 credit by [signing in with your GitHub account](https://app.all-hands.dev).
+### 📦 Complete Projects
+Every contract gets:
+- ✅ Compiled and deployed Move contract
+- ✅ TypeScript client with comprehensive tests
+- ✅ React frontend with wallet integration
+- ✅ Documentation page with usage examples
 
-OpenHands Cloud comes with source-available features and integrations:
-- Integrations with Slack, Jira, and Linear
-- Multi-user support
-- RBAC and permissions
-- Collaboration features (e.g., conversation sharing)
+### 🎨 Predictable Stack
+Fixed technology choices mean reliable results:
+- **Blockchain:** Lumio Network (Aptos fork)
+- **Language:** Move for contracts, TypeScript for clients
+- **Frontend:** React 19 + Vite 6 + TailwindCSS 4
+- **Wallet:** Pontem Wallet
 
-### OpenHands Enterprise
-Large enterprises can work with us to self-host OpenHands Cloud in their own VPC, via Kubernetes.
-OpenHands Enterprise can also work with the CLI and SDK above.
+### 🌐 Testnet First
+All deployments go to Lumio testnet - safe for experimentation, no real funds at risk.
 
-OpenHands Enterprise is source-available--you can see all the source code here in the enterprise/ directory,
-but you'll need to purchase a license if you want to run it for more than one month.
+## 📖 Example Usage
 
-Enterprise contracts also come with extended support and access to our research team.
+```
+You: "Create a counter contract with increment and get_count functions"
 
-Learn more at [openhands.dev/enterprise](https://openhands.dev/enterprise)
+LumioVibe:
+1. ✅ Creates Move contract with Counter resource
+2. ✅ Compiles and deploys to Lumio testnet
+3. ✅ Generates TypeScript client with tests
+4. ✅ Builds React UI with increment button
+5. ✅ Launches frontend at http://localhost:5173
+```
 
-### Everything Else
+## 🛠️ Technology Stack
 
-Check out our [Product Roadmap](https://github.com/orgs/openhands/projects/1), and feel free to
-[open up an issue](https://github.com/OpenHands/OpenHands/issues) if there's something you'd like to see!
+| Component | Technology |
+|-----------|-----------|
+| CLI | Lumio CLI v7.8.0 |
+| Testnet | https://api.testnet.lumio.io/v1 |
+| SDK | @aptos-labs/ts-sdk |
+| Frontend | React 19 + Vite 6 |
+| Styling | TailwindCSS 4 |
+| Wallet | Pontem Wallet |
 
-You might also be interested in our [evaluation infrastructure](https://github.com/OpenHands/benchmarks), our [chrome extension](https://github.com/OpenHands/openhands-chrome-extension/), or our [Theory-of-Mind module](https://github.com/OpenHands/ToM-SWE).
+## 📂 Project Structure
 
-All our work is available under the MIT license, except for the `enterprise/` directory in this repository (see the [enterprise license](enterprise/LICENSE) for details).
-The core `openhands` and `agent-server` Docker images are fully MIT-licensed as well.
+Every generated project follows this structure:
 
-If you need help with anything, or just want to chat, [come find us on Slack](https://dub.sh/openhands).
+```
+project-name/
+├── contract/           # Move smart contract
+│   ├── Move.toml
+│   └── sources/
+├── client/            # TypeScript client
+│   ├── src/
+│   └── tests/
+└── frontend/          # React application
+    ├── src/
+    │   ├── pages/
+    │   │   ├── Home.tsx
+    │   │   └── Documentation.tsx
+    │   └── hooks/
+    └── package.json
+```
+
+## 🎓 Learn More
+
+- [Design Document](LUMIO_VIBE_DESIGN.md) - Detailed architecture and workflow
+- [Setup Guide](LUMIOVIBE_SETUP.md) - Installation and configuration
+- [Lumio Network](https://lumio.io) - Official Lumio documentation
+- [OpenHands](https://github.com/OpenHands/OpenHands) - The foundation we built on
+
+## 🤝 Contributing
+
+LumioVibe is specialized for Lumio Network development. For contributions:
+
+1. Read [LUMIO_VIBE_DESIGN.md](LUMIO_VIBE_DESIGN.md) for architecture details
+2. Check existing microagents in `.openhands/microagents/`
+3. Submit PRs with improvements to Move templates or frontend generation
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+LumioVibe is a fork of [OpenHands](https://github.com/OpenHands/OpenHands), which is also MIT-licensed.
+
+## 🙏 Acknowledgments
+
+Built with ❤️ on top of [OpenHands](https://github.com/OpenHands/OpenHands) - the amazing open-source AI development platform.
+
+Special thanks to the Lumio Network team for creating an awesome Move-based blockchain!
+
+---
+
+<div align="center">
+  <p>Made for the Lumio Network community 🌟</p>
+  <p><a href="https://lumio.io">Visit Lumio Network</a></p>
+</div>
