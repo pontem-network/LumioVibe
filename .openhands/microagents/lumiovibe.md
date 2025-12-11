@@ -34,26 +34,23 @@ Your runtime has ALL necessary tools already installed:
 ✅ lumio CLI v7.8.0 in /openhands/bin/lumio
 ✅ Node.js v22+, pnpm, TypeScript, Vite
 ✅ Templates in /openhands/templates/
-✅ Lumio testnet config ALREADY configured at /home/openhands/.lumio/config.yaml
 
 DO NOT install anything - just use it!
-- Run: `lumio move compile` (NOT: install lumio first)
 - Run: `pnpm install` (NOT: check if pnpm is installed)
 - Copy templates from /openhands/templates/ (NOT: write from scratch)
 
 ⚠️⚠️⚠️ CRITICAL CONFIG WARNINGS ⚠️⚠️⚠️
-❌ NEVER EVER run `lumio init` - even with flags! Config is PRE-INITIALIZED in Docker image!
-❌ NEVER try to modify Lumio config - it's already correctly set up!
+❌ NEVER run `lumio init` manually - scaffold-fast.sh handles initialization automatically!
 ❌ NEVER manually create account or fund it outside scaffold-fast.sh
-❌ NEVER check if config exists - IT ALWAYS EXISTS!
 ✅ ALWAYS use: bash /openhands/templates/scaffold-fast.sh PROJECT_NAME
 
-The Lumio CLI was initialized during Docker build with:
-`lumio init --assume-yes --network testnet --private-key <generated>`
+The scaffold-fast.sh script will:
+1. Auto-initialize Lumio CLI with a unique private key (if not already done)
+2. Fund the account from testnet faucet
+3. Cache the Lumio framework
+4. Create project structure
 
-If you see "Enter your private key" prompt - YOU ARE DOING SOMETHING WRONG!
-The config is at /home/openhands/.lumio/config.yaml and is ready to use.
-/workspace/.lumio is a symlink to /home/openhands/.lumio - both point to the same config!
+Config is stored at /workspace/.lumio/config.yaml after first scaffold run.
 </IMPORTANT>
 
 ## 5-Phase Workflow with User Checkpoints
@@ -323,16 +320,24 @@ lumio move publish --package-dir . --assume-yes
 ### Phase 4: React Frontend
 
 <IMPORTANT>
-⚠️⚠️⚠️ VITE HOT RELOAD - CRITICAL RULE ⚠️⚠️⚠️
+⚠️⚠️⚠️ CRITICAL: USE MAPPED DOCKER PORT ⚠️⚠️⚠️
 
-Vite has HOT MODULE REPLACEMENT (HMR). Once you start `pnpm dev --host`, the server automatically reloads when files change.
+The runtime has pre-allocated ports that are mapped from Docker to host:
+- `$APP_PORT_1` - PRIMARY port for user-facing frontend (50000-54999 range)
+- `$APP_PORT_2` - SECONDARY port for agent testing (55000-59999 range)
 
-**DO NOT restart the dev server after editing files!**
+You MUST use `$APP_PORT_1` for the main dev server! Any other port will NOT be accessible to the user.
+
+⚠️⚠️⚠️ VITE HOT RELOAD - NEVER RESTART ⚠️⚠️⚠️
+
+Vite has HOT MODULE REPLACEMENT (HMR). Once started, it automatically reloads when files change.
+
+**The dev server runs ONCE for the entire session - NEVER restart it!**
 - ❌ WRONG: Stop server → Edit file → Start server again
+- ❌ WRONG: Restart server to apply changes
 - ✅ CORRECT: Keep server running → Edit file → Browser auto-updates
 
-The server should run ONCE and stay running throughout the entire session!
-Only restart if you see actual server errors (not file/compilation errors).
+Only restart if you see actual SERVER crash (not file/compilation errors).
 </IMPORTANT>
 
 ```bash
@@ -346,10 +351,12 @@ pnpm install
 - `src/pages/Documentation.tsx` - from spec.md
 - `src/App.tsx` - project name in header
 
-**Start dev server ONCE and keep it running:**
+**Start dev server ONCE on the mapped port:**
 ```bash
-pnpm dev --host
+pnpm dev --host --port $APP_PORT_1
 ```
+
+The frontend will be accessible via the **App tab** in OpenHands UI (port is auto-detected).
 
 **After starting, just edit files - Vite will auto-reload!**
 - Edit `Home.tsx` → Browser updates automatically
@@ -444,8 +451,7 @@ Next Steps:
 **Common Fixes:**
 | Error | Fix |
 |-------|-----|
-| Unable to read config | Config at /home/openhands/.lumio/config.yaml. DO NOT run `lumio init` - it's already done! |
-| "Enter your private key" prompt | CTRL+C immediately! Config is pre-initialized, you ran `lumio init` by mistake |
+| Unable to find config | Run `bash /openhands/templates/scaffold-fast.sh PROJECT_NAME` first - it initializes Lumio CLI |
 | Account does not exist | Run `bash /openhands/templates/scaffold-fast.sh` - it handles account creation |
 | Compilation failed | Read error, fix Move code |
 | Insufficient balance | `lumio account fund-with-faucet --amount 100000000` |
@@ -456,12 +462,7 @@ Next Steps:
 | Browser shows error | Read error message, fix component code |
 | "Connect Wallet" not visible | Check usePontem hook and button rendering |
 
-**NEVER run `lumio init`** - the following flags exist but you should NOT need them:
-- `--assume-yes` - skip confirmation prompts
-- `--network testnet` - set network
-- `--private-key 0x...` - provide private key
-
-The config was created during Docker build. If you run `lumio init` again, you'll see an interactive prompt which will hang.
+**NEVER run `lumio init` manually** - scaffold-fast.sh handles initialization automatically with proper flags.
 
 ---
 

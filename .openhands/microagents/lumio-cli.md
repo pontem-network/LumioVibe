@@ -20,23 +20,21 @@ Lumio CLI is a fork of Aptos CLI for Lumio Network.
 <IMPORTANT>
 ⚠️⚠️⚠️ READ THIS CAREFULLY ⚠️⚠️⚠️
 
-Lumio CLI is ALREADY configured and ready to use!
-- Config location: /home/openhands/.lumio/config.yaml (primary)
-- Symlink available: /workspace/.lumio → /home/openhands/.lumio
-- Works from any directory!
+Lumio CLI is pre-installed and will be auto-configured on first use!
+- Config location: /workspace/.lumio/config.yaml (created automatically)
+- Works from /workspace directory!
 
-❌ DO NOT run `lumio init` - it will break the setup!
+❌ DO NOT run `lumio init` manually - scaffold-fast.sh handles it!
 ❌ DO NOT manually edit or create config files!
-❌ DO NOT try to troubleshoot config issues manually!
 
-✅ The config is pre-configured with:
-- Network: Testnet
-- API: https://api.testnet.lumio.io/v1
-- Faucet: https://faucet.testnet.lumio.io
+✅ scaffold-fast.sh will automatically:
+- Initialize Lumio CLI with unique private key
+- Configure testnet (API: https://api.testnet.lumio.io/v1)
+- Fund account from faucet
 
 ✅ ALWAYS use this to start a new project:
    bash /openhands/templates/scaffold-fast.sh PROJECT_NAME
-   (This handles account creation and funding automatically)
+   (This handles initialization, account creation and funding automatically)
 </IMPORTANT>
 
 ## Deployment Workflow (CORRECT)
@@ -122,7 +120,7 @@ lumio account list
 
 | Error | Solution |
 |-------|----------|
-| `Unable to read config` | Config exists as symlink at `/workspace/.lumio`. DO NOT run `lumio init` |
+| `Unable to find config` | Run `bash /openhands/templates/scaffold-fast.sh PROJECT_NAME` first - it initializes Lumio CLI |
 | `Account does not exist` | Run `lumio account fund-with-faucet --amount 100000000` - it will create account |
 | `Insufficient balance` | Run `lumio account fund-with-faucet --amount 100000000` again |
 | `Module already published` | Contract already deployed, use different account or module name |
@@ -130,11 +128,10 @@ lumio account list
 
 ## Important Notes
 
-1. **Config location:** `/home/openhands/.lumio/config.yaml` (primary location)
-2. **Symlink:** `/workspace/.lumio` → `/home/openhands/.lumio` (works from anywhere!)
-3. **Don't run:** `lumio init` (config is pre-configured)
-4. **Account creation:** Automatic on first `fund-with-faucet`
-5. **Contract address:** Same as deployer's account address
+1. **Config location:** `/workspace/.lumio/config.yaml` (created by scaffold-fast.sh)
+2. **Don't run:** `lumio init` manually (scaffold-fast.sh handles it)
+3. **Account creation:** Automatic during scaffold-fast.sh
+4. **Contract address:** Same as deployer's account address
 
 ## Example Session
 
@@ -163,8 +160,6 @@ lumio move publish --package-dir . --assume-yes
 
 ## Config File Location
 
-**Primary location:** `/home/openhands/.lumio/config.yaml`
+**Location:** `/workspace/.lumio/config.yaml`
 
-**Symlink (for convenience):** `/workspace/.lumio` → `/home/openhands/.lumio`
-
-The config is pre-configured and accessible from any directory!
+Created automatically by scaffold-fast.sh on first use. Works from /workspace directory.

@@ -1,7 +1,7 @@
 #!/bin/bash
 # LumioVibe Quick Prepare
 # Call this ONCE at the start of any LumioVibe project
-# It will: init account, fund it, cache framework
+# It will: init lumio CLI, fund account, cache framework
 
 set -e
 
@@ -14,8 +14,19 @@ if [ -f /workspace/.lumio-prepared ]; then
     exit 0
 fi
 
+# 0. Initialize Lumio CLI if not already initialized
+echo "[1/4] Initializing Lumio CLI..."
+if [ ! -f /workspace/.lumio/config.yaml ]; then
+    PRIVATE_KEY=$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 64 | head -n 1)
+    cd /workspace
+    lumio init --assume-yes --network testnet --private-key "$PRIVATE_KEY"
+    echo "✓ Lumio CLI initialized with new account"
+else
+    echo "✓ Lumio CLI already initialized"
+fi
+
 # 1. Fund account (creates if doesn't exist)
-echo "[1/3] Funding Lumio account..."
+echo "[2/4] Funding Lumio account..."
 FUND_OUTPUT=$(lumio account fund-with-faucet --amount 100000000 2>&1)
 if echo "$FUND_OUTPUT" | grep -qi "success\|funded"; then
     echo "✓ Account funded"
@@ -25,7 +36,7 @@ else
 fi
 
 # 2. Get deployer address
-echo "[2/3] Getting deployer address..."
+echo "[3/4] Getting deployer address..."
 DEPLOYER_ADDRESS=$(lumio account list 2>/dev/null | grep "Account Address:" | awk '{print $3}' | head -1)
 if [ -z "$DEPLOYER_ADDRESS" ]; then
     echo "ERROR: Could not get deployer address"
@@ -35,7 +46,7 @@ fi
 echo "✓ Deployer: $DEPLOYER_ADDRESS"
 
 # 3. Pre-compile template to cache framework
-echo "[3/3] Caching Lumio framework (first compile)..."
+echo "[4/4] Caching Lumio framework (first compile)..."
 TMP_DIR=$(mktemp -d)
 cd "$TMP_DIR"
 

@@ -392,16 +392,9 @@ COPY --chown=openhands:openhands ./code/templates /openhands/templates
 RUN chmod +x /openhands/templates/scaffold.sh 2>/dev/null || true
 
 # ================================================================
-# Initialize Lumio CLI as openhands user (must run AFTER lumio binary is installed)
+# Lumio CLI initialization happens at runtime via lumiovibe-prepare.sh
+# Each container instance gets a unique private key when first used
 # ================================================================
-USER openhands
-WORKDIR /home/openhands
-RUN PRIVATE_KEY=$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 64 | head -n 1) && \
-    /openhands/bin/lumio init --assume-yes --network testnet --private-key "$PRIVATE_KEY" && \
-    # Verify config was created with correct permissions
-    ls -la /home/openhands/.lumio/ && \
-    cat /home/openhands/.lumio/config.yaml
-USER root
 
 
 # ================================================================
