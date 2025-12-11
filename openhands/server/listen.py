@@ -33,8 +33,8 @@ base_app.add_middleware(
     secret_key=SESSION_SECRET_KEY,
     store=MemoryIOSession(),
     http_only=False,
-    secure=False,
-    max_age=3600,
+    secure=True,
+    max_age=86400,  # 1 day
     session_cookie='usid',
     session_object='session',
 )
