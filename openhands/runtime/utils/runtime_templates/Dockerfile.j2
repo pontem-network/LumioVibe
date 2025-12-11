@@ -248,9 +248,9 @@ RUN \
     mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace && \
     chown -R openhands:openhands /openhands/workspace && \
     chown -R openhands:openhands /openhands/micromamba && \
-    # Ensure PATH includes system binaries early in startup
-    echo 'export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"' >> /etc/environment && \
-    echo 'export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"' >> /etc/bash.bashrc && \
+    # Ensure PATH includes /usr/local/bin (for npm/pnpm/node) and system binaries
+    echo 'export PATH="/openhands/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/openhands/micromamba/bin"' >> /etc/environment && \
+    echo 'export PATH="/openhands/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/openhands/micromamba/bin:$PATH"' >> /etc/bash.bashrc && \
     # Set up conda environment activation for all users
     echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /etc/bash.bashrc && \
     echo 'micromamba activate openhands 2>/dev/null || true' >> /etc/bash.bashrc && \
@@ -422,11 +422,12 @@ RUN {{ extra_deps }}
 # Set up environment for openhands user
 USER root
 RUN \
-    # Set up environment for openhands user (.bashrc for non-login shells)
-    echo 'export PATH="/openhands/bin:/usr/bin:/bin:/usr/sbin:/sbin:/openhands/micromamba/bin:$PATH"' >> /home/openhands/.bashrc && \
+    # Set PATH at the BEGINNING of .bashrc (before interactive check) for non-interactive shells
+    sed -i '1i export PATH="/openhands/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/openhands/micromamba/bin:$PATH"' /home/openhands/.bashrc && \
+    # Also add to end of .bashrc for interactive shells (after the interactive check)
     echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /home/openhands/.bashrc && \
     echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /home/openhands/.bashrc && \
     echo 'micromamba activate openhands 2>/dev/null || true' >> /home/openhands/.bashrc && \
-    # Also add to .profile for login shells
-    echo 'export PATH="/openhands/bin:$PATH"' >> /home/openhands/.profile && \
+    # Also add to .profile for login shells (includes /usr/local/bin for npm/pnpm/node)
+    echo 'export PATH="/openhands/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/openhands/micromamba/bin:$PATH"' >> /home/openhands/.profile && \
     chown openhands:openhands /home/openhands/.bashrc /home/openhands/.profile

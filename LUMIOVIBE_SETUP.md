@@ -4,8 +4,7 @@
 
 LumioVibe is a specialized AI agent that creates complete Move smart contract applications on Lumio Network:
 - ✅ Move contract compiled and deployed to testnet
-- ✅ TypeScript client library with tests
-- ✅ React frontend with wallet integration
+- ✅ React frontend with Pontem Wallet integration
 - ✅ Everything running and ready to use
 
 ## System Architecture
@@ -45,8 +44,8 @@ Main microagent: `lumiovibe.md`
 Supporting microagents:
 - `lumio-cli.md` - CLI commands reference
 - `move-syntax.md` - Move language guide
-- `ts-client.md` - TypeScript client patterns
 - `frontend-template.md` - React app structure
+- `pontem-wallet.md` - Pontem Wallet integration
 
 ### 4. Project Templates
 
@@ -58,46 +57,50 @@ templates/
 ├── move/                   # Move contract templates
 │   ├── Move.toml.template
 │   └── sources/
-├── client/                 # TypeScript client
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── src/
-├── frontend/               # React app
+├── frontend/               # React app with Pontem Wallet
 │   ├── package.json
 │   ├── vite.config.ts
 │   ├── tailwind.config.js
 │   └── src/
-└── scaffold.sh            # Project scaffolding script
+│       └── hooks/
+│           ├── usePontem.ts
+│           └── useContract.ts
+├── scaffold.sh            # Project scaffolding script
+└── scaffold-fast.sh       # Fast scaffolding with pre-configured account
 ```
 
-## Agent Workflow
+## Agent Workflow (v5.0 - Simplified)
 
 ```mermaid
 graph TD
-    A[User Request] --> B[Phase 0: Discovery & Spec]
-    B --> C[Phase 1: Project Setup]
-    C --> D[Phase 2: Move Contract]
-    D --> E[Phase 3: Deploy]
-    E --> F[Phase 4: TS Client]
-    F --> G[Phase 5: Frontend]
-    G --> H[Phase 6: Report]
+    A[User Request] --> B[Phase 0: Discovery]
+    B --> B1[Step 0.1: Gather Requirements]
+    B1 --> B2[Step 0.2: Generate Assumptions]
+    B2 --> B3{Step 0.3: User Confirms?}
+    B3 -->|No/Corrections| B2
+    B3 -->|Yes| B4[Step 0.4: Create spec.md]
+    B4 --> C[Phase 1: Environment Setup]
+    C --> D[Phase 2: Implement Contract]
 
     D --> D1{Compile OK?}
-    D1 -->|No| D2[Fix & Retry max 5x]
+    D1 -->|No, Attempt 1-2| D2[Fix & Retry]
     D2 --> D1
+    D1 -->|No, Attempt 3| D3[ASK USER: Try different approach?]
+    D3 --> D1
+    D1 -->|Yes| E[Phase 2.5: Pre-Deploy Checkpoint]
 
-    E --> E1{Deploy OK?}
-    E1 -->|No| E2[Fix & Retry max 5x]
-    E2 --> E1
+    E --> E1{User approves deploy?}
+    E1 -->|No| D
+    E1 -->|Yes| F[Phase 3: Deploy]
 
-    F --> F1{Tests OK?}
-    F1 -->|No| F2[Fix & Retry max 5x]
-    F2 --> F1
-
-    G --> G1{Build OK?}
-    G1 -->|No| G2[Fix & Retry max 5x]
-    G2 --> G1
+    F --> G[Phase 4: Frontend]
+    G --> H[Phase 5: Report]
 ```
+
+**Key Checkpoints:**
+1. **Phase 0.3** - User confirms assumptions before any code is written
+2. **Phase 2.5** - User approves what will be deployed (irreversible)
+3. **Smart Retry** - After 2 failures, ask user instead of looping
 
 ## Configuration Changes Summary
 
@@ -148,7 +151,7 @@ docker run --rm --user openhands \
   ls -la /openhands/templates/
 ```
 
-Should see: `move/`, `client/`, `frontend/`, `scaffold.sh`
+Should see: `move/`, `frontend/`, `scaffold.sh`, `scaffold-fast.sh`
 
 ### 3. Verify Microagents
 
@@ -156,7 +159,7 @@ Should see: `move/`, `client/`, `frontend/`, `scaffold.sh`
 ls -la .openhands/microagents/
 ```
 
-Should see: `lumiovibe.md`, `lumio-cli.md`, `move-syntax.md`, `ts-client.md`, `frontend-template.md`
+Should see: `lumiovibe.md`, `lumio-cli.md`, `move-syntax.md`, `frontend-template.md`, `pontem-wallet.md`
 
 ## Usage Example
 
@@ -165,31 +168,49 @@ User request:
 Create a simple counter contract with increment and get_value functions
 ```
 
-Agent workflow:
-1. Asks for project name, confirms requirements
-2. Creates `spec.md` and shows to user
-3. Scaffolds project structure
-4. Writes Move contract with `lumio_coin` module
-5. Compiles with `lumio move compile` (retries if errors)
-6. Funds account from faucet
-7. Deploys with `lumio move publish` (retries if errors)
-8. Creates TypeScript client with contract methods
-9. Runs tests with `pnpm test`
-10. Creates React frontend with Home and Documentation pages
-11. Builds with `pnpm build`
-12. Starts dev server with `pnpm dev --host`
-13. Reports completion with URL
+Agent workflow (v4.0):
 
-Result: User opens `http://localhost:5173` and sees working dapp!
+**Phase 0: Discovery & Assumptions**
+1. Asks: "What's the project name?" → "counter_app"
+2. Generates assumptions document:
+   - Data: `Counter { value: u64 }` with key ability
+   - Functions: `initialize()`, `increment()`, `get_count()`
+   - Access: anyone can increment their own counter
+   - ❓ Questions: "Should increment accept an amount parameter?"
+3. **⏸️ CHECKPOINT:** Shows assumptions, waits for "confirmed"
+4. Creates `spec.md` from confirmed assumptions
+
+**Phase 1-2: Setup & Implement**
+5. Runs `scaffold-fast.sh counter_app`
+6. Writes Move contract based on spec.md
+7. Compiles (smart retry: asks user after 2 failures)
+
+**Phase 2.5: Pre-Deploy Checkpoint**
+8. **⏸️ CHECKPOINT:** Shows what will be deployed:
+   - Module: `0x123...::counter`
+   - Functions: initialize, increment, get_count
+   - "This is IRREVERSIBLE. Reply 'deploy' to proceed."
+9. Waits for explicit "deploy" confirmation
+
+**Phase 3-4: Deploy & Build**
+10. Deploys with `lumio move publish`
+11. Creates React frontend with Pontem Wallet integration
+12. Builds & starts dev server
+
+**Phase 5: Report**
+13. Reports completion with URL and confirmed checkpoints
+
+Result: User opened `http://localhost:5173` with full confidence in what was built!
 
 ## Key Success Factors
 
-1. **All tools pre-installed** - Agent doesn't waste time installing
-2. **Clear workflow** - 6 mandatory phases with retry logic
-3. **Templates ready** - No writing configs from scratch
-4. **System prompts** - Agent knows environment setup
-5. **Error recovery** - Max 5 retries per phase, never gives up
-6. **Complete solution** - Frontend must run, user sees UI
+1. **Explicit assumptions** - Agent shows what it plans to build BEFORE writing code
+2. **User checkpoints** - Confirmation required before irreversible actions (deploy)
+3. **Smart retry** - After 2 failures, ask user instead of endless loop
+4. **All tools pre-installed** - Agent doesn't waste time installing
+5. **Clear workflow** - 5 phases with user checkpoints
+6. **Templates ready** - No writing configs from scratch
+7. **Complete solution** - Frontend must run, user sees UI
 
 ## Troubleshooting
 

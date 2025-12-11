@@ -1,0 +1,85 @@
+import { useState, useEffect, useCallback } from 'react';
+import type { PontemProvider } from '../types/pontem';
+
+const LUMIO_TESTNET_RPC = 'https://api.testnet.lumio.io/v1';
+
+export function usePontem() {
+  const [connected, setConnected] = useState(false);
+  const [account, setAccount] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const pontem = typeof window !== 'undefined' ? window.pontem : undefined;
+
+  useEffect(() => {
+    checkConnection();
+  }, []);
+
+  const checkConnection = async () => {
+    if (!pontem) return;
+    try {
+      const isConn = await pontem.isConnected();
+      if (isConn) {
+        const addr = await pontem.account();
+        setAccount(addr);
+        setConnected(true);
+      }
+    } catch (e) {
+      console.error('Connection check failed:', e);
+    }
+  };
+
+  const connect = useCallback(async () => {
+    if (!pontem) {
+      setError('Pontem Wallet not installed. Get it at pontem.network/pontem-wallet');
+      return false;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const addr = await pontem.connect();
+      setAccount(addr);
+      setConnected(true);
+
+      const network = await pontem.network();
+      if (!network.api?.includes('lumio')) {
+        setError('Please switch to Lumio Testnet in Pontem Wallet settings');
+      }
+
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to connect wallet');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [pontem]);
+
+  const disconnect = useCallback(async () => {
+    if (!pontem) return;
+    try {
+      await pontem.disconnect();
+      setAccount(null);
+      setConnected(false);
+      setError(null);
+    } catch (e) {
+      console.error('Disconnect failed:', e);
+    }
+  }, [pontem]);
+
+  const clearError = useCallback(() => setError(null), []);
+
+  return {
+    pontem,
+    connected,
+    account,
+    loading,
+    error,
+    connect,
+    disconnect,
+    clearError,
+    isInstalled: !!pontem,
+  };
+}

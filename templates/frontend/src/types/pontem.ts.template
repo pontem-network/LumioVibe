@@ -1,0 +1,76 @@
+// Pontem Wallet TypeScript Types for Lumio Network
+
+export interface PontemProvider {
+  connect(): Promise<string>;
+  disconnect(): Promise<void>;
+  isConnected(): Promise<boolean>;
+  account(): Promise<string>;
+  publicKey(): Promise<string>;
+  network(): Promise<PontemNetwork>;
+  signAndSubmit(
+    payload: PontemPayload,
+    options?: PontemTxOptions
+  ): Promise<PontemTxResult>;
+  signMessage(
+    message: SignMessagePayload,
+    options?: { useNewFormat: boolean }
+  ): Promise<SignMessageResult>;
+}
+
+export interface PontemNetwork {
+  api: string;
+  chainId: number;
+  name: string;
+}
+
+export interface PontemPayload {
+  function: string;
+  arguments: (string | number | Uint8Array)[];
+  type_arguments?: string[];
+}
+
+export interface PontemTxOptions {
+  max_gas_amount?: string;
+  gas_unit_price?: string;
+  expiration_timestamp_secs?: string;
+}
+
+export interface PontemTxResult {
+  success: boolean;
+  payload?: PontemPayload;
+  result?: {
+    hash: string;
+    sender: string;
+    sequence_number: string;
+    gas_unit_price: string;
+    max_gas_amount: string;
+  };
+}
+
+export interface SignMessagePayload {
+  message: string;
+  nonce: string;
+  address?: boolean;
+  application?: boolean;
+  chainId?: boolean;
+}
+
+export interface SignMessageResult {
+  success: boolean;
+  result?: {
+    address: string;
+    application: string;
+    chainId: number;
+    fullMessage: string;
+    message: string;
+    nonce: string;
+    prefix: string;
+    signature: Uint8Array;
+  };
+}
+
+declare global {
+  interface Window {
+    pontem?: PontemProvider;
+  }
+}

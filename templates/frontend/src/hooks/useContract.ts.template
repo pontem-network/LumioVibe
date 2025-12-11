@@ -1,37 +1,26 @@
 import { useState, useCallback } from 'react';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import {
-  Aptos,
-  AptosConfig,
-  Network,
-  InputGenerateTransactionPayloadData,
-} from '@aptos-labs/ts-sdk';
+import { usePontem } from './usePontem';
 
+// These will be replaced by scaffold script
 const CONTRACT_ADDRESS = '{{CONTRACT_ADDRESS}}';
 const MODULE_NAME = '{{MODULE_NAME}}';
-
-const LUMIO_TESTNET_CONFIG = {
-  fullnode: 'https://api.testnet.lumio.io/v1',
-  indexer: 'https://indexer.testnet.lumio.io/v1/graphql',
-  faucet: 'https://faucet.testnet.lumio.io',
-};
-
-const aptosConfig = new AptosConfig({
-  network: Network.CUSTOM,
-  fullnode: LUMIO_TESTNET_CONFIG.fullnode,
-  indexer: LUMIO_TESTNET_CONFIG.indexer,
-  faucet: LUMIO_TESTNET_CONFIG.faucet,
-});
-
-const aptos = new Aptos(aptosConfig);
+const LUMIO_RPC = 'https://api.testnet.lumio.io/v1';
 
 export function useContract() {
-  const { account, signAndSubmitTransaction } = useWallet();
+  const { pontem, connected, account } = usePontem();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const initialize = useCallback(async () => {
-    if (!account) {
+  /**
+   * Call an entry function (modifies blockchain state)
+   * All arguments MUST be strings - Pontem requires this format
+   */
+  const callEntryFunction = useCallback(async (
+    functionName: string,
+    args: (string | number)[] = [],
+    typeArgs: string[] = []
+  ) => {
+    if (!pontem || !connected) {
       setError('Wallet not connected');
       return null;
     }
@@ -40,73 +29,118 @@ export function useContract() {
     setError(null);
 
     try {
-      const payload: InputGenerateTransactionPayloadData = {
-        function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::initialize`,
-        functionArguments: [],
-      };
+      // Verify network before transaction
+      const network = await pontem.network();
+      if (!network.api?.includes('lumio')) {
+        throw new Error('Please switch to Lumio Testnet in Pontem Wallet');
+      }
 
-      const response = await signAndSubmitTransaction({ data: payload });
-      await aptos.waitForTransaction({ transactionHash: response.hash });
-      return response;
+      // IMPORTANT: All arguments must be strings for Pontem
+      const { success, result } = await pontem.signAndSubmit({
+        function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::${functionName}`,
+        arguments: args.map(a => String(a)),
+        type_arguments: typeArgs,
+      });
+
+      if (!success) {
+        throw new Error('Transaction was rejected');
+      }
+
+      return result;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error');
+      const msg = e instanceof Error ? e.message : 'Transaction failed';
+      setError(msg);
       return null;
     } finally {
       setLoading(false);
     }
-  }, [account, signAndSubmitTransaction]);
+  }, [pontem, connected]);
 
-  const getOwner = useCallback(async (address: string): Promise<string | null> => {
+  /**
+   * Call a view function (read-only, doesn't require wallet)
+   */
+  const callViewFunction = useCallback(async <T>(
+    functionName: string,
+    args: (string | number)[] = [],
+    typeArgs: string[] = []
+  ): Promise<T | null> => {
+    setError(null);
+
     try {
-      const result = await aptos.view({
-        payload: {
-          function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::get_owner`,
-          functionArguments: [address],
-        },
+      const response = await fetch(`${LUMIO_RPC}/view`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::${functionName}`,
+          type_arguments: typeArgs,
+          arguments: args.map(a => String(a)),
+        }),
       });
-      return result[0] as string;
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`View call failed: ${errorText}`);
+      }
+
+      const result = await response.json();
+      return result[0] as T;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error');
+      const msg = e instanceof Error ? e.message : 'View call failed';
+      setError(msg);
       return null;
     }
   }, []);
 
-  const getCreatedAt = useCallback(async (address: string): Promise<number | null> => {
-    try {
-      const result = await aptos.view({
-        payload: {
-          function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::get_created_at`,
-          functionArguments: [address],
-        },
-      });
-      return Number(result[0]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error');
-      return null;
-    }
-  }, []);
+  // ============================================================
+  // Contract-specific functions (customize these for your contract)
+  // ============================================================
 
-  const isInitialized = useCallback(async (address: string): Promise<boolean> => {
-    try {
-      const result = await aptos.view({
-        payload: {
-          function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::is_initialized`,
-          functionArguments: [address],
-        },
-      });
-      return result[0] as boolean;
-    } catch (e) {
-      return false;
-    }
-  }, []);
+  /**
+   * Initialize the contract for the connected account
+   */
+  const initialize = useCallback(() => {
+    return callEntryFunction('initialize');
+  }, [callEntryFunction]);
+
+  /**
+   * Increment the counter (example function - modify for your contract)
+   */
+  const increment = useCallback((amount: number = 1) => {
+    return callEntryFunction('increment', [amount]);
+  }, [callEntryFunction]);
+
+  /**
+   * Get the current count for an address
+   */
+  const getCount = useCallback((address: string) => {
+    return callViewFunction<number>('get_count', [address]);
+  }, [callViewFunction]);
+
+  /**
+   * Check if address has initialized
+   */
+  const isInitialized = useCallback((address: string) => {
+    return callViewFunction<boolean>('exists_at', [address]);
+  }, [callViewFunction]);
+
+  const clearError = useCallback(() => setError(null), []);
 
   return {
+    // Contract functions
     initialize,
-    getOwner,
-    getCreatedAt,
+    increment,
+    getCount,
     isInitialized,
+    // Generic callers for custom functions
+    callEntryFunction,
+    callViewFunction,
+    // State
     loading,
     error,
+    clearError,
+    account,
+    // Contract info
     contractAddress: CONTRACT_ADDRESS,
+    moduleName: MODULE_NAME,
   };
 }

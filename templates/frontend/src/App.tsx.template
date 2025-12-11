@@ -1,38 +1,41 @@
 import { Routes, Route, Link } from 'react-router-dom';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { usePontem } from './hooks/usePontem';
 import Home from './pages/Home';
 import Documentation from './pages/Documentation';
 
 function App() {
-  const { connect, disconnect, account, connected, wallets } = useWallet();
-
-  const handleConnect = async () => {
-    if (wallets && wallets.length > 0) {
-      await connect(wallets[0].name);
-    }
-  };
+  const { connected, account, connect, disconnect, loading, isInstalled } = usePontem();
 
   return (
-    <div className="min-h-screen">
-      <nav className="bg-lumio-dark border-b border-gray-700 px-6 py-4">
+    <div className="min-h-screen bg-gray-900 text-white">
+      <nav className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-8">
-            <h1 className="text-xl font-bold text-lumio-primary">{{PROJECT_NAME}}</h1>
+            <h1 className="text-xl font-bold text-purple-400">{{PROJECT_NAME}}</h1>
             <div className="flex gap-4">
               <Link to="/" className="text-gray-300 hover:text-white transition">
                 Home
               </Link>
-              <Link to="/documentation" className="text-gray-300 hover:text-white transition">
+              <Link to="/docs" className="text-gray-300 hover:text-white transition">
                 Docs
               </Link>
             </div>
           </div>
 
           <div>
-            {connected ? (
+            {!isInstalled ? (
+              <a
+                href="https://pontem.network/pontem-wallet"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm transition"
+              >
+                Install Pontem Wallet
+              </a>
+            ) : connected ? (
               <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-400">
-                  {account?.address?.slice(0, 6)}...{account?.address?.slice(-4)}
+                <span className="text-sm text-gray-400 font-mono">
+                  {account?.slice(0, 6)}...{account?.slice(-4)}
                 </span>
                 <button
                   onClick={disconnect}
@@ -43,10 +46,11 @@ function App() {
               </div>
             ) : (
               <button
-                onClick={handleConnect}
-                className="bg-lumio-primary hover:bg-lumio-secondary px-4 py-2 rounded-lg text-sm transition"
+                onClick={connect}
+                disabled={loading}
+                className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 px-4 py-2 rounded-lg text-sm transition"
               >
-                Connect Wallet
+                {loading ? 'Connecting...' : 'Connect Wallet'}
               </button>
             )}
           </div>
@@ -56,9 +60,13 @@ function App() {
       <main className="max-w-7xl mx-auto px-6 py-8">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/documentation" element={<Documentation />} />
+          <Route path="/docs" element={<Documentation />} />
         </Routes>
       </main>
+
+      <footer className="border-t border-gray-800 py-6 text-center text-gray-500 text-sm">
+        <p>Built on <a href="https://lumio.io" className="text-purple-400 hover:underline" target="_blank">Lumio Network</a></p>
+      </footer>
     </div>
   );
 }

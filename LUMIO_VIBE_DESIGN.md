@@ -24,15 +24,14 @@
 ### 1.2 Ограничения скоупа
 Инструмент **НЕ** является универсальным AI-ассистентом. Он специализирован на:
 - ✅ Move смарт-контракты для Lumio
-- ✅ TypeScript клиенты для контрактов
-- ✅ React фронтенды с интеграцией контрактов
+- ✅ React фронтенды с Pontem Wallet интеграцией
 - ❌ Другие блокчейны (Ethereum, Solana, etc.)
 - ❌ Бэкенд серверы
 - ❌ Мобильные приложения
 
 ### 1.3 Ключевые принципы
 1. **Итеративность** - агент не останавливается на ошибках, а исправляет их
-2. **Полнота** - каждый контракт получает TS клиент, тесты и фронтенд
+2. **Полнота** - каждый контракт получает работающий фронтенд
 3. **Предсказуемость** - фиксированный стек технологий
 4. **Документирование** - автоматическая страница с описанием контракта
 
@@ -50,15 +49,7 @@
 | Account Module | `0x1::lumio_account` | Вместо aptos_account |
 | Framework | Загружается автоматически через `lumio` | |
 
-### 2.2 TypeScript Client
-| Компонент | Значение |
-|-----------|----------|
-| SDK | `@aptos-labs/ts-sdk` ^1.39.0 |
-| Runtime | Node.js 22+ |
-| Package Manager | pnpm |
-| Test Framework | vitest |
-
-### 2.3 Frontend
+### 2.2 Frontend
 | Компонент | Значение |
 |-----------|----------|
 | Framework | React 19 |
@@ -68,7 +59,7 @@
 | Wallet | Pontem Wallet |
 | Port | Автоопределение (5173+) |
 
-### 2.4 Решения по архитектуре
+### 2.3 Решения по архитектуре
 | Вопрос | Решение | Обоснование |
 |--------|---------|-------------|
 | Network | Только Testnet | Безопасно для vibe coding, нет риска потери средств |
@@ -79,6 +70,24 @@
 ---
 
 ## 3. Архитектура
+
+### 3.0 Принципы взаимодействия с пользователем
+
+**Explicit Assumptions Pattern:**
+Агент не угадывает требования молча. Вместо этого:
+1. Собирает базовые требования
+2. Формулирует ЯВНЫЕ предположения
+3. Показывает их пользователю для корректировки
+4. Получает ЯВНОЕ подтверждение
+5. Только потом начинает писать код
+
+**Checkpoints Before Irreversible Actions:**
+- Перед deploy контракта - обязательный checkpoint
+- Пользователь должен явно подтвердить что будет задеплоено
+
+**Smart Retry:**
+- После 2-х неудачных попыток - спросить пользователя вместо бесконечного цикла
+- Предложить альтернативные подходы
 
 ### 3.1 Структура генерируемого проекта
 
@@ -91,16 +100,6 @@ project-name/
 │   └── build/                     # Артефакты компиляции
 │       └── project-name/
 │           └── bytecode_modules/
-│
-├── client/                        # TypeScript клиент
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── src/
-│   │   ├── index.ts               # Экспорт клиента
-│   │   ├── client.ts              # Класс клиента контракта
-│   │   └── types.ts               # Типы из ABI
-│   └── tests/
-│       └── contract.test.ts       # Тесты контракта
 │
 ├── frontend/                      # React приложение
 │   ├── package.json
@@ -116,12 +115,13 @@ project-name/
 │       ├── components/
 │       │   └── ...                # UI компоненты
 │       └── hooks/
+│           ├── usePontem.ts       # Хук для Pontem Wallet
 │           └── useContract.ts     # Хук для работы с контрактом
 │
-└── README.md                      # Документация проекта
+└── spec.md                        # Спецификация проекта
 ```
 
-### 3.2 Workflow агента
+### 3.2 Workflow агента (v4.0 - с Checkpoints)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -131,102 +131,90 @@ project-name/
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│  PHASE 1: MOVE CONTRACT                                              │
+│  PHASE 0: DISCOVERY & ASSUMPTIONS                                    │
 │                                                                      │
-│  1. lumio move init --name <project>                                │
-│  2. Создать структуры данных в sources/main.move                    │
-│  3. Реализовать entry functions                                     │
-│  4. Реализовать view functions                                      │
+│  Step 0.1: Gather basic requirements                                │
+│  - Project name, core features, users                               │
+│                                                                      │
+│  Step 0.2: Generate ASSUMPTIONS document                            │
+│  - Data structures with types                                       │
+│  - Access control model                                             │
+│  - Functions with signatures                                        │
+│  - Edge cases & error handling                                      │
+│  - Frontend components                                              │
+│  - ❓ Questions for user                                            │
+│                                                                      │
+│  Step 0.3: ⏸️ CHECKPOINT - Wait for user confirmation               │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │  Show assumptions → User confirms OR corrects               │    │
+│  │  Loop until explicit "confirmed" / "да" / "ok"              │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+│                                                                      │
+│  Step 0.4: Generate spec.md from confirmed assumptions              │
+└─────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  PHASE 1: ENVIRONMENT SETUP                                          │
+│                                                                      │
+│  bash /openhands/templates/scaffold-fast.sh {project_name}          │
+│  - Creates account, funds from faucet                               │
+│  - Sets up project with Move.toml                                   │
+│  - Compiles example (caches framework)                              │
+└─────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  PHASE 2: IMPLEMENT CONTRACT                                         │
+│                                                                      │
+│  Write contract based on confirmed spec.md                          │
 │                                                                      │
 │  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  COMPILE LOOP (до успеха)                                   │    │
+│  │  SMART COMPILE LOOP                                         │    │
 │  │                                                             │    │
-│  │  lumio move compile --package-dir contract/                 │    │
-│  │       │                                                     │    │
-│  │       ├── Success ──────────────────────────► Exit Loop     │    │
-│  │       │                                                     │    │
-│  │       └── Error ──► Анализ ошибки ──► Исправление ──► Retry │    │
+│  │  Attempt 1-2: Fix and retry                                 │    │
+│  │  Attempt 3: ⏸️ ASK USER: "Error is X. Try approach Y?"     │    │
+│  │  Attempt 4-5: Only with user's explicit direction           │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│  PHASE 2: DEPLOY CONTRACT                                            │
+│  PHASE 2.5: ⏸️ PRE-DEPLOY CHECKPOINT                                │
 │                                                                      │
-│  1. Проверить баланс аккаунта                                       │
-│  2. Если баланс < 1 LUM: lumio account fund-with-faucet             │
+│  Show user exactly what will be deployed:                           │
+│  - Module name                                                      │
+│  - All public functions                                             │
+│  - All data structures                                              │
 │                                                                      │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  DEPLOY LOOP (до успеха)                                    │    │
-│  │                                                             │    │
-│  │  lumio move publish --package-dir contract/ --assume-yes    │    │
-│  │       │                                                     │    │
-│  │       ├── Success ──► Сохранить адрес контракта ──► Exit    │    │
-│  │       │                                                     │    │
-│  │       └── Error ──► Диагностика ──► Исправление ──► Retry   │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                                                                      │
-│  OUTPUT: Contract Address (сохраняется для клиента)                 │
+│  "This will be deployed to Lumio Testnet (IRREVERSIBLE)."          │
+│  Wait for explicit "deploy" / "да" / "proceed"                      │
 └─────────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│  PHASE 3: TYPESCRIPT CLIENT                                          │
+│  PHASE 3: DEPLOY CONTRACT                                            │
 │                                                                      │
-│  1. Создать client/ директорию                                      │
-│  2. Инициализировать pnpm project                                   │
-│  3. Прочитать ABI из contract/build/                                │
-│  4. Сгенерировать types.ts из ABI                                   │
-│  5. Создать client.ts с методами для каждой функции                 │
-│  6. Написать тесты в tests/contract.test.ts                         │
-│                                                                      │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  TEST LOOP (до успеха)                                      │    │
-│  │                                                             │    │
-│  │  pnpm test                                                  │    │
-│  │       │                                                     │    │
-│  │       ├── Success ──────────────────────────► Exit Loop     │    │
-│  │       │                                                     │    │
-│  │       └── Error ──► Анализ ──► Исправление ──► Retry        │    │
-│  └─────────────────────────────────────────────────────────────┘    │
+│  lumio move publish --package-dir . --assume-yes                    │
+│  Save contract address to spec.md                                   │
 └─────────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │  PHASE 4: FRONTEND                                                   │
 │                                                                      │
-│  1. Создать Vite + React проект                                     │
-│  2. Добавить TailwindCSS                                            │
-│  3. Подключить wallet adapter                                       │
-│  4. Создать useContract.ts хук (импорт из ../client)                │
-│  5. Создать страницу Home.tsx с UI для взаимодействия              │
-│  6. Создать страницу Documentation.tsx                              │
-│     - Описание контракта                                            │
-│     - Список функций с параметрами                                  │
-│     - Примеры использования                                         │
-│                                                                      │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  BUILD LOOP (до успеха)                                     │    │
-│  │                                                             │    │
-│  │  pnpm build                                                 │    │
-│  │       │                                                     │    │
-│  │       ├── Success ──────────────────────────► Exit Loop     │    │
-│  │       │                                                     │    │
-│  │       └── Error ──► Анализ ──► Исправление ──► Retry        │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                                                                      │
-│  7. pnpm dev --port <auto> --host                                   │
-│  8. Сообщить URL пользователю / открыть в браузере                  │
+│  Build React app with Pontem Wallet, integrate with contract        │
+│  Run dev server, smart retry: ask user after 2 failures             │
 └─────────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                           DONE                                       │
 │                                                                      │
-│  ✅ Контракт задеплоен на Lumio Testnet                             │
-│  ✅ TypeScript клиент готов и протестирован                         │
-│  ✅ Frontend запущен на http://localhost:<port>                     │
-│  ✅ Документация доступна на /documentation                         │
+│  ✅ User confirmed assumptions (Phase 0)                            │
+│  ✅ User approved deployment (Phase 2.5)                            │
+│  ✅ Contract deployed to Lumio Testnet                              │
+│  ✅ Frontend running on http://localhost:5173                       │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -257,18 +245,12 @@ project-name/
   - lumio account fund-with-faucet
   - Профили и конфигурация
 
-- [ ] **1.4** Создать `.openhands/microagents/ts-client-generation.md`
-  - Шаблон клиента
-  - Работа с @aptos-labs/ts-sdk
-  - Конфигурация для Lumio
-  - Паттерны тестирования
-
-- [ ] **1.5** Создать `.openhands/microagents/frontend-template.md`
+- [ ] **1.4** Создать `.openhands/microagents/frontend-template.md`
   - Структура React проекта
   - Интеграция с wallet adapter
   - Страница Documentation
 
-- [ ] **1.6** Создать `.openhands/microagents/workflow.md`
+- [ ] **1.5** Создать `.openhands/microagents/workflow.md`
   - Полный workflow агента
   - Правила retry при ошибках
   - Критерии успеха каждой фазы
@@ -293,16 +275,7 @@ project-name/
   - Примеры entry/view функций
   - Комментарии-инструкции
 
-- [ ] **2.3** Создать `templates/client/package.json.template`
-  - @aptos-labs/ts-sdk
-  - vitest
-  - typescript
-
-- [ ] **2.4** Создать `templates/client/src/client.ts.template`
-  - Базовый класс клиента
-  - Конфигурация для Lumio testnet
-
-- [ ] **2.5** Создать `templates/frontend/` полный шаблон
+- [ ] **2.3** Создать `templates/frontend/` полный шаблон
   - Vite config
   - TailwindCSS config
   - Wallet adapter setup
@@ -387,7 +360,6 @@ User: "Создай контракт счётчика с функциями incr
 
 Expected:
 - Contract: counter модуль с resource Counter, entry increment(), view get_count()
-- Client: CounterClient class с методами increment(), getCount()
 - Frontend: UI с кнопкой Increment и отображением текущего значения
 ```
 
@@ -397,7 +369,6 @@ User: "Создай контракт для NFT коллекции с возмо
 
 Expected:
 - Contract: nft модуль с Token struct, mint(), transfer()
-- Client: NFTClient с методами mint(), transfer(), getTokens()
 - Frontend: Галерея NFT, формы для mint и transfer
 ```
 
@@ -407,7 +378,6 @@ User: "Создай простой DEX для обмена двух токено
 
 Expected:
 - Contract: dex модуль с Pool struct, add_liquidity(), swap()
-- Client: DEXClient
 - Frontend: Swap interface, liquidity management
 ```
 
@@ -446,8 +416,9 @@ Expected:
 |------|--------|-----------|
 | 2024-12-08 | 0.1 | Начальная версия документа |
 | 2024-12-08 | 0.2 | Фаза 1 завершена: созданы microagents |
-| 2024-12-08 | 0.3 | Фаза 2 завершена: созданы project templates (move, client, frontend) |
+| 2024-12-08 | 0.3 | Фаза 2 завершена: созданы project templates (move, frontend) |
 | 2024-12-10 | 1.0 | Фаза 3 & 4 завершены: Runtime с Lumio CLI + Workflow Enforcement через системные промпты |
+| 2024-12-11 | 2.0 | **Explicit Assumptions Pattern:** Phase 0 расширена с этапом предположений. Добавлены checkpoints перед deploy. Smart retry (спрашивать после 2 неудач). Workflow обновлён до 7 фаз. |
 
 ---
 
