@@ -125,5 +125,3 @@ def init_user_and_working_directory(
     logger.debug(f'Created working directory. Output: [{out_str}]')
 
     return None if existing_user_id == -1 else existing_user_id
-
-

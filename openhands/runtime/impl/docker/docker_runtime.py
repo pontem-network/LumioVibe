@@ -36,6 +36,7 @@ from openhands.runtime.utils.command import (
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.port_lock import PortLock, find_available_port_with_lock
 from openhands.runtime.utils.runtime_build import build_runtime_image
+from openhands.storage.locations import get_conversation_workspace_dir
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import add_shutdown_listener
 from openhands.utils.tenacity_stop import stop_if_should_exit
@@ -258,6 +259,26 @@ class DockerRuntime(ActionExecutionClient):
             )
             raise ex
 
+    def _get_workspace_dir_path(self) -> str | None:
+        """Get the absolute path to the workspace directory for this conversation.
+
+        Creates the directory if it doesn't exist.
+
+        Returns:
+            The absolute path to the workspace directory, or None if user_id is not set.
+        """
+        if not self.user_id:
+            return None
+
+        workspace_rel_path = get_conversation_workspace_dir(self.sid, self.user_id)
+        file_store_path = os.path.expanduser(self.config.file_store_path)
+        workspace_abs_path = os.path.join(file_store_path, workspace_rel_path)
+
+        os.makedirs(workspace_abs_path, exist_ok=True)
+        logger.debug(f'Workspace directory created/verified: {workspace_abs_path}')
+
+        return workspace_abs_path
+
     def _process_volumes(self) -> dict[str, dict[str, str]]:
         """Process volume mounts based on configuration.
 
@@ -266,6 +287,20 @@ class DockerRuntime(ActionExecutionClient):
         """
         # Initialize volumes dictionary
         volumes: dict[str, dict[str, str]] = {}
+
+        # Auto-mount workspace directory for authenticated users
+        workspace_dir = self._get_workspace_dir_path()
+        if workspace_dir:
+            workspace_in_sandbox = (
+                self.config.workspace_mount_path_in_sandbox or '/workspace'
+            )
+            volumes[workspace_dir] = {
+                'bind': workspace_in_sandbox,
+                'mode': 'rw',
+            }
+            logger.debug(
+                f'Auto-mounting workspace dir: {workspace_dir} to {workspace_in_sandbox}'
+            )
 
         # Process volumes (comma-delimited)
         if self.config.sandbox.volumes is not None:
@@ -543,6 +578,22 @@ class DockerRuntime(ActionExecutionClient):
 
     def _attach_to_container(self) -> None:
         self.container = self.docker_client.containers.get(self.container_name)
+
+        # Check if the container image matches the expected runtime image
+        if self.runtime_container_image and self.container.image:
+            container_image = (
+                self.container.image.tags[0] if self.container.image.tags else None
+            )
+            if container_image and container_image != self.runtime_container_image:
+                self.log(
+                    'info',
+                    f'Container image changed from {container_image} to {self.runtime_container_image}. Recreating container.',
+                )
+                self.container.remove(force=True)
+                raise docker.errors.NotFound(
+                    f'Container {self.container_name} removed due to image change'
+                )
+
         if self.container.status == 'exited':
             self.container.start()
 

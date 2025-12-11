@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Any,Optional
 
 from fastapi import Request
 from pydantic import SecretStr
@@ -16,6 +15,7 @@ from openhands.storage.settings.settings_store import SettingsStore
 @dataclass
 class DefaultUserAuth(UserAuth):
     """Default user authentication mechanism"""
+
     user_id: str | None = None
     settings: Settings | None = None
     settings_store: SettingsStore | None = None
@@ -53,7 +53,6 @@ class DefaultUserAuth(UserAuth):
 
         settings_store = await self.get_user_settings_store()
         settings: Settings = (await settings_store.load()) or Settings()
-
 
         # Merge config.toml settings with stored settings
         if settings:

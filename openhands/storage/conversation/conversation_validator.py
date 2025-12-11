@@ -1,6 +1,6 @@
 import os
-from http.cookies import SimpleCookie
 from datetime import datetime, timezone
+from http.cookies import SimpleCookie
 
 from openhands.core.config.utils import load_openhands_config
 from openhands.core.logger import openhands_logger as logger
@@ -35,17 +35,15 @@ class ConversationValidator:
         cookie = SimpleCookie()
         cookie.load(cookies_str)
 
-        usid = cookie.get("usid", None)
+        usid = cookie.get('usid', None)
         if usid is None or usid.value is None:
-            logger.warning(
-                "usid cookie not found in cookies_str: %s", cookies_str
-            )
+            logger.warning('usid cookie not found in cookies_str: %s', cookies_str)
             return None
 
         session_id = get_session_id_from_usid_token(usid.value)
         if session_id is None:
             return None
-        user_id = load_session_file(session_id).get("store",{}).get("user_id")
+        user_id = load_session_file(session_id).get('store', {}).get('user_id')
         if user_id is None:
             return None
 

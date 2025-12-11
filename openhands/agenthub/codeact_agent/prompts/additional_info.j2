@@ -53,10 +53,12 @@ For example, if you are using vite.config.js, you should set server.host and ser
    - Compiles initial example
 
 ❌ NEVER DO THESE - scaffold-fast.sh handles everything:
-   - `lumio init` (config already exists, will break setup!)
+   - `lumio init` - CONFIG IS PRE-INITIALIZED! Never run this command!
+     (It was run during Docker build: `lumio init --assume-yes --network testnet --private-key <key>`)
    - `lumio account fund-with-faucet` manually (scaffold does it)
    - Create Move.toml manually (scaffold creates it)
    - Modify /workspace/.lumio/ or /home/openhands/.lumio/ manually
+   - If you see "Enter your private key" prompt - STOP, config already exists!
 
 ✅ Config is ready:
    → Primary location: /home/openhands/.lumio/config.yaml
@@ -76,19 +78,30 @@ For example, if you are using vite.config.js, you should set server.host and ser
   - lumiovibe-prepare.sh - Called automatically by scaffold-fast.sh
   - move/, client/, frontend/ - Template files
 
-**Lumio Network Configuration:**
-* Network: Lumio Testnet (Chain ID: 2)
-* Fullnode API: https://api.testnet.lumio.io/v1
-* Faucet: https://faucet.testnet.lumio.io
-* Native Coin: `0x1::lumio_coin::LumioCoin` (NOT aptos_coin!)
+**Lumio Network Configuration (CRITICAL - memorize these!):**
+* **Chain ID: 2** (ALWAYS use 2, NOT 1 or 4!)
+* **Fullnode RPC: https://api.testnet.lumio.io/v1** (NOT aptos URLs!)
+* **Faucet: https://faucet.testnet.lumio.io**
+* Native Coin: `0x1::lumio_coin::LumioCoin` (NOT AptosCoin!)
 * Account Module: `0x1::lumio_account` (NOT aptos_account!)
 * **Lumio CLI Config:** ALREADY configured at /home/openhands/.lumio/config.yaml
+
+**WRONG vs CORRECT network values:**
+- ❌ chain_id: 1 → ✅ chain_id: 2
+- ❌ https://fullnode.testnet.aptoslabs.com → ✅ https://api.testnet.lumio.io/v1
+- ❌ 0x1::aptos_coin::AptosCoin → ✅ 0x1::lumio_coin::LumioCoin
 
 **After scaffold-fast.sh completes:**
 - You'll have a working project in /workspace/PROJECT_NAME
 - Contract address = deployer address (shown in scaffold output)
 - Project structure: contract/, client/, frontend/, spec.md
 - Now you can modify contract code and deploy with `lumio move publish`
+
+**VITE HOT RELOAD - CRITICAL:**
+Vite has Hot Module Replacement (HMR). After starting `pnpm dev --host`:
+- ❌ WRONG: Stop server → Edit file → Start server again
+- ✅ CORRECT: Keep server running → Edit file → Browser auto-updates
+Start the dev server ONCE and keep it running! Don't restart after file edits.
 </LUMIO_VIBE_RUNTIME>
 {% if runtime_info.custom_secrets_descriptions %}
 <CUSTOM_SECRETS>

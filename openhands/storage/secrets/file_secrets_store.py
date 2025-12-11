@@ -7,6 +7,7 @@ from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.storage import get_file_store
 from openhands.storage.data_models.secrets import Secrets
 from openhands.storage.files import FileStore
+from openhands.storage.locations import get_user_secrets_filename
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -46,4 +47,5 @@ class FileSecretsStore(SecretsStore):
             file_store_web_hook_headers=config.file_store_web_hook_headers,
             file_store_web_hook_batch=config.file_store_web_hook_batch,
         )
-        return FileSecretsStore(file_store)
+        path = get_user_secrets_filename(user_id)
+        return FileSecretsStore(file_store, path)

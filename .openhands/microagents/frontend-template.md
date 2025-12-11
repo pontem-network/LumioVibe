@@ -1,370 +1,459 @@
 ---
 name: frontend-template
 type: knowledge
-version: 1.0.0
+version: 3.0.0
 agent: CodeActAgent
 triggers:
 - frontend
 - react
 - vite
-- wallet
+- ui
 - pontem
+- wallet
 ---
 
 # Frontend Template for Lumio dApps
 
-## Setup
+## CRITICAL: Direct Pontem Wallet API
+
+<IMPORTANT>
+DO NOT use `@aptos-labs/wallet-adapter-react` or any wallet adapter libraries!
+They have compatibility issues with Lumio Network.
+
+Use **direct Pontem Wallet API** via `window.pontem`.
+Docs: https://docs.pontemwallet.xyz/guide/api.html
+</IMPORTANT>
+
+## Project Structure
+
+```
+frontend/
+├── package.json
+├── vite.config.ts
+├── tailwind.config.js
+├── tsconfig.json
+├── index.html
+└── src/
+    ├── main.tsx
+    ├── App.tsx
+    ├── index.css
+    ├── types/
+    │   └── pontem.ts          # Complete Pontem types
+    ├── hooks/
+    │   ├── usePontem.ts       # Wallet connection hook
+    │   └── useContract.ts     # Contract interaction hook
+    └── pages/
+        ├── Home.tsx
+        └── Documentation.tsx
+```
+
+## Step 1: Copy from Templates
 
 ```bash
-pnpm create vite frontend --template react-ts
+cp -r /openhands/templates/frontend/* ./frontend/
 cd frontend
+```
+
+## Step 2: Update Placeholders
+
+Replace in all files:
+- `{{PROJECT_NAME}}` → your project name
+- `{{CONTRACT_ADDRESS}}` → deployed contract address
+- `{{MODULE_NAME}}` → your Move module name
+
+## Step 3: Install & Run
+
+```bash
 pnpm install
-pnpm add @aptos-labs/wallet-adapter-react @pontem-network/wallet-adapter-plugin
-pnpm add tailwindcss postcss autoprefixer
-npx tailwindcss init -p
+pnpm dev --host --port $APP_PORT_1
 ```
 
-## tailwind.config.js
+<IMPORTANT>
+⚠️ ALWAYS use `$APP_PORT_1` - this port is mapped from Docker to host!
+⚠️ Start the server ONCE and NEVER restart - Vite HMR handles all changes automatically.
+</IMPORTANT>
 
-```javascript
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
-};
-```
+---
 
-## src/index.css
+## Pontem Wallet API Reference
 
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-```
+Based on official docs: https://docs.pontemwallet.xyz/guide/api.html
 
-## Wallet Provider Setup
+### Detecting Wallet
 
-```tsx
-// src/App.tsx
-import { AptosWalletAdapterProvider } from "@aptos-labs/wallet-adapter-react";
-import { PontemWallet } from "@pontem-network/wallet-adapter-plugin";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import Documentation from "./pages/Documentation";
-
-const wallets = [new PontemWallet()];
-
-function App() {
-  return (
-    <AptosWalletAdapterProvider
-      plugins={wallets}
-      autoConnect={true}
-      onError={(error) => console.error(error)}
-    >
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/documentation" element={<Documentation />} />
-        </Routes>
-      </BrowserRouter>
-    </AptosWalletAdapterProvider>
-  );
-}
-
-export default App;
-```
-
-## Wallet Connect Component
-
-```tsx
-// src/components/WalletConnect.tsx
-import { useWallet } from "@aptos-labs/wallet-adapter-react";
-
-export function WalletConnect() {
-  const { connect, disconnect, account, connected, wallets } = useWallet();
-
-  if (connected && account) {
-    return (
-      <div className="flex items-center gap-4">
-        <span className="text-sm">
-          {account.address.slice(0, 6)}...{account.address.slice(-4)}
-        </span>
-        <button
-          onClick={disconnect}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-        >
-          Disconnect
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex gap-2">
-      {wallets?.map((wallet) => (
-        <button
-          key={wallet.name}
-          onClick={() => connect(wallet.name)}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Connect {wallet.name}
-        </button>
-      ))}
-    </div>
-  );
-}
-```
-
-## Contract Hook
-
-```tsx
-// src/hooks/useContract.tsx
-import { useWallet } from "@aptos-labs/wallet-adapter-react";
-import { Aptos, AptosConfig } from "@aptos-labs/ts-sdk";
-import { useMemo } from "react";
-
-const CONTRACT_ADDRESS = "0x..."; // Your deployed contract address
-
-const config = new AptosConfig({
-  fullnode: "https://api.testnet.lumio.io/v1",
-});
-
-export function useContract() {
-  const { account, signAndSubmitTransaction } = useWallet();
-  const aptos = useMemo(() => new Aptos(config), []);
-
-  const callEntryFunction = async (
-    functionName: string,
-    args: any[] = [],
-    typeArgs: string[] = []
-  ) => {
-    if (!account) throw new Error("Wallet not connected");
-
-    const response = await signAndSubmitTransaction({
-      data: {
-        function: `${CONTRACT_ADDRESS}::module_name::${functionName}`,
-        typeArguments: typeArgs,
-        functionArguments: args,
-      },
-    });
-
-    return aptos.waitForTransaction({ transactionHash: response.hash });
-  };
-
-  const callViewFunction = async <T,>(
-    functionName: string,
-    args: any[] = [],
-    typeArgs: string[] = []
-  ): Promise<T> => {
-    const result = await aptos.view({
-      payload: {
-        function: `${CONTRACT_ADDRESS}::module_name::${functionName}`,
-        typeArguments: typeArgs,
-        functionArguments: args,
-      },
-    });
-    return result[0] as T;
-  };
-
-  return {
-    account,
-    callEntryFunction,
-    callViewFunction,
-    isConnected: !!account,
-  };
-}
-```
-
-## Home Page Template
-
-```tsx
-// src/pages/Home.tsx
-import { useState } from "react";
-import { WalletConnect } from "../components/WalletConnect";
-import { useContract } from "../hooks/useContract";
-import { Link } from "react-router-dom";
-
-export default function Home() {
-  const { account, callEntryFunction, callViewFunction, isConnected } = useContract();
-  const [loading, setLoading] = useState(false);
-
-  const handleAction = async () => {
-    if (!isConnected) return;
-    setLoading(true);
-    try {
-      await callEntryFunction("function_name", []);
-      // Refresh data after action
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">My dApp</h1>
-          <nav className="flex items-center gap-4">
-            <Link to="/documentation" className="text-blue-500 hover:underline">
-              Documentation
-            </Link>
-            <WalletConnect />
-          </nav>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {isConnected ? (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Contract Interaction</h2>
-            <button
-              onClick={handleAction}
-              disabled={loading}
-              className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
-            >
-              {loading ? "Processing..." : "Call Function"}
-            </button>
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-600 mb-4">Connect your wallet to continue</p>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}
-```
-
-## Documentation Page (REQUIRED)
-
-```tsx
-// src/pages/Documentation.tsx
-import { Link } from "react-router-dom";
-
-const CONTRACT_ADDRESS = "0x...";
-const MODULE_NAME = "module_name";
-
-const functions = [
-  {
-    name: "initialize",
-    type: "entry",
-    params: [{ name: "account", type: "&signer" }],
-    description: "Initialize the contract for the caller",
-  },
-  {
-    name: "get_value",
-    type: "view",
-    params: [{ name: "addr", type: "address" }],
-    returns: "u64",
-    description: "Get the current value for an address",
-  },
-];
-
-export default function Documentation() {
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <Link to="/" className="text-blue-500 hover:underline">
-            ← Back to App
-          </Link>
-          <h1 className="text-2xl font-bold mt-2">Contract Documentation</h1>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <section className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Overview</h2>
-          <p className="text-gray-600">
-            Description of what this contract does...
-          </p>
-        </section>
-
-        <section className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Contract Address</h2>
-          <code className="bg-gray-100 px-2 py-1 rounded text-sm">
-            {CONTRACT_ADDRESS}::{MODULE_NAME}
-          </code>
-          <p className="text-sm text-gray-500 mt-2">Deployed on Lumio Testnet</p>
-        </section>
-
-        <section className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Functions</h2>
-          <div className="space-y-6">
-            {functions.map((fn) => (
-              <div key={fn.name} className="border-b pb-4 last:border-b-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-mono font-semibold">{fn.name}</span>
-                  <span
-                    className={`text-xs px-2 py-1 rounded ${
-                      fn.type === "view"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-blue-100 text-blue-800"
-                    }`}
-                  >
-                    {fn.type}
-                  </span>
-                </div>
-                <p className="text-gray-600 text-sm mb-2">{fn.description}</p>
-                <div className="text-sm">
-                  <span className="font-semibold">Parameters: </span>
-                  {fn.params.map((p) => `${p.name}: ${p.type}`).join(", ") || "none"}
-                </div>
-                {fn.returns && (
-                  <div className="text-sm">
-                    <span className="font-semibold">Returns: </span>
-                    {fn.returns}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-    </div>
-  );
-}
-```
-
-## vite.config.ts
+The wallet injects `window.pontem` after page load. Use the `pontemWalletInjected` event:
 
 ```typescript
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+// Wait for wallet injection
+window.addEventListener('pontemWalletInjected', () => {
+  console.log('Pontem is available:', window.pontem);
+});
 
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    host: true, // Allow external access
+// Or check with delay fallback
+if (window.pontem) {
+  // Wallet ready
+} else {
+  setTimeout(() => {
+    if (window.pontem) { /* ready */ }
+  }, 500);
+}
+```
+
+### Connection Methods
+
+```typescript
+// Connect - requests permission, returns address
+const result = await window.pontem.connect();
+// Returns: string (address) OR { address: string, publicKey: string }
+
+// Check if connected
+const isConnected = await window.pontem.isConnected();
+// Returns: boolean
+
+// Get current account
+const address = await window.pontem.account();
+// Returns: "0x..." (hex string)
+
+// Disconnect
+await window.pontem.disconnect();
+```
+
+### Network Methods
+
+```typescript
+// Get current network
+const network = await window.pontem.network();
+// Returns: { name: string, api: string, chainId: number }
+
+// Get chain ID only
+const chainId = await window.pontem.chainId();
+// Returns: string (e.g., "2" for Lumio testnet)
+
+// Switch network (prompts user)
+await window.pontem.switchNetwork(2);  // 2 = Lumio Testnet
+// Chain IDs: 1=Mainnet, 2=Testnet, 67=Devnet
+```
+
+### Transaction Methods
+
+```typescript
+// Sign and submit transaction
+const { success, result } = await window.pontem.signAndSubmit({
+  function: "0x1::module::function",
+  arguments: ["arg1", "100"],  // ALL MUST BE STRINGS!
+  type_arguments: []
+});
+
+// With gas options
+const { success, result } = await window.pontem.signAndSubmit(
+  {
+    function: "0x123::counter::increment",
+    arguments: ["1"],
+    type_arguments: []
   },
+  {
+    max_gas_amount: "10000",
+    gas_unit_price: "100"
+  }
+);
+
+// Result structure
+if (success) {
+  console.log('TX Hash:', result.hash);
+  console.log('Sender:', result.sender);
+}
+```
+
+### Event Listeners
+
+```typescript
+// Listen for account changes
+const unsubscribe = window.pontem.onChangeAccount((address) => {
+  if (address) {
+    console.log('Switched to:', address);
+  } else {
+    console.log('Disconnected');
+  }
+});
+
+// Listen for network changes
+const unsubscribe = window.pontem.onChangeNetwork((network) => {
+  console.log('Network changed:', network.name, network.chainId);
+});
+
+// Cleanup
+unsubscribe();
+```
+
+---
+
+## TypeScript Types (types/pontem.ts)
+
+```typescript
+export interface PontemProvider {
+  version: string;
+  connect(): Promise<{ address: string; publicKey: string } | string>;
+  disconnect(): Promise<void>;
+  isConnected(): Promise<boolean>;
+  account(): Promise<string>;
+  publicKey(): Promise<string>;
+  network(): Promise<PontemNetwork>;
+  chainId(): Promise<string>;
+  switchNetwork(chainId: number): Promise<boolean>;
+  signAndSubmit(payload: PontemPayload, options?: PontemTxOptions): Promise<PontemTxResult>;
+  onChangeAccount(callback: (address: string | undefined) => void): () => void;
+  onChangeNetwork(callback: (network: PontemNetwork) => void): () => void;
+}
+
+export interface PontemNetwork {
+  name: string;
+  api: string;
+  chainId: number;
+}
+
+export interface PontemPayload {
+  function: string;      // "0xADDR::module::function"
+  arguments: string[];   // ALL must be strings!
+  type_arguments?: string[];
+}
+
+export interface PontemTxResult {
+  success: boolean;
+  result?: { hash: string; sender: string };
+}
+
+// Lumio constants
+export const LUMIO_CHAIN_ID = 2;
+export const LUMIO_RPC = 'https://api.testnet.lumio.io/v1';
+
+declare global {
+  interface Window { pontem?: PontemProvider; }
+  interface WindowEventMap { pontemWalletInjected: CustomEvent; }
+}
+```
+
+---
+
+## usePontem Hook
+
+```typescript
+import { useState, useEffect, useCallback } from 'react';
+import { LUMIO_CHAIN_ID } from '../types/pontem';
+
+export function usePontem() {
+  const [pontem, setPontem] = useState(undefined);
+  const [connected, setConnected] = useState(false);
+  const [account, setAccount] = useState(null);
+  const [network, setNetwork] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const setup = () => {
+      if (window.pontem) {
+        setPontem(window.pontem);
+        // Setup listeners
+        window.pontem.onChangeAccount((addr) => {
+          setAccount(addr || null);
+          setConnected(!!addr);
+        });
+        window.pontem.onChangeNetwork((net) => {
+          setNetwork(net);
+          if (net.chainId !== LUMIO_CHAIN_ID) {
+            setError('Please switch to Lumio Testnet');
+          }
+        });
+      }
+    };
+
+    setup();
+    window.addEventListener('pontemWalletInjected', setup);
+    return () => window.removeEventListener('pontemWalletInjected', setup);
+  }, []);
+
+  const connect = useCallback(async () => {
+    if (!pontem) {
+      setError('Install Pontem Wallet from pontem.network');
+      return false;
+    }
+    const result = await pontem.connect();
+    const addr = typeof result === 'string' ? result : result.address;
+    setAccount(addr);
+    setConnected(true);
+
+    // Auto-switch to Lumio
+    const net = await pontem.network();
+    if (net.chainId !== LUMIO_CHAIN_ID) {
+      await pontem.switchNetwork(LUMIO_CHAIN_ID);
+    }
+    return true;
+  }, [pontem]);
+
+  return { pontem, connected, account, network, error, connect };
+}
+```
+
+---
+
+## useContract Hook
+
+```typescript
+import { usePontem } from './usePontem';
+
+const CONTRACT_ADDRESS = '{{CONTRACT_ADDRESS}}';
+const MODULE_NAME = '{{MODULE_NAME}}';
+const LUMIO_RPC = 'https://api.testnet.lumio.io/v1';
+
+export function useContract() {
+  const { pontem, connected } = usePontem();
+
+  // Entry function (modifies state, requires wallet)
+  const callEntry = async (fn: string, args: any[] = []) => {
+    if (!pontem || !connected) throw new Error('Wallet not connected');
+
+    const { success, result } = await pontem.signAndSubmit({
+      function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::${fn}`,
+      arguments: args.map(a => String(a)),  // MUST be strings!
+      type_arguments: [],
+    });
+
+    if (!success) throw new Error('Transaction rejected');
+    return result;
+  };
+
+  // View function (read-only, no wallet needed)
+  const callView = async (fn: string, args: any[] = []) => {
+    const res = await fetch(`${LUMIO_RPC}/view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::${fn}`,
+        type_arguments: [],
+        arguments: args.map(a => String(a)),
+      }),
+    });
+    const data = await res.json();
+    return data[0];
+  };
+
+  return { callEntry, callView };
+}
+```
+
+---
+
+## CRITICAL Rules
+
+### 1. Arguments MUST be strings
+
+```typescript
+// ✅ CORRECT
+arguments: ["0x123...", "100", "true"]
+
+// ❌ WRONG - will fail silently or throw
+arguments: [0x123, 100, true]
+```
+
+Always use `args.map(a => String(a))` before passing to signAndSubmit.
+
+### 2. Check Network Before Transactions
+
+```typescript
+const network = await window.pontem.network();
+if (network.chainId !== 2) {  // 2 = Lumio Testnet
+  await window.pontem.switchNetwork(2);
+}
+```
+
+### 3. Handle Wallet Not Installed
+
+```typescript
+if (!window.pontem) {
+  alert('Please install Pontem Wallet from pontem.network/pontem-wallet');
+  return;
+}
+```
+
+### 4. View Functions Don't Need Wallet
+
+```typescript
+// Direct RPC call - no wallet required
+const response = await fetch('https://api.testnet.lumio.io/v1/view', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    function: "0x123::counter::get_value",
+    type_arguments: [],
+    arguments: ["0xabc..."],
+  }),
 });
 ```
 
-## Required Dependencies
+### 5. Wait for Wallet Injection
+
+```typescript
+// ❌ WRONG: Accessing immediately
+const pontem = window.pontem; // undefined on page load!
+
+// ✅ CORRECT: Wait for injection event
+useEffect(() => {
+  const setup = () => {
+    if (window.pontem) setPontem(window.pontem);
+  };
+  setup();
+  window.addEventListener('pontemWalletInjected', setup);
+  setTimeout(setup, 500); // Fallback for slow injection
+  return () => window.removeEventListener('pontemWalletInjected', setup);
+}, []);
+```
+
+### 6. NEVER Use Wallet Adapters
+
+```typescript
+// ❌ WRONG - compatibility issues with Lumio
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { WalletProvider } from '@pontem/wallet-adapter-react';
+
+// ✅ CORRECT - direct API only
+const pontem = window.pontem;
+await pontem.connect();
+await pontem.signAndSubmit(payload);
+```
+
+---
+
+## package.json (Minimal - NO wallet adapters!)
 
 ```json
 {
   "dependencies": {
-    "@aptos-labs/wallet-adapter-react": "^3.0.0",
-    "@pontem-network/wallet-adapter-plugin": "^0.2.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "react-router-dom": "^6.0.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
   }
 }
 ```
 
-## Key Points
+**NO wallet-adapter packages needed!**
 
-1. Always include Documentation page with contract info
-2. Use Pontem Wallet adapter
-3. Configure for Lumio Testnet URLs
-4. Show wallet connection status
-5. Handle loading states for transactions
-6. Use TailwindCSS for styling
+---
+
+## Key Points Summary
+
+1. **Direct Pontem API only** - No wallet adapter libraries
+2. **All args as strings** - `args.map(a => String(a))`
+3. **Listen for injection** - Use `pontemWalletInjected` event
+4. **Check/switch network** - Chain ID 2 for Lumio Testnet
+5. **View via RPC** - Don't need wallet for reads
+6. **Copy templates** - Don't write from scratch
+7. **Use $APP_PORT_1** - Required for Docker port mapping
+8. **Never restart Vite** - HMR handles all code changes
