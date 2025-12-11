@@ -89,6 +89,7 @@ def test_volumes_mode_extraction():
     runtime.config.sandbox.volumes = '/host/path:/container/path:ro'
     runtime.config.workspace_mount_path = '/host/path'
     runtime.config.workspace_mount_path_in_sandbox = '/container/path'
+    runtime.user_id = None
 
     # Call the actual method that processes volumes
     volumes = runtime._process_volumes()
@@ -115,6 +116,7 @@ def test_volumes_multiple_mounts():
     )
     runtime.config.workspace_mount_path = '/host/path1'
     runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
+    runtime.user_id = None
 
     # Call the actual method that processes volumes
     volumes = runtime._process_volumes()
@@ -139,6 +141,7 @@ def test_multiple_volumes():
     runtime.config.sandbox.volumes = '/host/path1:/container/path1,/host/path2:/container/path2,/host/path3:/container/path3:ro'
     runtime.config.workspace_mount_path = '/host/path1'
     runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
+    runtime.user_id = None
 
     # Call the actual method that processes volumes
     volumes = runtime._process_volumes()
@@ -165,9 +168,67 @@ def test_volumes_default_mode():
     runtime.config.sandbox.volumes = '/host/path:/container/path'
     runtime.config.workspace_mount_path = '/host/path'
     runtime.config.workspace_mount_path_in_sandbox = '/container/path'
+    runtime.user_id = None
 
     # Call the actual method that processes volumes
     volumes = runtime._process_volumes()
 
     # Assert that the mode remains 'rw' (default)
     assert volumes[os.path.abspath('/host/path')]['mode'] == 'rw'
+
+
+def test_workspace_dir_auto_mount_with_user_id(tmp_path):
+    """Test that workspace directory is auto-mounted when user_id is set."""
+    import os
+
+    from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+
+    # Create a DockerRuntime instance with a mock config
+    runtime = DockerRuntime.__new__(DockerRuntime)
+    runtime.config = MagicMock()
+    runtime.config.sandbox.volumes = None
+    runtime.config.workspace_mount_path = None
+    runtime.config.workspace_mount_path_in_sandbox = '/workspace'
+    runtime.config.file_store_path = str(tmp_path)
+    runtime.user_id = 'test_user_123'
+    runtime.sid = 'conv_456'
+
+    # Call the actual method that processes volumes
+    volumes = runtime._process_volumes()
+
+    # Assert that workspace directory was auto-mounted
+    # Path: users/{user_id}/conversations/{sid}/workspace/
+    expected_workspace_dir = os.path.join(
+        str(tmp_path),
+        'users',
+        'test_user_123',
+        'conversations',
+        'conv_456',
+        'workspace',
+    )
+    expected_workspace_dir_with_slash = expected_workspace_dir + '/'
+    assert expected_workspace_dir_with_slash in volumes
+    assert volumes[expected_workspace_dir_with_slash]['bind'] == '/workspace'
+    assert volumes[expected_workspace_dir_with_slash]['mode'] == 'rw'
+
+    # Assert that the directory was created
+    assert os.path.isdir(expected_workspace_dir)
+
+
+def test_workspace_dir_not_mounted_without_user_id():
+    """Test that workspace directory is NOT auto-mounted when user_id is None."""
+    from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+
+    # Create a DockerRuntime instance with a mock config
+    runtime = DockerRuntime.__new__(DockerRuntime)
+    runtime.config = MagicMock()
+    runtime.config.sandbox.volumes = None
+    runtime.config.workspace_mount_path = None
+    runtime.config.workspace_mount_path_in_sandbox = '/workspace'
+    runtime.user_id = None
+
+    # Call the actual method that processes volumes
+    volumes = runtime._process_volumes()
+
+    # Assert that no volumes were mounted (no user_id = no auto-mount)
+    assert len(volumes) == 0

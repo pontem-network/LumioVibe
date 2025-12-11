@@ -366,16 +366,26 @@ The frontend will be accessible via the **App tab** in OpenHands UI (port is aut
 
 ---
 
-### Phase 4.5: Visual Testing (Browser Verification)
+### Phase 4.5: Visual Testing (Browser Verification) - OPTIONAL
 
 <IMPORTANT>
-After starting the dev server, you MUST verify the frontend visually using the browser tool.
-This ensures the UI actually works, not just compiles.
+Visual testing by browser agent is OPTIONAL and uses a SEPARATE port to avoid disrupting the user's frontend.
+
+**Port Strategy:**
+- `$APP_PORT_1` - User's frontend (NEVER touch after starting)
+- `$APP_PORT_2` - Agent's browser testing (can start/stop freely)
+
+If you need to verify the frontend visually, start a SECOND dev server on `$APP_PORT_2`:
+```bash
+cd frontend && pnpm dev --host --port $APP_PORT_2 &
+```
+
+This keeps the user's App tab working while you test.
 </IMPORTANT>
 
-**Step 1: Open the frontend in browser**
+**Step 1: Open the frontend in browser (use APP_PORT_2)**
 ```python
-goto('http://localhost:5173')
+goto(f'http://localhost:{os.environ.get("APP_PORT_2", "55000")}')
 ```
 
 **Step 2: Verify page loads correctly**
@@ -392,14 +402,14 @@ Look for in the AXTree:
 
 **Step 4: Navigate to Documentation page**
 ```python
-goto('http://localhost:5173/docs')
+goto(f'http://localhost:{os.environ.get("APP_PORT_2", "55000")}/docs')
 ```
 Verify documentation page shows contract info.
 
 **If visual test fails:**
 - Check browser error messages
-- Fix React/TypeScript errors
-- Rebuild and retry
+- Fix React/TypeScript errors (HMR will auto-reload both servers)
+- NO need to restart - just edit files
 
 **Visual Test Checklist:**
 - [ ] Homepage loads without errors
@@ -420,19 +430,15 @@ Network: Lumio Testnet
 
 ✅ Assumptions confirmed by user
 ✅ Contract deployed (irreversible checkpoint passed)
-✅ Frontend verified via browser:
-   - Home page loads correctly
-   - Connect Wallet button present
-   - Contract functions accessible
-   - Documentation page works
-✅ Frontend: http://localhost:5173
-   - Home: Interact with contract
-   - Docs: http://localhost:5173/docs
+✅ Frontend running on port $APP_PORT_1
+✅ Accessible via App tab in OpenHands UI
 
 Next Steps:
 1. Connect Pontem Wallet to Lumio Testnet
-2. Open http://localhost:5173
+2. Click the "App" tab in OpenHands to view your dapp
 3. Start using your dapp!
+
+Note: The frontend uses Vite HMR - any code changes will auto-reload without restart.
 ```
 
 ---
@@ -457,12 +463,15 @@ Next Steps:
 | Insufficient balance | `lumio account fund-with-faucet --amount 100000000` |
 | Module exists | Different name or new account |
 | Build errors | Check TypeScript types |
-| Port in use | Use `--port 5174` |
+| Port in use | ALWAYS use `$APP_PORT_1` - it's pre-allocated and guaranteed free |
+| App not visible in UI | Make sure you used `--port $APP_PORT_1`, not default 5173 |
 | Browser shows blank page | Check console errors, verify React renders |
-| Browser shows error | Read error message, fix component code |
+| Browser shows error | Read error message, fix component code (HMR will reload) |
 | "Connect Wallet" not visible | Check usePontem hook and button rendering |
 
 **NEVER run `lumio init` manually** - scaffold-fast.sh handles initialization automatically with proper flags.
+
+**NEVER restart Vite dev server** - use HMR for all code changes.
 
 ---
 
@@ -523,29 +532,124 @@ if (network.chainId !== 2 || !network.api?.includes('lumio')) {
 ## CRITICAL: Pontem Wallet Integration
 
 <IMPORTANT>
-DO NOT use `@aptos-labs/wallet-adapter-react`! It has compatibility issues with Lumio.
+DO NOT use `@aptos-labs/wallet-adapter-react` or any wallet adapter library!
+They have compatibility issues with Lumio Network.
 
-Use **direct Pontem API** via `window.pontem`:
+Use **direct Pontem Wallet API** via `window.pontem`.
+Official docs: https://docs.pontemwallet.xyz/guide/api.html
+</IMPORTANT>
+
+### Detecting Wallet
+
+Pontem injects `window.pontem` after page load. Wait for it:
+
+```typescript
+// Listen for injection event
+window.addEventListener('pontemWalletInjected', () => {
+  console.log('Pontem ready:', window.pontem);
+});
+
+// Or check with fallback
+if (!window.pontem) {
+  setTimeout(() => { /* check again */ }, 500);
+}
+```
+
+### Connection
+
+```typescript
+// Connect - returns address
+const result = await window.pontem.connect();
+const address = typeof result === 'string' ? result : result.address;
+
+// Check connection
+const isConnected = await window.pontem.isConnected();
+
+// Get current account
+const addr = await window.pontem.account();
+```
+
+### Network Verification
+
+```typescript
+// Get network info
+const network = await window.pontem.network();
+// Returns: { name: string, api: string, chainId: number }
+
+// Lumio Testnet chainId is 2!
+if (network.chainId !== 2) {
+  await window.pontem.switchNetwork(2);  // Auto-switch to Lumio
+}
+```
+
+### Transactions (Entry Functions)
 
 ```typescript
 // CORRECT FORMAT for signAndSubmit
 const { success, result } = await window.pontem.signAndSubmit({
   function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::function_name`,
-  arguments: ["arg1", "100"],  // ALL must be strings!
+  arguments: ["arg1", "100"],  // ALL MUST BE STRINGS!
   type_arguments: []           // Empty for non-generic functions
+});
+
+if (success) {
+  console.log('TX Hash:', result.hash);
+}
+```
+
+### View Functions (Read-Only)
+
+```typescript
+// Direct RPC call - NO wallet needed!
+const response = await fetch('https://api.testnet.lumio.io/v1/view', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::get_count`,
+    type_arguments: [],
+    arguments: ["0xabc..."],  // Still strings!
+  }),
+});
+const data = await response.json();
+const value = data[0];  // First element is the return value
+```
+
+### Event Listeners (Reactive Updates)
+
+```typescript
+// Listen for account changes
+window.pontem.onChangeAccount((address) => {
+  if (address) {
+    setAccount(address);
+  } else {
+    setAccount(null);  // Disconnected
+  }
+});
+
+// Listen for network changes
+window.pontem.onChangeNetwork((network) => {
+  if (network.chainId !== 2) {
+    setError('Please switch to Lumio Testnet');
+  }
 });
 ```
 
-**Key Rules:**
-1. ALL arguments must be strings: `arguments: args.map(a => String(a))`
-2. Function format: `"0xADDR::module::function"`
-3. Check network before tx: `pontem.network().api.includes('lumio')`
-4. View functions via RPC, not wallet: `fetch('https://api.testnet.lumio.io/v1/view', {...})`
+### Key Rules
 
-See `/openhands/templates/frontend/src/hooks/` for working examples:
-- `usePontem.ts` - wallet connection
-- `useContract.ts` - contract calls
-</IMPORTANT>
+| Rule | Details |
+|------|---------|
+| ALL args as strings | `arguments: args.map(a => String(a))` |
+| Function format | `"0xADDR::module::function"` |
+| Chain ID | 2 for Lumio Testnet |
+| View via RPC | `fetch('https://api.testnet.lumio.io/v1/view', {...})` |
+| No wallet adapters | Use `window.pontem` directly |
+
+### Templates Location
+
+Ready-to-use hooks in `/openhands/templates/frontend/src/`:
+- `types/pontem.ts` - Complete TypeScript types
+- `hooks/usePontem.ts` - Wallet connection with event listeners
+- `hooks/useContract.ts` - Contract calls (entry + view)
 
 ---
 
@@ -556,10 +660,9 @@ You are DONE when ALL true:
 - ✅ User approved deployment in Phase 2.5
 - ✅ spec.md has contract address
 - ✅ `pnpm build` succeeds in frontend/
-- ✅ Browser visual test passed (Phase 4.5)
-- ✅ Homepage and Docs page load without errors
-- ✅ `pnpm dev --host` running
-- ✅ Reported URL to user
+- ✅ `pnpm dev --host --port $APP_PORT_1` running (started ONCE, never restarted)
+- ✅ Frontend accessible via App tab in OpenHands UI
+- ✅ Told user to check the App tab
 
 ---
 
@@ -571,5 +674,6 @@ You are DONE when ALL true:
 4. **All tools pre-installed** - don't install, just use
 5. **Templates first** - don't write from scratch
 6. **lumio_coin, NOT aptos_coin** - Lumio-specific
-7. **Frontend must run** - user sees working UI
-8. **spec.md is truth** - follow it exactly after confirmation
+7. **Frontend must run on $APP_PORT_1** - user sees working UI in App tab
+8. **Vite runs ONCE** - never restart, use HMR for all changes
+9. **spec.md is truth** - follow it exactly after confirmation

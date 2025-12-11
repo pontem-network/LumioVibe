@@ -1,31 +1,55 @@
 // Pontem Wallet TypeScript Types for Lumio Network
+// Based on official docs: https://docs.pontemwallet.xyz/guide/api.html
 
 export interface PontemProvider {
-  connect(): Promise<string>;
+  // Version
+  version: string;
+
+  // Connection
+  connect(): Promise<{ address: string; publicKey: string } | string>;
   disconnect(): Promise<void>;
   isConnected(): Promise<boolean>;
+
+  // Account info
   account(): Promise<string>;
   publicKey(): Promise<string>;
+
+  // Network
   network(): Promise<PontemNetwork>;
+  chainId(): Promise<string>;
+  switchNetwork(chainId: number): Promise<boolean>;
+
+  // Transactions
   signAndSubmit(
     payload: PontemPayload,
     options?: PontemTxOptions
   ): Promise<PontemTxResult>;
+
+  signTransaction(
+    payload: PontemPayload,
+    options?: PontemSignOptions
+  ): Promise<{ payload: PontemPayload; result: Uint8Array }>;
+
+  // Messages
   signMessage(
-    message: SignMessagePayload,
-    options?: { useNewFormat: boolean }
+    payload: SignMessagePayload,
+    options?: { useNewFormat?: boolean }
   ): Promise<SignMessageResult>;
+
+  // Event listeners
+  onChangeAccount(callback: (address: string | undefined) => void): () => void;
+  onChangeNetwork(callback: (network: PontemNetwork) => void): () => void;
 }
 
 export interface PontemNetwork {
+  name: string;
   api: string;
   chainId: number;
-  name: string;
 }
 
 export interface PontemPayload {
-  function: string;
-  arguments: (string | number | Uint8Array)[];
+  function: string;  // Format: "0xADDR::module::function"
+  arguments: string[];  // ALL must be strings!
   type_arguments?: string[];
 }
 
@@ -33,6 +57,11 @@ export interface PontemTxOptions {
   max_gas_amount?: string;
   gas_unit_price?: string;
   expiration_timestamp_secs?: string;
+  sequence_number?: string;
+}
+
+export interface PontemSignOptions extends PontemTxOptions {
+  sender?: string;
 }
 
 export interface PontemTxResult {
@@ -69,8 +98,26 @@ export interface SignMessageResult {
   };
 }
 
+// Lumio Network Constants
+export const LUMIO_CHAIN_ID = 2;  // Testnet chain ID
+export const LUMIO_RPC = 'https://api.testnet.lumio.io/v1';
+export const LUMIO_FAUCET = 'https://faucet.testnet.lumio.io';
+
+// Network chain IDs for switchNetwork
+export const CHAIN_IDS = {
+  MAINNET: 1,
+  TESTNET: 2,
+  DEVNET: 67,
+  LUMIO: 100,
+} as const;
+
 declare global {
   interface Window {
     pontem?: PontemProvider;
   }
+  interface WindowEventMap {
+    pontemWalletInjected: CustomEvent;
+  }
 }
+
+export {};

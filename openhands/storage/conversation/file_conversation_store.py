@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from pydantic import TypeAdapter
@@ -16,8 +16,8 @@ from openhands.storage.data_models.conversation_metadata_result_set import (
 )
 from openhands.storage.files import FileStore
 from openhands.storage.locations import (
-    CONVERSATION_BASE_DIR,
     get_conversation_metadata_filename,
+    get_user_dir,
 )
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.search_utils import offset_to_page_id, page_id_to_offset
@@ -28,22 +28,21 @@ conversation_metadata_type_adapter = TypeAdapter(ConversationMetadata)
 @dataclass
 class FileConversationStore(ConversationStore):
     file_store: FileStore
+    user_id: str | None = field(default=None)
 
     async def save_metadata(self, metadata: ConversationMetadata) -> None:
         json_str = conversation_metadata_type_adapter.dump_json(metadata)
-        path = self.get_conversation_metadata_filename(metadata.conversation_id)
+        path = self._get_metadata_path(metadata.conversation_id)
         await call_sync_from_async(self.file_store.write, path, json_str)
 
     async def get_metadata(self, conversation_id: str) -> ConversationMetadata:
-        path = self.get_conversation_metadata_filename(conversation_id)
+        path = self._get_metadata_path(conversation_id)
         json_str = await call_sync_from_async(self.file_store.read, path)
 
-        # Validate the JSON
         json_obj = json.loads(json_str)
         if 'created_at' not in json_obj:
             raise FileNotFoundError(path)
 
-        # Remove github_user_id if it exists
         if 'github_user_id' in json_obj:
             json_obj.pop('github_user_id')
 
@@ -51,13 +50,11 @@ class FileConversationStore(ConversationStore):
         return result
 
     async def delete_metadata(self, conversation_id: str) -> None:
-        path = str(
-            Path(self.get_conversation_metadata_filename(conversation_id)).parent
-        )
+        path = str(Path(self._get_metadata_path(conversation_id)).parent)
         await call_sync_from_async(self.file_store.delete, path)
 
     async def exists(self, conversation_id: str) -> bool:
-        path = self.get_conversation_metadata_filename(conversation_id)
+        path = self._get_metadata_path(conversation_id)
         try:
             await call_sync_from_async(self.file_store.read, path)
             return True
@@ -70,11 +67,11 @@ class FileConversationStore(ConversationStore):
         limit: int = 20,
     ) -> ConversationMetadataResultSet:
         conversations: list[ConversationMetadata] = []
-        metadata_dir = self.get_conversation_metadata_dir()
+        conversations_dir = self._get_conversations_dir()
         try:
             conversation_ids = [
                 Path(path).name
-                for path in self.file_store.list(metadata_dir)
+                for path in self.file_store.list(conversations_dir)
                 if not Path(path).name.startswith('.')
             ]
         except FileNotFoundError:
@@ -95,11 +92,13 @@ class FileConversationStore(ConversationStore):
         next_page_id = offset_to_page_id(end, end < num_conversations)
         return ConversationMetadataResultSet(conversations, next_page_id)
 
-    def get_conversation_metadata_dir(self) -> str:
-        return CONVERSATION_BASE_DIR
+    def _get_conversations_dir(self) -> str:
+        if self.user_id:
+            return f'{get_user_dir(self.user_id)}conversations/'
+        return 'sessions/'
 
-    def get_conversation_metadata_filename(self, conversation_id: str) -> str:
-        return get_conversation_metadata_filename(conversation_id)
+    def _get_metadata_path(self, conversation_id: str) -> str:
+        return get_conversation_metadata_filename(conversation_id, self.user_id)
 
     @classmethod
     async def get_instance(
@@ -107,12 +106,12 @@ class FileConversationStore(ConversationStore):
     ) -> FileConversationStore:
         file_store = get_file_store(
             file_store_type=config.file_store,
-            file_store_path=config.file_store_path + '/' + (user_id or ''),
+            file_store_path=config.file_store_path,
             file_store_web_hook_url=config.file_store_web_hook_url,
             file_store_web_hook_headers=config.file_store_web_hook_headers,
             file_store_web_hook_batch=config.file_store_web_hook_batch,
         )
-        return FileConversationStore(file_store)
+        return FileConversationStore(file_store, user_id)
 
 
 def _sort_key(conversation: ConversationMetadata) -> str:

@@ -46,6 +46,7 @@ class ServerConversation:
                 sid=self.sid,
                 attach_to_existing=True,
                 headless_mode=False,
+                user_id=self.user_id,
             )
         self.runtime = runtime
 

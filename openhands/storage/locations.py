@@ -1,9 +1,29 @@
 CONVERSATION_BASE_DIR = 'sessions'
+WORKSPACE_DIR_NAME = 'workspace'
+USERS_BASE_DIR = 'users'
+
+
+def get_user_dir(user_id: str | None) -> str:
+    if user_id:
+        return f'{USERS_BASE_DIR}/{user_id}/'
+    return ''
+
+
+def get_user_settings_filename(user_id: str | None) -> str:
+    return f'{get_user_dir(user_id)}settings.json'
+
+
+def get_user_secrets_filename(user_id: str | None) -> str:
+    return f'{get_user_dir(user_id)}secrets.json'
+
+
+def get_conversation_workspace_dir(sid: str, user_id: str | None = None) -> str:
+    return f'{get_conversation_dir(sid, user_id)}{WORKSPACE_DIR_NAME}/'
 
 
 def get_conversation_dir(sid: str, user_id: str | None = None) -> str:
     if user_id:
-        return f'users/{user_id}/conversations/{sid}/'
+        return f'{get_user_dir(user_id)}conversations/{sid}/'
     else:
         return f'{CONVERSATION_BASE_DIR}/{sid}/'
 
