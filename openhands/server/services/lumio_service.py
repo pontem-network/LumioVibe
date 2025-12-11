@@ -1,4 +1,5 @@
 import httpx
+
 from openhands.core.logger import openhands_logger as logger
 
 
@@ -19,7 +20,9 @@ class LumioService:
             True if the user is whitelisted, False otherwise
         """
         if not self.contract_address:
-            logger.warning('VIBE_BALANCE_CONTRACT not configured, skipping whitelist check')
+            logger.warning(
+                'VIBE_BALANCE_CONTRACT not configured, skipping whitelist check'
+            )
             return True
 
         # Normalize address format
@@ -43,7 +46,9 @@ class LumioService:
                     return bool(result[0])
                 return False
         except httpx.HTTPStatusError as e:
-            logger.error(f'Lumio API HTTP error: {e.response.status_code} - {e.response.text}')
+            logger.error(
+                f'Lumio API HTTP error: {e.response.status_code} - {e.response.text}'
+            )
             return False
         except httpx.RequestError as e:
             logger.error(f'Lumio API request error: {e}')

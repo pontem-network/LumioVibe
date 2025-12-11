@@ -1,21 +1,24 @@
-from typing import Any, Optional
-import uuid
 import hashlib
-import time
 import secrets
+import time
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
-from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
+from nacl.signing import VerifyKey
+from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.dependencies import get_dependencies
-from openhands.server.user_auth import get_user_settings_store
-from openhands.server.shared import server_config
 from openhands.server.services.lumio_service import LumioService
+from openhands.server.shared import server_config
+from openhands.server.user_auth import get_user_settings_store
 from openhands.server.user_auth.default_user_auth import DefaultUserAuth
 from openhands.storage.data_models.settings import AuthWallet, Settings
-from openhands.storage.session import delete_session_file, get_session_id_from_usid_token, load_session_file
+from openhands.storage.session import (
+    delete_session_file,
+    get_session_id_from_usid_token,
+)
 from openhands.storage.settings.settings_store import SettingsStore
 
 app = APIRouter(prefix='/api/token', dependencies=get_dependencies())
@@ -131,7 +134,7 @@ async def new_token(
 
     user_auth = DefaultUserAuth(user_id=token.account)
     user_settings_store: SettingsStore = await user_auth.get_user_settings_store()
-    user_setting: Settings  = (await user_settings_store.load()) or Settings()
+    user_setting: Settings = (await user_settings_store.load()) or Settings()
 
     """Create a new authentication token for wallet."""
     user_setting.wallet = AuthWallet()
@@ -180,7 +183,10 @@ async def verify_token(
         raise HTTPException(status_code=500, detail='Invalid token')
 
     # Verify nonce matches server-generated nonce
-    if user_setting.wallet.nonce is None or sign_token.nonce != user_setting.wallet.nonce:
+    if (
+        user_setting.wallet.nonce is None
+        or sign_token.nonce != user_setting.wallet.nonce
+    ):
         logger.warning(
             f'Nonce mismatch: expected {user_setting.wallet.nonce}, got {sign_token.nonce}'
         )
@@ -227,7 +233,9 @@ async def status_token(
         lumio_service = get_lumio_service()
         is_whitelisted = await lumio_service.is_whitelisted(user_setting.wallet.account)
         if not is_whitelisted:
-            logger.info(f'Account removed from whitelist: {user_setting.wallet.account}')
+            logger.info(
+                f'Account removed from whitelist: {user_setting.wallet.account}'
+            )
             user_setting.wallet.verified_token = False
             await user_settings_store.store(user_setting)
             return user_setting.wallet

@@ -403,7 +403,9 @@ def _build_sandbox_image(
     if versioned_tag is not None:
         names.append(f'{runtime_image_repo}:{versioned_tag}')
     if not force_rebuild:
-        names = [name for name in names if not runtime_builder.image_exists(name, False)]
+        names = [
+            name for name in names if not runtime_builder.image_exists(name, False)
+        ]
 
     image_name = runtime_builder.build(
         path=str(build_folder),

@@ -381,11 +381,42 @@ const response = await fetch('https://api.testnet.lumio.io/v1/view', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    function: "0x123::counter::get_count",
+    function: "0x123::counter::get_value",
     type_arguments: [],
     arguments: ["0xabc..."],
   }),
 });
+```
+
+### 5. Wait for Wallet Injection
+
+```typescript
+// ❌ WRONG: Accessing immediately
+const pontem = window.pontem; // undefined on page load!
+
+// ✅ CORRECT: Wait for injection event
+useEffect(() => {
+  const setup = () => {
+    if (window.pontem) setPontem(window.pontem);
+  };
+  setup();
+  window.addEventListener('pontemWalletInjected', setup);
+  setTimeout(setup, 500); // Fallback for slow injection
+  return () => window.removeEventListener('pontemWalletInjected', setup);
+}, []);
+```
+
+### 6. NEVER Use Wallet Adapters
+
+```typescript
+// ❌ WRONG - compatibility issues with Lumio
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { WalletProvider } from '@pontem/wallet-adapter-react';
+
+// ✅ CORRECT - direct API only
+const pontem = window.pontem;
+await pontem.connect();
+await pontem.signAndSubmit(payload);
 ```
 
 ---

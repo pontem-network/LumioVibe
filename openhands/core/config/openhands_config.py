@@ -20,7 +20,8 @@ from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 
 OPENHANDS_DIR = os.path.expanduser('~/.openhands')
-SESSION_SECRET_KEY=os.environ.get('SESSION_SECRET_KEY', 'MNMC-toqC-j2rd-aaU8')
+SESSION_SECRET_KEY = os.environ.get('SESSION_SECRET_KEY', 'MNMC-toqC-j2rd-aaU8')
+
 
 class OpenHandsConfig(BaseModel):
     """Configuration for the app.

@@ -11,7 +11,6 @@ from openhands.server.routes.secrets import invalidate_legacy_secrets_store
 from openhands.server.settings import (
     GETSettingsModel,
 )
-from openhands.server.shared import config
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_secrets_store,
@@ -142,9 +141,9 @@ async def store_settings(
     settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> JSONResponse:
     return JSONResponse(
-            status_code=status.HTTP_403_FORBIDDEN,
-            content={'message': 'The action is prohibited'},
-        )
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={'message': 'The action is prohibited'},
+    )
     # # Check provider tokens are valid
     # try:
     #     existing_settings = await settings_store.load()

@@ -9,7 +9,8 @@ export default function Documentation() {
       <section className="bg-gray-800 rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-lumio-primary">Overview</h2>
         <p className="text-gray-300">
-          {{PROJECT_DESCRIPTION}}
+          A smart contract deployed on Lumio Testnet. This dApp allows users to interact
+          with the contract through the Pontem Wallet.
         </p>
       </section>
 

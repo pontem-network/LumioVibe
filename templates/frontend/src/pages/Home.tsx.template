@@ -45,7 +45,7 @@ export default function Home() {
   };
 
   const handleIncrement = async () => {
-    const result = await increment(1);
+    const result = await increment();
     if (result) {
       setTimeout(refreshData, 2000);
     }

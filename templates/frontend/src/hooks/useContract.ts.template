@@ -103,17 +103,17 @@ export function useContract() {
   }, [callEntryFunction]);
 
   /**
-   * Increment the counter (example function - modify for your contract)
+   * Increment the counter by 1
    */
-  const increment = useCallback((amount: number = 1) => {
-    return callEntryFunction('increment', [amount]);
+  const increment = useCallback(() => {
+    return callEntryFunction('increment');
   }, [callEntryFunction]);
 
   /**
    * Get the current count for an address
    */
   const getCount = useCallback((address: string) => {
-    return callViewFunction<number>('get_count', [address]);
+    return callViewFunction<number>('get_value', [address]);
   }, [callViewFunction]);
 
   /**
