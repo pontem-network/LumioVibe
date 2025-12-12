@@ -1,4 +1,5 @@
 import json
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,11 +28,16 @@ class DeploymentManager:
         self.config = config
         self.deployment_config = config.deployment
         self.docker_client = docker.from_env()
+        self._file_store_path = os.path.expanduser(config.file_store_path)
+
+    def _get_abs_path(self, relative_path: str) -> Path:
+        """Get absolute path from relative path within file store."""
+        return Path(self._file_store_path) / relative_path
 
     def _get_metadata_path(self, conversation_id: str, user_id: str) -> Path:
         """Get path to deployment metadata file in conversation workspace."""
-        workspace_dir = get_conversation_workspace_dir(conversation_id, user_id)
-        return Path(workspace_dir) / '.deployment.json'
+        workspace_rel = get_conversation_workspace_dir(conversation_id, user_id)
+        return self._get_abs_path(workspace_rel) / '.deployment.json'
 
     def _load_metadata(
         self, conversation_id: str, user_id: str
@@ -70,8 +76,9 @@ class DeploymentManager:
 
     def _is_deployable(self, conversation_id: str, user_id: str) -> bool:
         """Check if conversation workspace has deployable frontend."""
-        workspace_dir = get_conversation_workspace_dir(conversation_id, user_id)
-        frontend_path = Path(workspace_dir) / 'frontend' / 'package.json'
+        workspace_rel = get_conversation_workspace_dir(conversation_id, user_id)
+        workspace_path = self._get_abs_path(workspace_rel)
+        frontend_path = workspace_path / 'frontend' / 'package.json'
         return frontend_path.exists()
 
     def get_deployment_status(self, conversation_id: str, user_id: str) -> dict:
@@ -128,7 +135,7 @@ class DeploymentManager:
 
         # Check user-specific conversations path
         user_conversations_path = (
-            Path(self.config.file_store_path) / 'users' / user_id / 'conversations'
+            Path(self._file_store_path) / 'users' / user_id / 'conversations'
         )
         if user_conversations_path.exists():
             for conv_dir in user_conversations_path.iterdir():
@@ -139,7 +146,7 @@ class DeploymentManager:
                         deployments.append(status)
 
         # Also check legacy sessions path (for older conversations without user_id)
-        legacy_path = Path(self.config.file_store_path) / 'sessions'
+        legacy_path = Path(self._file_store_path) / 'sessions'
         if legacy_path.exists():
             for session_dir in legacy_path.iterdir():
                 if session_dir.is_dir():
@@ -175,7 +182,8 @@ class DeploymentManager:
                 }
             existing.remove(force=True)
 
-        workspace_dir = get_conversation_workspace_dir(conversation_id, user_id)
+        workspace_rel = get_conversation_workspace_dir(conversation_id, user_id)
+        workspace_dir = str(self._get_abs_path(workspace_rel))
         container_name = self._get_container_name(conversation_id)
 
         app_port = find_available_tcp_port(*DEPLOY_PORT_RANGE)
@@ -343,7 +351,8 @@ pnpm dev --host --port $APP_PORT
         metadata.status = DeploymentStatus.REDEPLOYING
         self._save_metadata(metadata, user_id)
 
-        workspace_dir = get_conversation_workspace_dir(conversation_id, user_id)
+        workspace_rel = get_conversation_workspace_dir(conversation_id, user_id)
+        workspace_dir = str(self._get_abs_path(workspace_rel))
         container_name = f'{self._get_container_name(conversation_id)}-redeploy'
 
         try:
