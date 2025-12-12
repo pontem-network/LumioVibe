@@ -126,23 +126,27 @@ class DeploymentManager:
         """List all deployments for user."""
         deployments = []
 
-        prefix = self.deployment_config.container_name_prefix
-        containers = self.docker_client.containers.list(
-            all=True, filters={'name': prefix}
+        # Check user-specific conversations path
+        user_conversations_path = (
+            Path(self.config.file_store_path) / 'users' / user_id / 'conversations'
         )
+        if user_conversations_path.exists():
+            for conv_dir in user_conversations_path.iterdir():
+                if conv_dir.is_dir():
+                    conv_id = conv_dir.name
+                    status = self.get_deployment_status(conv_id, user_id)
+                    if status.get('is_deployable'):
+                        deployments.append(status)
 
-        container_map = {}
-        for container in containers:
-            name = container.name
-            if name:
-                conv_id = name.replace(prefix, '')
-                container_map[conv_id] = container
-
-        base_path = Path(self.config.file_store_path) / 'sessions'
-        if base_path.exists():
-            for session_dir in base_path.iterdir():
+        # Also check legacy sessions path (for older conversations without user_id)
+        legacy_path = Path(self.config.file_store_path) / 'sessions'
+        if legacy_path.exists():
+            for session_dir in legacy_path.iterdir():
                 if session_dir.is_dir():
                     conv_id = session_dir.name
+                    # Skip if already found in user path
+                    if any(d['conversation_id'] == conv_id for d in deployments):
+                        continue
                     status = self.get_deployment_status(conv_id, user_id)
                     if status.get('is_deployable'):
                         deployments.append(status)
