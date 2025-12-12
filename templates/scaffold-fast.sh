@@ -72,8 +72,11 @@ if [ -z "$DEPLOYER_ADDRESS" ]; then
     log_info "Initializing new Lumio account..."
     cd "$WORKSPACE"
 
-    # lumio init creates account automatically
-    $LUMIO_BIN init --assume-yes --network testnet 2>&1 || true
+    # Generate a random private key (32 bytes = 64 hex chars)
+    GENERATED_PRIVATE_KEY=$(openssl rand -hex 32)
+
+    # lumio init with --private-key to avoid interactive prompt
+    $LUMIO_BIN init --assume-yes --network testnet --private-key "$GENERATED_PRIVATE_KEY" 2>&1 || true
 
     # Get address from config.yaml (lumio account list returns empty array)
     DEPLOYER_ADDRESS=$(get_from_config "account")
@@ -116,13 +119,7 @@ fi
 log_info "Step 3/5: Creating project structure..."
 
 if [ -d "$OUTPUT_DIR" ]; then
-    log_warn "Directory $OUTPUT_DIR already exists"
-    read -p "Overwrite? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        log_error "Aborted"
-        exit 1
-    fi
+    log_warn "Directory $OUTPUT_DIR already exists, removing..."
     rm -rf "$OUTPUT_DIR"
 fi
 
@@ -156,6 +153,12 @@ generate_types "$OUTPUT_DIR" "$DEPLOYER_ADDRESS" "$PRIVATE_KEY"
 generate_hooks "$OUTPUT_DIR" "$DEPLOYER_ADDRESS"
 generate_pages "$OUTPUT_DIR" "$PROJECT_NAME"
 
+# Install frontend dependencies
+log_info "Installing frontend dependencies..."
+cd "$OUTPUT_DIR/frontend"
+pnpm install --silent 2>&1 || pnpm install 2>&1 || true
+cd "$WORKSPACE"
+
 # ============================================
 # DONE
 # ============================================
@@ -188,14 +191,12 @@ lumio move publish --package-dir . --assume-yes
 ### Run frontend (Test Mode - no wallet needed)
 \`\`\`bash
 cd $OUTPUT_DIR/frontend
-pnpm install
 pnpm dev:test --host --port \$APP_PORT_1
 \`\`\`
 
 ### Run frontend (Production Mode - requires Pontem Wallet)
 \`\`\`bash
 cd $OUTPUT_DIR/frontend
-pnpm install
 pnpm dev --host --port \$APP_PORT_1
 \`\`\`
 EOF
@@ -212,5 +213,5 @@ echo "Next steps:"
 echo "  1. cd $OUTPUT_DIR/contract"
 echo "  2. lumio move compile --package-dir ."
 echo "  3. lumio move publish --package-dir . --assume-yes"
-echo "  4. cd ../frontend && pnpm install && pnpm dev:test --host"
+echo "  4. cd ../frontend && pnpm dev:test --host"
 echo ""

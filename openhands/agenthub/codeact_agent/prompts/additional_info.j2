@@ -1,123 +1,92 @@
-{% if repository_info %}
-<REPOSITORY_INFO>
-At the user's request, repository {{ repository_info.repo_name }} has been cloned to {{ repository_info.repo_directory }} in the current working directory.
-{% if repository_info.branch_name %}The repository has been checked out to branch "{{ repository_info.branch_name }}".
-
-IMPORTANT: You should work within the current branch "{{ repository_info.branch_name }}" unless:
-    1. the user explicitly instructs otherwise
-    2. the current branch is "main", "master", or another default branch where direct pushes may be unsafe
-{% endif %}
-</REPOSITORY_INFO>
-{% endif %}
-{% if repository_instructions -%}
-<REPOSITORY_INSTRUCTIONS>
-**CRITICAL: The following instructions OVERRIDE your default behavior. You MUST follow them exactly.**
-
-{{ repository_instructions }}
-</REPOSITORY_INSTRUCTIONS>
-{% endif %}
 {% if runtime_info -%}
 <RUNTIME_INFORMATION>
 {% if runtime_info.working_dir %}
-The current working directory is {{ runtime_info.working_dir }}
+Working directory: {{ runtime_info.working_dir }}
 {% endif %}
 {% if runtime_info.available_hosts %}
-The user has access to the following hosts for accessing a web application,
-each of which has a corresponding port:
+Available hosts for web apps:
 {% for host, port in runtime_info.available_hosts.items() -%}
 * {{ host }} (port {{ port }})
 {% endfor %}
-When starting a web server, use the corresponding ports. You should also
-set any options to allow iframes and CORS requests, and allow the server to
-be accessed from any host (e.g. 0.0.0.0).
-For example, if you are using vite.config.js, you should set server.host and server.allowedHosts to true
-{% endif %}
-{% if runtime_info.additional_agent_instructions %}
-{{ runtime_info.additional_agent_instructions }}
+Use these ports for dev servers. Set server.host=true for Vite.
 {% endif %}
 
 <LUMIO_VIBE_RUNTIME>
-⚠️⚠️⚠️ LUMIO/MOVE PROJECT SETUP - READ THIS FIRST ⚠️⚠️⚠️
+⚠️ LUMIO/MOVE PROJECT SETUP ⚠️
 
-**When user asks to create a Move/Lumio contract or dapp:**
+**Start with:** `bash /openhands/templates/scaffold-fast.sh PROJECT_NAME`
 
-✅ STEP 1: ALWAYS START WITH THIS COMMAND:
-   `bash /openhands/templates/scaffold-fast.sh PROJECT_NAME`
+This creates everything: account, funding, contract template, frontend template.
 
-   This ONE command does EVERYTHING needed:
-   - Creates account (if not exists)
-   - Funds from faucet
-   - Caches Lumio framework (git dependencies)
-   - Creates project with working counter example
-   - Sets up Move.toml with correct deployer address
-   - Compiles initial example
-
-❌ NEVER DO THESE - scaffold-fast.sh handles everything:
-   - `lumio init` - CONFIG IS PRE-INITIALIZED! Never run this command!
-     (It was run during Docker build: `lumio init --assume-yes --network testnet --private-key <key>`)
-   - `lumio account fund-with-faucet` manually (scaffold does it)
-   - Create Move.toml manually (scaffold creates it)
-   - Modify /workspace/.lumio/ or /home/openhands/.lumio/ manually
-   - If you see "Enter your private key" prompt - STOP, config already exists!
-
-✅ Config is ready:
-   → Primary location: /home/openhands/.lumio/config.yaml
-   → Symlink: /workspace/.lumio → /home/openhands/.lumio
-   → Works from any directory!
-   → Just run scaffold-fast.sh script to start!
+❌ NEVER: `lumio init` manually, create Move.toml manually
+✅ Config location: /workspace/.lumio/config.yaml
 
 ---
 
-**Pre-installed Tools (DO NOT install these):**
-* **lumio CLI v7.8.0** - Path: /openhands/bin/lumio
-* **Node.js v22+** - Available globally
-* **pnpm** - Package manager, available globally
-* **TypeScript, Vite, Vitest** - Installed globally
-* **Project Templates** - Located in /openhands/templates/
-  - scaffold-fast.sh - USE THIS to create projects!
-  - lumiovibe-prepare.sh - Called automatically by scaffold-fast.sh
-  - move/, client/, frontend/ - Template files
+**Pre-installed (DO NOT install):**
+* lumio CLI v7.8.0: /openhands/bin/lumio
+* Node.js v22+, pnpm, TypeScript, Vite
 
-**Lumio Network Configuration (CRITICAL - memorize these!):**
-* **Chain ID: 2** (ALWAYS use 2, NOT 1 or 4!)
-* **Fullnode RPC: https://api.testnet.lumio.io/v1** (NOT aptos URLs!)
-* **Faucet: https://faucet.testnet.lumio.io**
+**Lumio Network (CRITICAL):**
+* Chain ID: **2** (NOT 1 or 4!)
+* RPC: **https://api.testnet.lumio.io/v1**
 * Native Coin: `0x1::lumio_coin::LumioCoin` (NOT AptosCoin!)
-* Account Module: `0x1::lumio_account` (NOT aptos_account!)
-* **Lumio CLI Config:** ALREADY configured at /home/openhands/.lumio/config.yaml
 
-**WRONG vs CORRECT network values:**
-- ❌ chain_id: 1 → ✅ chain_id: 2
-- ❌ https://fullnode.testnet.aptoslabs.com → ✅ https://api.testnet.lumio.io/v1
-- ❌ 0x1::aptos_coin::AptosCoin → ✅ 0x1::lumio_coin::LumioCoin
+---
 
-**After scaffold-fast.sh completes:**
-- You'll have a working project in /workspace/PROJECT_NAME
-- Contract address = deployer address (shown in scaffold output)
-- Project structure: contract/, client/, frontend/, spec.md
-- Now you can modify contract code and deploy with `lumio move publish`
+⛔ **NO MOCK DATA IN FRONTEND** ⛔
 
-**VITE HOT RELOAD - CRITICAL:**
-Vite has Hot Module Replacement (HMR). After starting `pnpm dev --host`:
-- ❌ WRONG: Stop server → Edit file → Start server again
-- ✅ CORRECT: Keep server running → Edit file → Browser auto-updates
-Start the dev server ONCE and keep it running! Don't restart after file edits.
+ALL data MUST come from blockchain!
+
+❌ FORBIDDEN:
+```typescript
+setBalance(1000000000);  // hardcoded
+// Mock data for now...
+console.log(`Action`);   // no contract call
+```
+
+✅ CORRECT:
+```typescript
+const balance = await callView('get_balance', [account]);
+setBalance(balance);
+
+const result = await callEntry('stake', [amount]);
+if (result) await refreshData();
+```
+
+**useContract.ts MUST match your contract:**
+- Change MODULE_NAME to actual module
+- Add wrapper for EVERY entry/view function
+- Export ALL functions
+
+**If data doesn't change after TX = MOCK DATA = FIX IT!**
+
+---
+
+⛔ **TESTING & COMPLETION RULES** ⛔
+
+1. **Update useContract.ts** - change MODULE_NAME from 'counter' to your module!
+2. **Test ONLY in Test Mode** - `VITE_WALLET_MODE=test` on $APP_PORT_2
+3. **Initialize contract** - if has `initialize()`, call it first!
+4. **Verify data changes after TX** - if not = MOCK DATA = FIX!
+5. **Start Production Mode** - `pnpm dev --host --port $APP_PORT_1` REQUIRED!
+
+⛔ **AFTER ANY FIX/CHANGE:**
+1. Run Test Mode regression (test ALL, not just the fix!)
+2. Verify the fix works
+3. **THEN** start Production Mode on $APP_PORT_1
+4. Never report complete with only Test Mode running!
+
+**Before finish():**
+- [ ] useContract.ts MODULE_NAME matches contract (NOT 'counter'!)
+- [ ] Full regression test passed in Test Mode
+- [ ] Production Mode running on $APP_PORT_1
+- [ ] No console errors
+
+**Vite HMR:** Don't restart server, just edit files!
 </LUMIO_VIBE_RUNTIME>
-{% if runtime_info.custom_secrets_descriptions %}
-<CUSTOM_SECRETS>
-You have access to the following environment variables
-{% for secret_name, secret_description in runtime_info.custom_secrets_descriptions.items() %}
-* **${{ secret_name }}**: {{ secret_description }}
-{% endfor %}
-</CUSTOM_SECRETS>
-{% endif %}
 {% if runtime_info.date %}
-Today's date is {{ runtime_info.date }} (UTC).
+Date: {{ runtime_info.date }} (UTC)
 {% endif %}
 </RUNTIME_INFORMATION>
-{% if conversation_instructions and conversation_instructions.content -%}
-<CONVERSATION_INSTRUCTIONS>
-{{ conversation_instructions.content }}
-</CONVERSATION_INSTRUCTIONS>
-{% endif %}
 {% endif %}

@@ -1,7 +1,7 @@
 ---
 name: frontend-template
 type: knowledge
-version: 3.0.0
+version: 4.0.0
 agent: CodeActAgent
 triggers:
 - frontend
@@ -13,6 +13,41 @@ triggers:
 ---
 
 # Frontend Template for Lumio dApps
+
+## ⛔ CRITICAL: NO MOCK DATA - EVER!
+
+<IMPORTANT>
+⚠️⚠️⚠️ ABSOLUTE PROHIBITION ON MOCK/HARDCODED DATA ⚠️⚠️⚠️
+
+ALL data displayed in the frontend MUST come from the blockchain!
+
+**❌ STRICTLY FORBIDDEN:**
+```typescript
+// ❌ NEVER hardcode data
+setBalance(1000000000);
+setUserData({ name: 'Test', value: 100 });
+const [items] = useState([{ id: 1, name: 'Item 1' }]);
+
+// ❌ NEVER use "Mock" or "TODO" comments
+// Mock data for now - in real implementation...
+console.log(`Action ${amount}`); // without contract call
+```
+
+**✅ ALWAYS fetch from blockchain:**
+```typescript
+// ✅ View functions for reading data
+const balance = await callView<number>('get_balance', [account]);
+setBalance(balance);
+
+// ✅ Entry functions for transactions
+const result = await callEntry('transfer', [to, amount.toString()]);
+if (result) { await refreshData(); }  // Refresh after TX!
+```
+
+**If contract lacks a view function for data you need - ADD IT to the contract!**
+</IMPORTANT>
+
+---
 
 ## CRITICAL: Direct Pontem Wallet API
 
@@ -457,3 +492,107 @@ await pontem.signAndSubmit(payload);
 6. **Copy templates** - Don't write from scratch
 7. **Use $APP_PORT_1** - Required for Docker port mapping
 8. **Never restart Vite** - HMR handles all code changes
+9. **⚠️ NO MOCK DATA** - ALL data from blockchain via view functions!
+10. **⚠️ BOTH modes required** - Production on APP_PORT_1, Test on APP_PORT_2
+
+---
+
+## Data Flow Pattern
+
+### Correct Pattern for Pages
+
+```typescript
+// src/pages/Home.tsx
+import { useContract } from '../hooks/useContract';
+import { usePontem } from '../hooks/usePontem';
+import { useState, useEffect, useCallback } from 'react';
+
+export default function Home() {
+  const { account, connected } = usePontem();
+  const {
+    // Destructure ALL your contract functions
+    getBalance, getStakingInfo, getContractStats,  // View functions
+    stake, unstake, claimRewards,                   // Entry functions
+    loading, error
+  } = useContract();
+
+  // State for blockchain data - initialized as null/0, NOT mock values!
+  const [balance, setBalance] = useState<number>(0);
+  const [stakingInfo, setStakingInfo] = useState<StakingInfo | null>(null);
+
+  // ✅ CORRECT: Fetch data from blockchain
+  const refreshData = useCallback(async () => {
+    if (!account) return;
+
+    const bal = await getBalance(account);
+    if (bal !== null) setBalance(bal);
+
+    const info = await getStakingInfo(account);
+    if (info) setStakingInfo(info);
+  }, [account, getBalance, getStakingInfo]);
+
+  // Load data when account connects
+  useEffect(() => {
+    if (account) {
+      refreshData();
+      const interval = setInterval(refreshData, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [account, refreshData]);
+
+  // ✅ CORRECT: Action handlers call real entry functions
+  const handleStake = async () => {
+    if (!amount) return;
+    const result = await stake(parseFloat(amount) * 1e8);
+    if (result) {
+      setAmount('');
+      await refreshData();  // ✅ Refresh from chain after TX
+    }
+  };
+
+  return (
+    <div>
+      {/* UI that displays blockchain data */}
+      <p>Balance: {balance / 1e8}</p>
+      <button onClick={handleStake} disabled={loading}>Stake</button>
+    </div>
+  );
+}
+```
+
+### useContract.ts Must Match Your Contract
+
+```typescript
+// src/hooks/useContract.ts
+const MODULE_NAME = 'your_actual_module';  // ← CHANGE THIS!
+
+export function useContract() {
+  // ... base setup ...
+
+  // ✅ Add wrapper for EACH entry function
+  const stake = useCallback((amount: number) =>
+    callEntry('stake', [amount.toString()]), [callEntry]);
+
+  // ✅ Add wrapper for EACH view function
+  const getBalance = useCallback((addr: string) =>
+    callView<number>('get_balance', [addr]), [callView]);
+
+  return {
+    stake, getBalance,  // ← Export ALL functions!
+    callEntry, callView, loading, error, account,
+    contractAddress: CONTRACT_ADDRESS,
+    isTestMode: IS_TEST_MODE,
+  };
+}
+```
+
+### Verification Checklist
+
+Before marking frontend complete:
+- [ ] NO hardcoded/mock data in useState initializers
+- [ ] NO "Mock" or "TODO" comments in data functions
+- [ ] ALL data comes from callView
+- [ ] ALL actions use callEntry
+- [ ] Data refreshes after successful transactions
+- [ ] Test Mode verifies data changes after TX
+- [ ] Production Mode shows Connect Wallet button

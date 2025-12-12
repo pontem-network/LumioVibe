@@ -1,7 +1,7 @@
 ---
 name: lumiovibe
 type: workflow
-version: 5.0.0
+version: 6.0.0
 agent: CodeActAgent
 priority: 1
 triggers:
@@ -26,6 +26,55 @@ When user asks to create a contract/dapp, deliver a COMPLETE working solution:
 3. ✅ Move smart contract compiled and deployed to Lumio Testnet
 4. ✅ React frontend with Pontem Wallet integration - RUNNING and accessible
 5. ✅ Documentation page explaining the contract
+6. ✅ **ALL data fetched from blockchain** - NO mock/hardcoded data!
+7. ✅ **Dual-mode testing verified** - both Test Mode and Production Mode working
+
+## ⛔ CRITICAL: NO MOCK DATA - EVER!
+
+<IMPORTANT>
+⚠️⚠️⚠️ ABSOLUTE PROHIBITION ON MOCK/HARDCODED DATA ⚠️⚠️⚠️
+
+The frontend MUST fetch ALL data from the blockchain. NEVER use mock data!
+
+**❌ STRICTLY FORBIDDEN:**
+```typescript
+// ❌ NEVER DO THIS - hardcoded/mock data
+setBalance(1000000000);
+setStakingInfo({ stakedAmount: 500000000, ... });
+const [data] = useState({ totalStaked: 100, ... });
+
+// ❌ NEVER write "Mock data" or "in real implementation" comments
+// Mock data for now - in real implementation...
+console.log(`Staking ${amount}`); // without actual contract call
+```
+
+**✅ ALWAYS DO THIS - fetch from blockchain:**
+```typescript
+// ✅ CORRECT - call view functions to get data
+const balance = await callView<number>('get_balance', [account]);
+setBalance(balance);
+
+// ✅ CORRECT - call entry functions for transactions
+const result = await callEntry('stake', [amount.toString()]);
+if (result) { await refreshData(); }
+```
+
+**Every piece of data displayed to user MUST come from:**
+1. View function calls to the contract (`callView`)
+2. RPC calls to `https://api.testnet.lumio.io/v1/view`
+3. Transaction results from entry functions (`callEntry`)
+
+**If contract doesn't have a view function for some data - ADD IT to the contract!**
+
+**Verification checklist before completion:**
+- [ ] NO `useState` with hardcoded initial values for blockchain data
+- [ ] NO `// Mock` or `// TODO: implement` comments in data fetching
+- [ ] ALL `refreshData()` functions call actual view functions
+- [ ] ALL action handlers call actual entry functions
+- [ ] Data updates AFTER successful transactions, not with setTimeout
+</IMPORTANT>
+
+---
 
 ## CRITICAL: Everything is Pre-installed
 
@@ -45,7 +94,7 @@ DO NOT write files from scratch - scaffold-fast.sh generates everything!
 ✅ ALWAYS start with: `bash /openhands/templates/scaffold-fast.sh PROJECT_NAME`
 
 The scaffold-fast.sh script creates EVERYTHING in ONE command:
-1. Auto-initialize Lumio CLI with private key (if not done)
+1. Auto-initialize Lumio CLI with `--private-key` (fully non-interactive)
 2. Fund account from testnet faucet
 3. Create Move contract with Move.toml (address pre-set!)
 4. Compile contract (caches framework)
@@ -367,9 +416,118 @@ pnpm install
 
 **Most files are already created by scaffold-fast.sh!**
 Only update these for your specific contract:
-- `src/hooks/useContract.ts` - CONTRACT_ADDRESS is set, but update functions if contract differs from counter
+- `src/hooks/useContract.ts` - **CRITICAL: update MODULE_NAME and add ALL contract functions!**
 - `src/pages/Home.tsx` - customize UI for your contract's specific functions
 - `src/pages/Documentation.tsx` - update with your contract's function descriptions
+
+#### ⛔ MANDATORY: Update useContract.ts for YOUR Contract
+
+<IMPORTANT>
+⛔⛔⛔ YOU MUST UPDATE useContract.ts! ⛔⛔⛔
+
+The scaffold creates a COUNTER example with `MODULE_NAME = 'counter'`.
+This is WRONG for your contract!
+
+**You MUST:**
+1. Change `MODULE_NAME` to your actual module name
+2. Remove counter functions (initialize, increment, getCount, isInitialized)
+3. Add wrapper for EVERY entry function in YOUR contract
+4. Add wrapper for EVERY view function in YOUR contract
+5. Export ALL your functions from the hook
+
+**If you skip this step, the frontend WILL NOT WORK!**
+</IMPORTANT>
+
+**Example for a staking contract:**
+```typescript
+// src/hooks/useContract.ts
+const CONTRACT_ADDRESS = '0x...deployed_address...';
+const MODULE_NAME = 'moon_coin';  // ← Your actual module name!
+
+export function useContract() {
+  // ... existing setup ...
+
+  // ✅ Add wrapper for EVERY entry function in your contract
+  const stake = useCallback((amount: number) =>
+    callEntry('stake_lumio', [amount.toString()]), [callEntry]);
+
+  const unstake = useCallback((amount: number) =>
+    callEntry('unstake_lumio', [amount.toString()]), [callEntry]);
+
+  const claimRewards = useCallback(() =>
+    callEntry('claim_rewards', []), [callEntry]);
+
+  // ✅ Add wrapper for EVERY view function in your contract
+  const getStakingInfo = useCallback((addr: string) =>
+    callView<[number, number, number, number]>('get_staking_info', [addr]), [callView]);
+
+  const getMoonBalance = useCallback((addr: string) =>
+    callView<number>('get_moon_balance', [addr]), [callView]);
+
+  const getContractStats = useCallback(() =>
+    callView<[number, number]>('get_contract_stats', []), [callView]);
+
+  return {
+    // Entry functions
+    stake, unstake, claimRewards,
+    // View functions
+    getStakingInfo, getMoonBalance, getContractStats,
+    // Common
+    callEntry, callView, loading, error, account,
+    contractAddress: CONTRACT_ADDRESS,
+    isTestMode: IS_TEST_MODE,
+  };
+}
+```
+
+#### ⚠️ CRITICAL: Update Home.tsx to Use Real Data
+
+**❌ WRONG - Mock data:**
+```typescript
+const refreshData = async () => {
+  // Mock data for now
+  setBalance(1000000000);  // ❌ HARDCODED!
+};
+```
+
+**✅ CORRECT - Real blockchain data:**
+```typescript
+const { getStakingInfo, getMoonBalance, getContractStats } = useContract();
+
+const refreshData = async () => {
+  if (!account) return;
+
+  // ✅ Call actual view functions
+  const stakingData = await getStakingInfo(account);
+  if (stakingData) {
+    const [stakedAmount, stakeTime, lastRewardTime, pendingRewards] = stakingData;
+    setStakingInfo({ stakedAmount, stakeTime, lastRewardTime, pendingRewards });
+  }
+
+  const moonBal = await getMoonBalance(account);
+  if (moonBal !== null) setMoonBalance(moonBal);
+
+  const stats = await getContractStats();
+  if (stats) {
+    const [totalStaked, totalFees] = stats;
+    setContractStats({ totalStaked, totalFeesCollected: totalFees });
+  }
+};
+```
+
+**✅ CORRECT - Real transaction handlers:**
+```typescript
+const handleStake = async () => {
+  if (!stakeAmount) return;
+
+  // ✅ Call actual entry function
+  const result = await stake(parseFloat(stakeAmount) * 100000000);
+  if (result) {
+    setStakeAmount('');
+    await refreshData();  // ✅ Refresh from chain after TX
+  }
+};
+```
 
 **Start dev server ONCE on the mapped port:**
 ```bash
@@ -386,66 +544,247 @@ The frontend will be accessible via the **App tab** in OpenHands UI (port is aut
 
 ---
 
-### Phase 4.5: Agent Testing with TEST MODE
+### Phase 4.5: MANDATORY Testing in TEST MODE ⚠️
 
 <IMPORTANT>
-The frontend has TWO modes:
-1. **Production Mode** (default) - Uses Pontem Wallet, requires user approval for each transaction
-2. **Test Mode** - Uses embedded private key, agent can send transactions without wallet!
+⛔⛔⛔ CRITICAL TESTING RULES - NO EXCEPTIONS! ⛔⛔⛔
 
-**Port Strategy:**
-- `$APP_PORT_1` - User's frontend (Production Mode, Pontem Wallet)
-- `$APP_PORT_2` - Agent's testing (Test Mode, auto-signed transactions)
+1. **Agent testing ONLY in Test Mode** - NEVER use Pontem Wallet for agent tests!
+2. **Test Mode server is MANDATORY** - must run on $APP_PORT_2
+3. **Contract initialization REQUIRED** - if contract has `initialize()`, call it first!
+4. **Data verification REQUIRED** - prove data comes from chain, not mock!
 </IMPORTANT>
 
-**Step 1: Start Test Mode server on APP_PORT_2**
+#### Step 1: Start Test Mode Server (MANDATORY!)
+
 ```bash
+# Test Mode for agent testing - REQUIRED!
 cd frontend && VITE_WALLET_MODE=test pnpm dev --host --port $APP_PORT_2 &
 ```
 
-This starts the frontend in TEST MODE where:
-- No wallet extension needed
-- Transactions are signed with the deployer's private key automatically
-- Yellow "TEST MODE" banner shows at the top
-- Agent can fully test all contract interactions!
+⛔ **Agent CANNOT use Pontem Wallet!** Test Mode auto-signs transactions with deployer key.
 
-**Step 2: Open test frontend in browser**
+#### Step 2: Initialize Contract (if required)
+
+<IMPORTANT>
+Many contracts require initialization before use!
+If your contract has `initialize()` function - YOU MUST CALL IT!
+</IMPORTANT>
+
+**Check if contract needs initialization:**
+1. Open Test Mode frontend: `http://localhost:$APP_PORT_2`
+2. Look for "Initialize" button or check contract state
+3. If not initialized - click Initialize (or call via CLI):
+
+```bash
+# Alternative: Initialize via CLI
+cd contract && lumio move run --function-id $DEPLOYER_ADDRESS::module_name::initialize --assume-yes
+```
+
+#### Step 3: Verify Data is NOT Mocked
+
+<IMPORTANT>
+⛔⛔⛔ MOCK DATA DETECTION TEST ⛔⛔⛔
+
+You MUST prove that data comes from blockchain!
+
+**Test procedure:**
+1. Note current values displayed (balance, counter, etc.)
+2. Execute a transaction (stake, increment, etc.)
+3. Check if values CHANGED after transaction
+
+**If values DON'T change = MOCK DATA = MUST FIX!**
+</IMPORTANT>
+
+```python
+# Open Test Mode
+goto(f'http://localhost:{os.environ.get("APP_PORT_2", "55000")}')
+```
+
+**Verification checklist:**
+- [ ] Yellow "TEST MODE" banner visible
+- [ ] Account address displayed (deployer address)
+- [ ] Initial data loaded (may be 0 if contract just deployed)
+- [ ] **Execute transaction** (initialize, stake, increment, etc.)
+- [ ] **Data CHANGED after transaction** ← THIS PROVES IT'S REAL!
+
+#### Step 4: Test All Contract Functions
+
+**For each entry function in contract:**
+1. Click the corresponding button in UI
+2. Verify transaction succeeds (check for TX hash)
+3. Verify UI updates with new data from chain
+
+**Example test sequence for staking contract:**
+```
+1. Initialize contract (if needed)
+2. Check initial balance = 0
+3. Stake some amount
+4. Verify staked amount increased
+5. Check rewards accumulating
+6. Unstake
+7. Verify balance returned
+```
+
+#### Step 5: Start Production Mode (for user)
+
+```bash
+# Production Mode for end users
+cd frontend && pnpm dev --host --port $APP_PORT_1 &
+```
+
+**Quick verify Production Mode:**
+- [ ] NO "TEST MODE" banner
+- [ ] "Connect Wallet" button visible
+- [ ] Ready for user with Pontem Wallet
+
+#### Testing Checklist (ALL MUST PASS!)
+
+**⛔ MANDATORY - Test Mode ($APP_PORT_2):**
+- [ ] Test Mode server running
+- [ ] Yellow banner visible
+- [ ] Auto-connected (no wallet needed)
+- [ ] Contract initialized (click Initialize or run CLI)
+- [ ] **DATA CHANGES AFTER TX** ← CRITICAL!
+- [ ] All entry functions work
+- [ ] All view functions return real data
+
+#### Step 6: Start Production Mode (MANDATORY!)
+
+<IMPORTANT>
+⛔⛔⛔ PRODUCTION MODE IS MANDATORY! ⛔⛔⛔
+
+After testing is complete, you MUST start Production Mode for the user!
+The user needs Pontem Wallet integration to actually use the dApp.
+</IMPORTANT>
+
+```bash
+# Start Production Mode on APP_PORT_1 - REQUIRED!
+cd frontend && pnpm dev --host --port $APP_PORT_1 &
+```
+
+**Verify Production Mode:**
+- [ ] Server running on $APP_PORT_1
+- [ ] NO "TEST MODE" banner
+- [ ] "Connect Wallet" button visible
+- [ ] App tab shows Production frontend
+
+#### Pre-Completion Verification
+
+<IMPORTANT>
+⛔⛔⛔ DO NOT CALL finish() UNTIL ALL VERIFIED! ⛔⛔⛔
+
+Before marking project complete, verify:
+
+1. **useContract.ts matches contract:**
+   - [ ] MODULE_NAME matches actual module name (e.g., 'moon_coin', NOT 'counter')
+   - [ ] All entry functions from contract have wrappers
+   - [ ] All view functions from contract have wrappers
+   - [ ] Functions are exported from hook
+
+2. **Contract is working:**
+   - [ ] Contract is initialized (is_initialized() returns true)
+   - [ ] At least one transaction executed successfully
+   - [ ] Data updated after transaction
+
+3. **BOTH servers running:**
+   - [ ] Test Mode on $APP_PORT_2 (for verification)
+   - [ ] Production Mode on $APP_PORT_1 (for user!)
+
+4. **No errors in console:**
+   - [ ] No TypeScript errors
+   - [ ] No runtime errors
+   - [ ] View functions return data (not null/undefined)
+</IMPORTANT>
+
+<IMPORTANT>
+⛔ NEVER call finish() if:
+- useContract.ts still has 'counter' module (not updated!)
+- Contract not initialized
+- Only Test Mode running (no Production!)
+- Data doesn't change after transactions
+- viewFunction/callFunction errors in console
+
+**The project is NOT complete until user can use it with Pontem Wallet!**
+</IMPORTANT>
+
+---
+
+### Phase 4.6: Bug Fixes & Changes - MANDATORY Regression Testing
+
+<IMPORTANT>
+⛔⛔⛔ AFTER ANY CODE CHANGES - FULL REGRESSION TEST REQUIRED! ⛔⛔⛔
+
+When user reports a bug or asks for changes:
+
+**MANDATORY FLOW:**
+1. Make the fix/change in code
+2. Start Test Mode on $APP_PORT_2 (if not running)
+3. **FULL REGRESSION TEST** - test ALL functionality, not just the fix!
+4. Verify the specific fix works
+5. Verify nothing else broke
+6. **ONLY THEN** start Production Mode on $APP_PORT_1
+7. Verify Production Mode works
+8. Report completion with both servers running
+</IMPORTANT>
+
+#### After Any Fix/Change:
+
+```bash
+# Step 1: Ensure Test Mode is running
+cd frontend && VITE_WALLET_MODE=test pnpm dev --host --port $APP_PORT_2 &
+```
+
+#### Step 2: Full Regression Test in Test Mode
+
+**Open Test Mode and verify ALL of these:**
+
 ```python
 goto(f'http://localhost:{os.environ.get("APP_PORT_2", "55000")}')
 ```
 
-**Step 3: Verify Test Mode is active**
-Check the browser observation for:
-- Yellow "TEST MODE" banner at the top
-- Account address displayed (same as deployer)
-- No "Connect Wallet" button needed
+**Regression Checklist:**
+- [ ] App loads without errors
+- [ ] TEST MODE banner visible
+- [ ] Account auto-connected
+- [ ] Contract status shows correctly (initialized/not initialized)
+- [ ] If not initialized - Initialize button works
+- [ ] All balances load from chain
+- [ ] **THE SPECIFIC FIX WORKS** ← verify the bug is fixed!
+- [ ] Main action works (stake/vote/mint/etc)
+- [ ] Data updates after transaction
+- [ ] No console errors
 
-**Step 4: Test contract functions**
-In Test Mode, click buttons to:
-- Initialize contract (auto-signed)
-- Increment counter (auto-signed)
-- Verify counter updates
+#### Step 3: Deploy to Production
 
-**Step 5: Navigate to Documentation page**
-```python
-goto(f'http://localhost:{os.environ.get("APP_PORT_2", "55000")}/docs')
+**Only after ALL regression tests pass:**
+
+```bash
+# Start Production Mode on the MAIN port
+cd frontend && pnpm dev --host --port $APP_PORT_1 &
 ```
-Verify documentation page shows contract info.
 
-**If test fails:**
-- Check browser console for errors
-- Fix React/TypeScript errors (HMR will auto-reload)
-- Check transaction errors in the UI
+#### Step 4: Verify Production Mode
 
-**Test Mode Checklist:**
-- [ ] Yellow "TEST MODE" banner visible
-- [ ] Account address displayed automatically
-- [ ] Initialize button works (sends real transaction!)
-- [ ] Increment button works
-- [ ] Counter value updates after transactions
-- [ ] Documentation page accessible
+```python
+goto(f'http://localhost:{os.environ.get("APP_PORT_1", "50000")}')
+```
 
-**Note:** User's frontend on `$APP_PORT_1` stays in Production Mode with Pontem Wallet.
+**Production Checklist:**
+- [ ] App loads without errors
+- [ ] NO "TEST MODE" banner
+- [ ] "Connect Wallet" button visible
+- [ ] Ready for user with Pontem Wallet
+
+<IMPORTANT>
+⛔ NEVER report fix as complete if:
+- Only tested the specific fix (no regression!)
+- Only running Test Mode (no Production!)
+- Production not started on $APP_PORT_1
+- User can't access the app with Pontem Wallet
+
+**Every change requires: Test Mode regression → Production Mode deployment!**
+</IMPORTANT>
 
 ---
 
@@ -771,7 +1110,10 @@ You are DONE when ALL true:
 - ✅ User approved deployment in Phase 2.5
 - ✅ spec.md has contract address
 - ✅ `pnpm build` succeeds in frontend/
-- ✅ `pnpm dev --host --port $APP_PORT_1` running (started ONCE, never restarted)
+- ✅ **BOTH servers running:** Production on `$APP_PORT_1`, Test on `$APP_PORT_2`
+- ✅ **Test Mode verified:** data loads from chain, transactions work, UI updates
+- ✅ **Production Mode verified:** Connect Wallet button works
+- ✅ **NO MOCK DATA:** all data comes from view functions
 - ✅ Frontend accessible via App tab in OpenHands UI
 - ✅ Told user to check the App tab
 
@@ -786,9 +1128,11 @@ You are DONE when ALL true:
 5. **All tools pre-installed** - don't install, just use
 6. **Don't write from scratch** - scaffold-fast.sh generates all files inline, just customize
 7. **lumio_coin, NOT aptos_coin** - Lumio-specific
-8. **Frontend must run on $APP_PORT_1** - user sees working UI in App tab (Production Mode)
-9. **Use Test Mode for agent testing** - `VITE_WALLET_MODE=test` on `$APP_PORT_2` to send transactions without wallet
-10. **Vite runs ONCE** - never restart, use HMR for all changes
-11. **Direct Pontem API only** - NEVER use wallet adapters, use `window.pontem` (Production Mode)
-12. **All arguments as strings** - `args.map(a => String(a))` before signAndSubmit
-13. **spec.md is truth** - follow it exactly after confirmation
+8. **⚠️ NO MOCK DATA EVER** - ALL data from blockchain via view functions, ALL actions via entry functions
+9. **BOTH modes must work** - Production on `$APP_PORT_1` AND Test on `$APP_PORT_2` simultaneously
+10. **Verify data updates** - if data doesn't change after TX = mock data = MUST FIX
+11. **Vite runs ONCE** - never restart, use HMR for all changes
+12. **Direct Pontem API only** - NEVER use wallet adapters, use `window.pontem` (Production Mode)
+13. **All arguments as strings** - `args.map(a => String(a))` before signAndSubmit
+14. **spec.md is truth** - follow it exactly after confirmation
+15. **useContract.ts must match contract** - update MODULE_NAME, add functions for ALL entry/view functions

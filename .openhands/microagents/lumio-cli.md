@@ -24,11 +24,11 @@ Lumio CLI is pre-installed and will be auto-configured on first use!
 - Config location: /workspace/.lumio/config.yaml (created automatically)
 - Works from /workspace directory!
 
-❌ DO NOT run `lumio init` manually - scaffold-fast.sh handles it!
+❌ DO NOT run `lumio init` manually - scaffold-fast.sh handles it with `--private-key` flag!
 ❌ DO NOT manually edit or create config files!
 
 ✅ scaffold-fast.sh will automatically:
-- Initialize Lumio CLI with unique private key
+- Generate random key and run `lumio init --assume-yes --network testnet --private-key <key>`
 - Configure testnet (API: https://api.testnet.lumio.io/v1)
 - Fund account from faucet
 
