@@ -40,6 +40,7 @@ import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
 import { useConversationStore } from "#/state/conversation-store";
 import ConfirmationModeEnabled from "./confirmation-mode-enabled";
+import { LumioModeToggles } from "./lumio-mode-toggles";
 import {
   isV0Event,
   isV1Event,
@@ -61,7 +62,8 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const posthog = usePostHog();
-  const { setMessageToSend } = useConversationStore();
+  const { setMessageToSend, enableTesting, enableVerification } =
+    useConversationStore();
   const { data: conversation } = useActiveConversation();
   const { errorMessage } = useErrorMessageStore();
   const { isLoadingMessages } = useWsClient();
@@ -205,8 +207,11 @@ export function ChatInterface() {
     skippedFiles.forEach((f) => displayErrorToast(f.reason));
 
     const filePrompt = `${t("CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE")}: ${uploadedFiles.join("\n\n")}`;
-    const prompt =
+    let prompt =
       uploadedFiles.length > 0 ? `${content}\n\n${filePrompt}` : content;
+
+    const lumioSettings = `<lumio-settings testing="${enableTesting}" verification="${enableVerification}" />`;
+    prompt = `${lumioSettings}\n${prompt}`;
 
     send(createChatMessage(prompt, imageUrls, uploadedFiles, timestamp));
     setOptimisticUserMessage(content);
@@ -307,6 +312,10 @@ export function ChatInterface() {
           {errorMessage && <ErrorMessageBanner message={errorMessage} />}
 
           <InteractiveChatBox onSubmit={handleSendMessage} />
+
+          <div className="flex justify-start px-1">
+            <LumioModeToggles />
+          </div>
         </div>
 
         {config?.APP_MODE !== "saas" && !isV1Conversation && (

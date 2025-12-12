@@ -31,6 +31,8 @@ interface ConversationState {
   planContent: string | null;
   conversationMode: ConversationMode;
   subConversationTaskId: string | null; // Task ID for sub-conversation creation
+  enableTesting: boolean; // LumioVibe: enable browser testing phase
+  enableVerification: boolean; // LumioVibe: enable verification phase
 }
 
 interface ConversationActions {
@@ -57,6 +59,8 @@ interface ConversationActions {
   setConversationMode: (conversationMode: ConversationMode) => void;
   setSubConversationTaskId: (taskId: string | null) => void;
   setPlanContent: (planContent: string | null) => void;
+  setEnableTesting: (enableTesting: boolean) => void;
+  setEnableVerification: (enableVerification: boolean) => void;
 }
 
 type ConversationStore = ConversationState & ConversationActions;
@@ -85,6 +89,8 @@ export const useConversationStore = create<ConversationStore>()(
       planContent: null,
       conversationMode: "code",
       subConversationTaskId: null,
+      enableTesting: true,
+      enableVerification: true,
 
       // Actions
       setIsRightPanelShown: (isRightPanelShown) =>
@@ -238,6 +244,12 @@ export const useConversationStore = create<ConversationStore>()(
 
       setPlanContent: (planContent) =>
         set({ planContent }, false, "setPlanContent"),
+
+      setEnableTesting: (enableTesting) =>
+        set({ enableTesting }, false, "setEnableTesting"),
+
+      setEnableVerification: (enableVerification) =>
+        set({ enableVerification }, false, "setEnableVerification"),
     }),
     {
       name: "conversation-store",

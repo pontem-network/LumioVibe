@@ -544,16 +544,29 @@ The frontend will be accessible via the **App tab** in OpenHands UI (port is aut
 
 ---
 
-### Phase 4.5: MANDATORY Testing in TEST MODE ⚠️
+### Phase 4.5: Testing in TEST MODE
 
 <IMPORTANT>
-⛔⛔⛔ CRITICAL TESTING RULES - NO EXCEPTIONS! ⛔⛔⛔
+**Check user's message for `<lumio-settings>` tag to determine testing mode:**
+
+```
+<lumio-settings testing="true" verification="true" />
+```
+
+- If `testing="false"` → **SKIP Phase 4.5 entirely** (browser testing)
+- If `verification="false"` → **SKIP data verification steps**
+- If `testing="true"` → Execute full browser testing as described below
+- If no tag present → Default to full testing
+
+**User can toggle these settings via UI buttons below the chat input.**
+</IMPORTANT>
+
+⛔⛔⛔ CRITICAL TESTING RULES (when testing="true") ⛔⛔⛔
 
 1. **Agent testing ONLY in Test Mode** - NEVER use Pontem Wallet for agent tests!
 2. **Test Mode server is MANDATORY** - must run on $APP_PORT_2
 3. **Contract initialization REQUIRED** - if contract has `initialize()`, call it first!
 4. **Data verification REQUIRED** - prove data comes from chain, not mock!
-</IMPORTANT>
 
 #### Step 1: Start Test Mode Server (MANDATORY!)
 
@@ -710,14 +723,17 @@ Before marking project complete, verify:
 
 ---
 
-### Phase 4.6: Bug Fixes & Changes - MANDATORY Regression Testing
+### Phase 4.6: Bug Fixes & Changes - Regression Testing
 
 <IMPORTANT>
-⛔⛔⛔ AFTER ANY CODE CHANGES - FULL REGRESSION TEST REQUIRED! ⛔⛔⛔
+**Check `<lumio-settings>` tag in user's message:**
+- If `testing="false"` → **SKIP regression testing**, just make the fix and start Production Mode
+- If `testing="true"` or no tag → Execute full regression testing as below
+</IMPORTANT>
 
-When user reports a bug or asks for changes:
+When user reports a bug or asks for changes (and testing="true"):
 
-**MANDATORY FLOW:**
+**FLOW (when testing enabled):**
 1. Make the fix/change in code
 2. Start Test Mode on $APP_PORT_2 (if not running)
 3. **FULL REGRESSION TEST** - test ALL functionality, not just the fix!
@@ -726,7 +742,11 @@ When user reports a bug or asks for changes:
 6. **ONLY THEN** start Production Mode on $APP_PORT_1
 7. Verify Production Mode works
 8. Report completion with both servers running
-</IMPORTANT>
+
+**FLOW (when testing disabled):**
+1. Make the fix/change in code
+2. Start Production Mode on $APP_PORT_1
+3. Report completion
 
 #### After Any Fix/Change:
 
