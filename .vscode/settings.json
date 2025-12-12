@@ -22,8 +22,11 @@
         "source.fixAll": "explicit"
     },
     "cSpell.words": [
+        "ASGI",
+        "authx",
         "lumio",
         "openhands",
-        "pontem"
+        "pontem",
+        "usid"
     ]
 }
