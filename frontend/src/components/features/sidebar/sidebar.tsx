@@ -3,10 +3,12 @@ import { useLocation } from "react-router";
 import { OpenHandsLogoButton } from "#/components/shared/buttons/openhands-logo-button";
 import { NewProjectButton } from "#/components/shared/buttons/new-project-button";
 import { ConversationPanelButton } from "#/components/shared/buttons/conversation-panel-button";
+import { DeploymentsButton } from "#/components/shared/buttons/deployments-button";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
+import { DeploymentsPanel } from "../deployments/deployments-panel";
 import { useConfig } from "#/hooks/query/use-config";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { cn } from "#/utils/utils";
@@ -26,6 +28,8 @@ export function Sidebar() {
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
 
   const [conversationPanelIsOpen, setConversationPanelIsOpen] =
+    React.useState(false);
+  const [deploymentsPanelIsOpen, setDeploymentsPanelIsOpen] =
     React.useState(false);
 
   const { pathname } = useLocation();
@@ -78,11 +82,21 @@ export function Sidebar() {
 
             <ConversationPanelButton
               isOpen={conversationPanelIsOpen}
-              onClick={() =>
-                settings?.EMAIL_VERIFIED === false
-                  ? null
-                  : setConversationPanelIsOpen((prev) => !prev)
-              }
+              onClick={() => {
+                if (settings?.EMAIL_VERIFIED === false) return;
+                setDeploymentsPanelIsOpen(false);
+                setConversationPanelIsOpen((prev) => !prev);
+              }}
+              disabled={settings?.EMAIL_VERIFIED === false}
+            />
+
+            <DeploymentsButton
+              isOpen={deploymentsPanelIsOpen}
+              onClick={() => {
+                if (settings?.EMAIL_VERIFIED === false) return;
+                setConversationPanelIsOpen(false);
+                setDeploymentsPanelIsOpen((prev) => !prev);
+              }}
               disabled={settings?.EMAIL_VERIFIED === false}
             />
           </div>
@@ -102,6 +116,14 @@ export function Sidebar() {
           <ConversationPanelWrapper isOpen={conversationPanelIsOpen}>
             <ConversationPanel
               onClose={() => setConversationPanelIsOpen(false)}
+            />
+          </ConversationPanelWrapper>
+        )}
+
+        {deploymentsPanelIsOpen && (
+          <ConversationPanelWrapper isOpen={deploymentsPanelIsOpen}>
+            <DeploymentsPanel
+              onClose={() => setDeploymentsPanelIsOpen(false)}
             />
           </ConversationPanelWrapper>
         )}

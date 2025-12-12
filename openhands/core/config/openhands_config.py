@@ -12,6 +12,7 @@ from openhands.core.config.config_utils import (
     OH_MAX_ITERATIONS,
     model_defaults_to_dict,
 )
+from openhands.core.config.deployment_config import DeploymentConfig
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.kubernetes_config import KubernetesConfig
 from openhands.core.config.llm_config import LLMConfig
@@ -123,6 +124,7 @@ class OpenHandsConfig(BaseModel):
     mcp: MCPConfig = Field(default_factory=MCPConfig)
     kubernetes: KubernetesConfig = Field(default_factory=KubernetesConfig)
     cli: CLIConfig = Field(default_factory=CLIConfig)
+    deployment: DeploymentConfig = Field(default_factory=DeploymentConfig)
     git_user_name: str = Field(
         default='openhands', description='Git user name for commits made by the agent'
     )
