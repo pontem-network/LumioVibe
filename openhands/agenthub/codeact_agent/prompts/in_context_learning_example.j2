@@ -38,7 +38,7 @@ File updated successfully.
 A: Now adding my contract's functions to useContract.ts and updating the exports. Starting Test Mode for testing:
 <function=execute_bash>
 <parameter=command>
-cd /workspace/staking_app/frontend && pnpm install && VITE_WALLET_MODE=test pnpm dev --host --port $APP_PORT_2 &
+cd /workspace/staking_app/frontend && pnpm install && ./start.sh --test &
 </parameter>
 </function>
 
@@ -78,7 +78,7 @@ Transaction submitted. Staked amount: 10 (was 0)
 A: Data changed from 0 to 10 - this proves it's NOT mock data! Now I MUST start Production Mode for the user:
 <function=execute_bash>
 <parameter=command>
-cd /workspace/staking_app/frontend && pnpm dev --host --port $APP_PORT_1 &
+cd /workspace/staking_app/frontend && ./start.sh &
 </parameter>
 </function>
 
@@ -175,7 +175,7 @@ A: All features verified in Test Mode:
 Now I MUST start Production Mode on $APP_PORT_1:
 <function=execute_bash>
 <parameter=command>
-cd /workspace/staking_app/frontend && pnpm dev --host --port $APP_PORT_1 &
+cd /workspace/staking_app/frontend && ./start.sh &
 </parameter>
 </function>
 
@@ -247,7 +247,7 @@ A: Contract redeployed to new address! Now I need to restart frontend servers an
 <function=execute_bash>
 <parameter=command>
 pkill -f "vite.*staking_app" || true
-cd /workspace/staking_app/frontend && VITE_WALLET_MODE=test pnpm dev --host --port $APP_PORT_2 &
+cd /workspace/staking_app/frontend && ./start.sh --test &
 </parameter>
 </function>
 
@@ -287,7 +287,7 @@ Staked: 10 ✅, Total Rewards Distributed: 0 (new field working!)
 A: All features work! Now starting Production Mode:
 <function=execute_bash>
 <parameter=command>
-cd /workspace/staking_app/frontend && pnpm dev --host --port $APP_PORT_1 &
+cd /workspace/staking_app/frontend && ./start.sh &
 </parameter>
 </function>
 

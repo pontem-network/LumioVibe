@@ -404,7 +404,7 @@ cd {project_name}
 3. Compile, get approval, deploy
 4. **⚠️ Update MODULE_NAME in useContract.ts** to match the renamed module!
 5. Customize Home.tsx for contract functions
-6. Run `pnpm install && pnpm start:prod`
+6. Run `pnpm install && ./start.sh`
 
 ---
 
@@ -846,7 +846,7 @@ The scaffold creates Documentation.tsx with COUNTER example:
 
 **Start dev server ONCE on the mapped port:**
 ```bash
-pnpm start:prod
+./start.sh
 ```
 
 This command automatically:
@@ -1101,7 +1101,7 @@ const claimRewards = useCallback(...);
 **3.4 Function Call Test:**
 ```bash
 # Start test mode
-cd frontend && pnpm start:test &
+cd frontend && ./start.sh --test &
 
 # Wait for server, then test view function via browser console:
 # const result = await fetch('https://api.testnet.lumio.io/v1/view', {...})
@@ -1120,7 +1120,7 @@ Actually LOOK at the app! Don't just check code!
 **4.1 Open the app in browser:**
 ```bash
 # Ensure test mode is running
-cd frontend && pnpm start:test &
+cd frontend && ./start.sh --test &
 # Open http://localhost:$APP_PORT_2 in browser
 ```
 
@@ -1307,7 +1307,7 @@ After CLI verification passes, test in browser!
 
 **3.1: Start Test Mode**
 ```bash
-cd frontend && pnpm start:test &
+cd frontend && ./start.sh --test &
 ```
 
 **3.2: Open browser and check:**
@@ -1522,7 +1522,7 @@ Count the tasks - you should have:
 #### Step 1: Start Test Mode and OUTPUT CHECKPOINT
 
 ```bash
-cd frontend && pnpm start:test &
+cd frontend && ./start.sh --test &
 ```
 
 <IMPORTANT>
@@ -1994,7 +1994,7 @@ Test Mode on $APP_PORT_2 is only for YOUR verification - users cannot interact w
 </IMPORTANT>
 
 ```bash
-cd frontend && pnpm start:prod &
+cd frontend && ./start.sh &
 ```
 
 This automatically kills any process on `$APP_PORT_1` and starts with `--strictPort`.
@@ -2123,7 +2123,7 @@ When user reports a bug or asks for changes (and testing="true"):
 #### Step 1: Start Test Mode
 
 ```bash
-cd frontend && pnpm start:test &
+cd frontend && ./start.sh --test &
 ```
 
 This automatically kills any process on `$APP_PORT_2` and starts with `--strictPort`.
@@ -2172,7 +2172,7 @@ RE-RUN ALL test categories from Phase 4.5!
 **Only after ALL regression tests pass:**
 
 ```bash
-cd frontend && pnpm start:prod &
+cd frontend && ./start.sh &
 ```
 
 This automatically kills any process on `$APP_PORT_1` and starts with `--strictPort`.
@@ -2261,9 +2261,9 @@ Note: The frontend uses Vite HMR - any code changes will auto-reload without res
 | Insufficient balance | `lumio account fund-with-faucet --amount 100000000` |
 | Module exists | Different name or new account |
 | Build errors | Check TypeScript types |
-| Port in use | Use `pnpm start:prod` or `pnpm start:test` - they auto-kill old process |
-| Vite picked random port | You used `pnpm dev` instead of `pnpm start:prod` - random port not mapped! |
-| App not visible in UI | Use `pnpm start:prod` (not `pnpm dev`), check App tab |
+| Port in use | Use `./start.sh` or `./start.sh --test` - they auto-kill old process |
+| Vite picked random port | You used `pnpm dev` instead of `./start.sh` - random port not mapped! |
+| App not visible in UI | Use `./start.sh` (not `pnpm dev`), check App tab |
 | Browser shows blank page | Check console errors, verify React renders |
 | Browser shows error | Read error message, fix component code (HMR will reload) |
 | "Connect Wallet" not visible | Check usePontem hook and button rendering |
@@ -2272,34 +2272,49 @@ Note: The frontend uses Vite HMR - any code changes will auto-reload without res
 
 **NEVER restart Vite dev server** - use HMR for all code changes.
 
-**NEVER use `pnpm dev --host --port`** - use `pnpm start:prod` or `pnpm start:test` instead!
+**NEVER use `pnpm dev` directly** - use `./start.sh` script instead!
 
 ---
 
 ### ⚠️ Port Management
 
 <IMPORTANT>
-⛔⛔⛔ CRITICAL: USE NPM SCRIPTS, NOT RAW VITE! ⛔⛔⛔
+⛔⛔⛔ CRITICAL: USE ./start.sh SCRIPT ONLY! ⛔⛔⛔
 
 The Docker runtime maps ONLY specific ports (`$APP_PORT_1`, `$APP_PORT_2`).
 If Vite picks a random port, it will NOT be accessible!
 
 **Problem:** `pnpm dev --host --port 58805` → port busy → Vite picks 58808 → NOT MAPPED!
 
-**Solution:** Use the npm scripts that auto-kill + strictPort:
+**Solution:** ALWAYS use the start.sh script:
 ```bash
-pnpm start:prod   # Kills $APP_PORT_1 process, starts with --strictPort
-pnpm start:test   # Kills $APP_PORT_2 process, starts with --strictPort
+cd frontend
+./start.sh          # Production Mode on $APP_PORT_1
+./start.sh --test   # Test Mode on $APP_PORT_1
 ```
 
-**If still having port issues:**
-```bash
-# Manual kill (shouldn't be needed with npm scripts)
-kill $(lsof -t -i:$APP_PORT_1) 2>/dev/null || true
-kill $(lsof -t -i:$APP_PORT_2) 2>/dev/null || true
+**What ./start.sh does:**
+1. Checks $APP_PORT_1 is set (fails if not in LumioVibe runtime)
+2. Kills any process on $APP_PORT_1
+3. Verifies port is free
+4. Starts Vite with --strictPort (fails if port still busy)
 
-# Then start
-pnpm start:prod
+⛔ **FORBIDDEN commands:**
+- `pnpm dev` - will pick random port!
+- `pnpm dev --port XXXX` - port may be busy!
+- `vite --port XXXX` - no auto-kill!
+- `export APP_PORT_1=XXXX` - DO NOT set port manually!
+
+✅ **ONLY allowed command:**
+```bash
+cd frontend
+./start.sh          # Production
+./start.sh --test   # Test mode
+```
+
+⛔ **NEVER do this:**
+```bash
+export APP_PORT_1=51633 && ./start.sh  # WRONG! Script validates port range!
 ```
 </IMPORTANT>
 
@@ -2329,21 +2344,25 @@ The frontend supports TWO wallet modes:
 | **Production** (default) | - | Pontem Wallet popup, user confirms each TX |
 | **Test** | `VITE_WALLET_MODE=test` | Auto-signed with deployer's private key |
 
-**Commands (use these npm scripts!):**
+**Commands (use ./start.sh ONLY!):**
 ```bash
-# Production Mode (for users) - on APP_PORT_1
-pnpm start:prod
+cd frontend
 
-# Test Mode (for agent testing) - on APP_PORT_2
-pnpm start:test
+# Production Mode (for users) - on APP_PORT_1
+./start.sh
+
+# Test Mode (for agent testing) - on APP_PORT_1 with test wallet
+./start.sh --test
 ```
 
-**What these scripts do:**
-1. Kill any existing process on the target port
-2. Start Vite with `--strictPort` (fails if port still busy, won't pick random port)
-3. Set correct environment variables
+**What ./start.sh does:**
+1. Verifies $APP_PORT_1 is set
+2. Kill any existing process on $APP_PORT_1
+3. Verify port is free
+4. Start Vite with `--strictPort` (fails if port still busy)
+5. Set correct environment variables for test mode
 
-⚠️ **NEVER use `pnpm dev --host --port` directly!** Vite will pick random port if busy.
+⚠️ **NEVER use `pnpm dev` directly!** Vite will pick random port if busy.
 
 **Why Test Mode exists:**
 - Agent cannot use Pontem Wallet (browser extension)

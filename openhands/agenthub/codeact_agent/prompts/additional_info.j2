@@ -123,18 +123,21 @@ await stake(parseFloat(input) * 1e8);  // handler ALSO converts!
 
 ⛔ **PORT MANAGEMENT - CRITICAL!** ⛔
 
-**ALWAYS use npm scripts (not raw vite commands!):**
+**ALWAYS use ./start.sh script (not pnpm commands!):**
 ```bash
-pnpm start:prod   # Production on $APP_PORT_1
-pnpm start:test   # Test Mode on $APP_PORT_2
+cd frontend
+./start.sh          # Production on $APP_PORT_1
+./start.sh --test   # Test Mode on $APP_PORT_1
 ```
 
-These scripts automatically:
-1. Kill process on target port
-2. Use --strictPort (won't pick random port)
+The script automatically:
+1. Validates $APP_PORT_1 is set
+2. Kills process on $APP_PORT_1
+3. Verifies port is free
+4. Uses --strictPort (won't pick random port)
 
-❌ NEVER: `pnpm dev --host --port $APP_PORT_1` (Vite picks random port if busy!)
-✅ ALWAYS: `pnpm start:prod` or `pnpm start:test`
+❌ NEVER: `pnpm dev`, `pnpm start:prod`, `pnpm start:test` (will show error!)
+✅ ALWAYS: `./start.sh` or `./start.sh --test`
 
 ---
 
@@ -174,7 +177,7 @@ bash /openhands/templates/verify-data-refresh.sh PROJECT_DIR
 4. **VALUES MUST BE DIFFERENT!**
 
 **Step 3: Browser Data Refresh Test:**
-1. Start Test Mode: `pnpm start:test`
+1. Start Test Mode: `cd frontend && ./start.sh --test`
 2. Note value in UI
 3. Execute action (click button)
 4. **VALUE IN UI MUST CHANGE!**

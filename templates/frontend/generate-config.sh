@@ -16,14 +16,14 @@ generate_frontend_config() {
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:test": "VITE_WALLET_MODE=test vite",
+    "dev": "echo '⛔ ERROR: Use ./start.sh instead of pnpm dev!' && exit 1",
+    "dev:test": "echo '⛔ ERROR: Use ./start.sh --test instead!' && exit 1",
+    "start:prod": "echo '⛔ ERROR: Use ./start.sh instead!' && exit 1",
+    "start:test": "echo '⛔ ERROR: Use ./start.sh --test instead!' && exit 1",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "start:prod": "kill \$(lsof -t -i:\$APP_PORT_1) 2>/dev/null || true; vite --host --port \$APP_PORT_1 --strictPort",
-    "start:test": "kill \$(lsof -t -i:\$APP_PORT_2) 2>/dev/null || true; VITE_WALLET_MODE=test vite --host --port \$APP_PORT_2 --strictPort"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@aptos-labs/ts-sdk": "^1.33.1",
@@ -242,4 +242,68 @@ interface ImportMeta {
   readonly env: ImportMetaEnv
 }
 EOF
+
+    # start.sh - ONLY way to run frontend
+    cat > "$OUTPUT_DIR/frontend/start.sh" <<'STARTSCRIPT'
+#!/bin/bash
+# Frontend start script - ALWAYS use this to run the frontend
+# Usage: ./start.sh [--test]
+#
+# ⛔ DO NOT set APP_PORT_1 manually! It must be set by the runtime.
+
+set -e
+
+# Check APP_PORT_1 is set
+if [ -z "$APP_PORT_1" ]; then
+    echo "⛔ ERROR: APP_PORT_1 environment variable is not set!"
+    echo "This script must be run inside LumioVibe runtime."
+    echo ""
+    echo "DO NOT run: export APP_PORT_1=XXXX && ./start.sh"
+    echo "The port is automatically assigned by the runtime."
+    exit 1
+fi
+
+# Validate APP_PORT_1 is in correct range (50000-54999)
+# This prevents manual override attempts
+if [ "$APP_PORT_1" -lt 50000 ] || [ "$APP_PORT_1" -gt 54999 ]; then
+    echo "⛔ ERROR: APP_PORT_1=$APP_PORT_1 is outside valid range (50000-54999)!"
+    echo ""
+    echo "DO NOT set APP_PORT_1 manually!"
+    echo "The port is automatically assigned by the runtime."
+    echo ""
+    echo "Just run: ./start.sh"
+    exit 1
+fi
+
+PORT="$APP_PORT_1"
+MODE=""
+
+if [ "$1" = "--test" ] || [ "$1" = "-t" ]; then
+    MODE="test"
+    echo "Starting frontend in TEST mode (no wallet required)..."
+else
+    echo "Starting frontend in PRODUCTION mode (Pontem Wallet required)..."
+fi
+
+# Kill any process on APP_PORT_1
+echo "Killing any process on port $PORT..."
+lsof -ti:$PORT | xargs kill -9 2>/dev/null || true
+sleep 1
+
+# Double check port is free
+if lsof -ti:$PORT >/dev/null 2>&1; then
+    echo "ERROR: Port $PORT is still in use!"
+    lsof -i:$PORT
+    exit 1
+fi
+
+echo "Starting on port $PORT..."
+
+if [ "$MODE" = "test" ]; then
+    VITE_WALLET_MODE=test exec pnpm vite --host --port $PORT --strictPort
+else
+    exec pnpm vite --host --port $PORT --strictPort
+fi
+STARTSCRIPT
+    chmod +x "$OUTPUT_DIR/frontend/start.sh"
 }
