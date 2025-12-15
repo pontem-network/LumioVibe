@@ -302,8 +302,8 @@ docker-run:
 # Build runtime image with force rebuild (includes lumio-cli)
 build-runtime:
 	@echo "$(YELLOW)Building runtime image...$(RESET)"
-	@docker rmi -f $$(docker images -q "ghcr.io/openhands/runtime") 2>/dev/null || true
-	@IMAGE_NAME=$$(poetry run python -m openhands.runtime.utils.runtime_build --force_rebuild 2>&1 | grep -oE 'ghcr.io/openhands/runtime:[a-zA-Z0-9_.-]+' | tail -1); \
+	@docker rmi -f $$(docker images -q "registry.wings.toys/lumio/lumiovibe-runtime") 2>/dev/null || true
+	@IMAGE_NAME=$$(OH_RUNTIME_RUNTIME_IMAGE_REPO=registry.wings.toys/lumio/lumiovibe-runtime poetry run python -m openhands.runtime.utils.runtime_build --force_rebuild --platform linux/amd64 2>&1 | grep -oE 'registry.wings.toys/lumio/lumiovibe-runtime:[a-zA-Z0-9_.-]+' | tail -1); \
 	if [ -n "$$IMAGE_NAME" ]; then \
 		echo "$(GREEN)Runtime image built: $$IMAGE_NAME$(RESET)"; \
 		if [ -f $(CONFIG_FILE) ]; then \
