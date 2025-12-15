@@ -16,14 +16,14 @@ generate_frontend_config() {
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:test": "VITE_WALLET_MODE=test vite",
+    "dev": "echo '⛔ ERROR: Use ./start.sh instead of pnpm dev!' && exit 1",
+    "dev:test": "echo '⛔ ERROR: Use ./start.sh --test instead!' && exit 1",
+    "start:prod": "echo '⛔ ERROR: Use ./start.sh instead!' && exit 1",
+    "start:test": "echo '⛔ ERROR: Use ./start.sh --test instead!' && exit 1",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "start:prod": "kill \$(lsof -t -i:\$APP_PORT_1) 2>/dev/null || true; vite --host --port \$APP_PORT_1 --strictPort",
-    "start:test": "kill \$(lsof -t -i:\$APP_PORT_2) 2>/dev/null || true; VITE_WALLET_MODE=test vite --host --port \$APP_PORT_2 --strictPort"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@aptos-labs/ts-sdk": "^1.33.1",
