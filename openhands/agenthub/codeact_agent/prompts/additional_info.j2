@@ -188,29 +188,62 @@ Common fixes:
 
 ---
 
-⛔ **AGGRESSIVE TESTING PROTOCOL** ⛔
+⛔ **BROWSER TESTING = EXECUTION, NOT JUST SETUP!** ⛔
 
-**Philosophy: ASSUME THERE ARE BUGS - FIND THEM!**
+**"Starting test mode" is NOT testing! It's just setup!**
 
-1. **Console Clean** - NO red errors before testing!
-2. **Mock Detection** - data MUST change after TX
-3. **Edge Cases** - test zeros, max values, invalid inputs
-4. **Error Paths** - invalid ops must be REJECTED gracefully
-5. **State Consistency** - balances must add up!
+**AFTER starting server, you MUST:**
+1. Create 10+ test tasks from spec.md
+2. Execute EACH task one by one
+3. Output result for EACH test
+4. Mark tasks completed as you go
 
-**Testing Checklist:**
-- [ ] Zero/empty inputs → validation error
-- [ ] Over-balance amounts → "insufficient" error
-- [ ] Invalid input (letters in numbers) → rejected
-- [ ] Double-click → no double-submit
-- [ ] Data changes after TX (not mocked!)
-- [ ] Console stays clean during all tests
+**TEST EXECUTION LOOP (repeat for EACH task):**
+```
+═══════════════════════════════════════
+📋 TEST: [Task Name]
+═══════════════════════════════════════
+Action: [What you did]
+Expected: [What should happen]
+Actual: [What actually happened]
+Evidence: [TX hash / values before-after]
+Result: ✅ PASS / ❌ FAIL
+═══════════════════════════════════════
+```
 
-⛔ **AFTER ANY FIX/CHANGE:**
-1. Run FULL regression (ALL tests, not just the fix!)
-2. Verify fix works + nothing else broke
-3. **THEN** start Production Mode on $APP_PORT_1
-4. Never complete with only Test Mode running!
+**⛔ DO NOT STOP after starting server!**
+**⛔ Execute ALL test tasks!**
+**⛔ Output result for EACH test!**
+
+---
+
+⛔ **BLOCKING CHECKPOINTS** ⛔
+
+At each phase, OUTPUT checkpoint:
+```
+═══════════════════════════════════════
+⛔ CHECKPOINT: [Phase Name]
+═══════════════════════════════════════
+[Required output]
+═══════════════════════════════════════
+✅ CHECKPOINT PASSED
+═══════════════════════════════════════
+```
+
+**If you can't output checkpoint = you skipped something = GO BACK!**
+
+---
+
+⛔ **TESTING PROGRESS TRACKING** ⛔
+
+After every 3-4 tests, show progress:
+```
+📊 TESTING PROGRESS: X/Y tasks completed
+✅ Task 1 - PASS
+✅ Task 2 - PASS
+🔄 Task 3 - IN PROGRESS
+⏳ Task 4 - pending
+```
 
 ---
 
@@ -287,6 +320,35 @@ This script will:
 
 **⛔ CRITICAL: Without $APP_PORT_1 = NO APP FOR USER = NOT COMPLETE!**
 **⛔ CRITICAL: Values MUST update in UI after TX = THIS IS #1 BUG!**
+
+---
+
+⛔ **FINAL COMPLETION CHECKPOINT (MANDATORY!)** ⛔
+
+**Before calling finish(), OUTPUT this checkpoint:**
+```
+═══════════════════════════════════════
+⛔ FINAL COMPLETION CHECKPOINT
+═══════════════════════════════════════
+TASKS COMPLETED: X/X (must be 100%!)
+TESTS PASSED: X/X (must be 100%!)
+
+Test Results Summary:
+✅ [Test 1] - PASS
+✅ [Test 2] - PASS
+...
+
+Production Mode: RUNNING on $APP_PORT_1
+Contract Initialized: YES
+Data Refresh Verified: YES
+Browser Test Report: CREATED
+═══════════════════════════════════════
+✅ ALL CHECKS PASSED - Ready for finish()
+═══════════════════════════════════════
+```
+
+**⛔ If you cannot output this checkpoint = you skipped testing!**
+**⛔ Go back and execute ALL tests before completing!**
 
 **Vite HMR:** Don't restart server, just edit files!
 </LUMIO_VIBE_RUNTIME>

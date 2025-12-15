@@ -185,9 +185,7 @@ class LumioService:
 
             encode_url = f'{self.rpc_url}/v1/transactions/encode_submission'
             async with httpx.AsyncClient() as client:
-                encode_resp = await client.post(
-                    encode_url, json=raw_txn, timeout=10.0
-                )
+                encode_resp = await client.post(encode_url, json=raw_txn, timeout=10.0)
                 encode_resp.raise_for_status()
                 encoded_hex = encode_resp.json()
 
@@ -220,9 +218,7 @@ class LumioService:
             logger.error(f'Error submitting transaction: {e}')
             return False
 
-    async def batch_deduct(
-        self, users: list[str], tokens_amounts: list[int]
-    ) -> bool:
+    async def batch_deduct(self, users: list[str], tokens_amounts: list[int]) -> bool:
         """Deduct tokens from users' balances.
 
         Args:
@@ -239,9 +235,7 @@ class LumioService:
             logger.error('Users and amounts length mismatch')
             return False
 
-        normalized_users = [
-            u if u.startswith('0x') else f'0x{u}' for u in users
-        ]
+        normalized_users = [u if u.startswith('0x') else f'0x{u}' for u in users]
         str_amounts = [str(a) for a in tokens_amounts]
 
         payload = {

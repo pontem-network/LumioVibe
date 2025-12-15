@@ -108,16 +108,59 @@ After scaffold-fast.sh, you only customize the contract code and update UI!
 Config is stored at /workspace/.lumio/config.yaml after first scaffold run.
 </IMPORTANT>
 
+## ⛔ CRITICAL: BLOCKING CHECKPOINTS
+
+<IMPORTANT>
+⛔⛔⛔ YOU CANNOT SKIP THESE CHECKPOINTS! ⛔⛔⛔
+
+At each checkpoint you MUST:
+1. STOP and output the required information
+2. WAIT until output is complete
+3. ONLY THEN proceed to next phase
+
+**CHECKPOINT FORMAT:**
+```
+═══════════════════════════════════════
+⛔ CHECKPOINT: [Phase Name]
+═══════════════════════════════════════
+[Required output here]
+═══════════════════════════════════════
+✅ CHECKPOINT PASSED - Proceeding to next phase
+═══════════════════════════════════════
+```
+
+**If you cannot produce the required output = you skipped something = GO BACK!**
+</IMPORTANT>
+
+---
+
 ## ⛔ CRITICAL: Task Management with TodoWrite
 
 <IMPORTANT>
-⛔⛔⛔ YOU MUST USE TodoWrite THROUGHOUT THE WORKFLOW! ⛔⛔⛔
+⛔⛔⛔ TASKS ARE MANDATORY AND BLOCKING! ⛔⛔⛔
 
-**Why tasks are mandatory:**
-1. User sees your progress in real-time
-2. You don't forget steps
-3. Proves you completed each phase
-4. Makes debugging easier if something fails
+**You CANNOT proceed to next phase until:**
+1. You have called TodoWrite with tasks for current phase
+2. You can see the task list in the output
+3. At least one task is marked "in_progress"
+
+**Why this is BLOCKING:**
+- If you don't create tasks, you WILL forget steps
+- If you don't track progress, user can't see what you're doing
+- If you skip testing tasks, app will be broken
+
+**TASK CREATION IS A CHECKPOINT:**
+```
+═══════════════════════════════════════
+⛔ CHECKPOINT: Tasks Created for Phase X
+═══════════════════════════════════════
+Created X tasks:
+1. [task 1] - pending
+2. [task 2] - pending
+...
+Starting with task 1...
+═══════════════════════════════════════
+```
 
 **When to create/update tasks:**
 - Phase 0: Create tasks for assumption review
@@ -1476,59 +1519,197 @@ Count the tasks - you should have:
 
 ---
 
-#### Step 1: Start Test Mode Server
+#### Step 1: Start Test Mode and OUTPUT CHECKPOINT
 
 ```bash
 cd frontend && pnpm start:test &
 ```
 
-This automatically kills any process on `$APP_PORT_2` and starts with `--strictPort`.
-
----
-
-#### Step 2: Console Monitoring (CHECK FIRST!)
-
 <IMPORTANT>
-⛔ CONSOLE MUST BE CLEAN ⛔
+⛔⛔⛔ "STARTING SERVER" IS NOT THE END - IT'S THE BEGINNING! ⛔⛔⛔
 
-Open browser DevTools → Console BEFORE any testing!
+After starting the server, you MUST:
+1. Wait for "ready in X ms" message
+2. Verify server is running on $APP_PORT_2
+3. OUTPUT the checkpoint below
+4. THEN proceed to execute EACH test task
 
-**FAIL if any of:**
-- ❌ Red errors (TypeError, Failed to fetch, etc.)
-- ❌ React rendering errors
-- ❌ Uncaught exceptions
-- ❌ viewFunction/callFunction errors
-
-**OK:**
-- ⚠️ Warnings (StrictMode, HMR, dev mode)
+**DO NOT STOP HERE! Starting the server is just step 1 of testing!**
 </IMPORTANT>
 
----
+**MANDATORY OUTPUT after starting server:**
+```
+═══════════════════════════════════════
+⛔ CHECKPOINT: Test Mode Started
+═══════════════════════════════════════
+✅ Server running on port $APP_PORT_2
+✅ Created X test tasks
+✅ Ready to execute tests
 
-#### Step 3: Initialize Contract (if required)
-
-```bash
-# Via CLI if needed
-cd contract && lumio move run --function-id $DEPLOYER_ADDRESS::module_name::initialize --assume-yes
+Now executing tests one by one...
+═══════════════════════════════════════
 ```
 
 ---
 
-#### Step 4: Mock Data Detection
+#### Step 2: EXECUTE TEST LOOP (THE ACTUAL TESTING!)
 
 <IMPORTANT>
-⛔ PROOF DATA IS REAL ⛔
+⛔⛔⛔ THIS IS WHERE THE ACTUAL TESTING HAPPENS! ⛔⛔⛔
+
+"Starting test mode" was just setup. NOW you must EXECUTE each test!
+
+**EXECUTION LOOP - Repeat for EACH task:**
+```
+1. Mark task as "in_progress" (TodoWrite)
+2. Execute the test action
+3. Record the result (what happened?)
+4. Output the evidence (TX hash, screenshot description, values)
+5. Mark task as "completed" if PASSED, or fix if FAILED
+6. Move to next task
+```
+
+**YOU MUST OUTPUT FOR EACH TEST:**
+```
+═══════════════════════════════════════
+📋 TEST: [Task Name]
+═══════════════════════════════════════
+Action: [What you did]
+Expected: [What should happen]
+Actual: [What actually happened]
+Evidence: [TX hash / values before-after / error message]
+Result: ✅ PASS / ❌ FAIL
+═══════════════════════════════════════
+```
+
+**If FAIL:** Fix the issue, then re-test and output again!
+</IMPORTANT>
+
+**Example test execution:**
+```
+═══════════════════════════════════════
+📋 TEST: Test initialize() - verify status changes
+═══════════════════════════════════════
+Action: Called initialize() via Test Mode UI
+Expected: Status should change to "Initialized"
+Actual: Status changed from "Not initialized" to "Initialized"
+Evidence: TX hash 0x1234...abcd
+Result: ✅ PASS
+═══════════════════════════════════════
+
+═══════════════════════════════════════
+📋 TEST: Test stake() - verify balance decreases
+═══════════════════════════════════════
+Action: Entered 10 in stake input, clicked Stake button
+Expected: Balance should decrease by 10, Staked should increase by 10
+Actual: Balance: 100 → 90, Staked: 0 → 10
+Evidence: TX hash 0x5678...efgh
+Result: ✅ PASS
+═══════════════════════════════════════
+```
+
+---
+
+#### Step 3: Initialize Contract (EXECUTE AND OUTPUT!)
+
+<IMPORTANT>
+This is your FIRST test task! Execute and OUTPUT result!
+</IMPORTANT>
+
+```bash
+cd contract && lumio move run --function-id $DEPLOYER_ADDRESS::module_name::initialize --assume-yes
+```
+
+**MANDATORY OUTPUT:**
+```
+═══════════════════════════════════════
+📋 TEST: Initialize contract
+═══════════════════════════════════════
+Action: lumio move run --function-id ...::initialize
+Expected: Transaction success, contract initialized
+Actual: [Transaction result]
+Evidence: TX hash 0x...
+Result: ✅ PASS / ❌ FAIL
+═══════════════════════════════════════
+```
+
+---
+
+#### Step 4: Mock Data Detection (EXECUTE AND OUTPUT!)
+
+<IMPORTANT>
+⛔ THIS IS A CRITICAL TEST - MUST OUTPUT EVIDENCE! ⛔
+</IMPORTANT>
+
+**Execute these steps and OUTPUT results:**
 
 1. Note displayed values BEFORE action
 2. Execute ANY state-changing action
-3. Values MUST CHANGE after action
+3. Note displayed values AFTER action
+4. Compare BEFORE vs AFTER
 
-**If values DON'T change = MOCK DATA = FIX!**
+**MANDATORY OUTPUT:**
+```
+═══════════════════════════════════════
+📋 TEST: Mock Data Detection
+═══════════════════════════════════════
+BEFORE action:
+- Balance: [value]
+- Other field: [value]
+
+Action performed: [what you clicked]
+
+AFTER action:
+- Balance: [new value]
+- Other field: [new value]
+
+VALUES CHANGED: YES / NO
+Evidence: [TX hash if applicable]
+Result: ✅ PASS (values changed) / ❌ FAIL (mock data detected!)
+═══════════════════════════════════════
+```
+
+**If FAIL (values didn't change):**
+1. STOP testing
+2. Fix the mock data issue
+3. Re-run this test
+4. Only continue when PASS
+
+---
+
+#### Step 5: CONTINUE EXECUTING ALL REMAINING TASKS
+
+<IMPORTANT>
+⛔⛔⛔ DO NOT STOP UNTIL ALL TASKS ARE COMPLETED! ⛔⛔⛔
+
+You have created 10+ test tasks. You must execute EACH one!
+
+**For each remaining task:**
+1. Mark "in_progress"
+2. Execute test
+3. Output result in the format above
+4. Mark "completed" or fix and retry
+5. Move to next task
+
+**Progress tracking:**
+After every 3-4 tests, output progress:
+```
+═══════════════════════════════════════
+📊 TESTING PROGRESS: X/Y tasks completed
+═══════════════════════════════════════
+✅ Task 1 - PASS
+✅ Task 2 - PASS
+✅ Task 3 - PASS
+🔄 Task 4 - IN PROGRESS
+⏳ Task 5 - pending
+...
+═══════════════════════════════════════
+```
 </IMPORTANT>
 
 ---
 
-#### Step 5: AGGRESSIVE Edge Case Testing
+#### Step 6: Edge Case Testing (EXECUTE EACH AND OUTPUT!)
 
 <IMPORTANT>
 ⛔ EDGE CASES CATCH 80% OF BUGS! ⛔
