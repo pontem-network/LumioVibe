@@ -2305,15 +2305,15 @@ cd frontend
 - `vite --port XXXX` - no auto-kill!
 - `export APP_PORT_1=XXXX` - DO NOT set port manually!
 
-✅ **ONLY allowed command:**
+✅ **ONLY allowed command (ALWAYS with & for background!):**
 ```bash
-cd frontend
-./start.sh          # Production
-./start.sh --test   # Test mode
+cd frontend && ./start.sh &          # Production (MUST have &)
+cd frontend && ./start.sh --test &   # Test mode (MUST have &)
 ```
 
 ⛔ **NEVER do this:**
 ```bash
+./start.sh                             # WRONG! Missing & - will block terminal!
 export APP_PORT_1=51633 && ./start.sh  # WRONG! Script validates port range!
 ```
 </IMPORTANT>
@@ -2344,16 +2344,16 @@ The frontend supports TWO wallet modes:
 | **Production** (default) | - | Pontem Wallet popup, user confirms each TX |
 | **Test** | `VITE_WALLET_MODE=test` | Auto-signed with deployer's private key |
 
-**Commands (use ./start.sh ONLY!):**
+**Commands (use ./start.sh with & ONLY!):**
 ```bash
-cd frontend
-
 # Production Mode (for users) - on APP_PORT_1
-./start.sh
+cd frontend && ./start.sh &
 
 # Test Mode (for agent testing) - on APP_PORT_1 with test wallet
-./start.sh --test
+cd frontend && ./start.sh --test &
 ```
+
+⚠️ **ALWAYS add `&` at the end to run in background!**
 
 **What ./start.sh does:**
 1. Verifies $APP_PORT_1 is set
