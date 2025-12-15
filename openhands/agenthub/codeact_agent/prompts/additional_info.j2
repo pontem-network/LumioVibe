@@ -123,21 +123,20 @@ await stake(parseFloat(input) * 1e8);  // handler ALSO converts!
 
 ⛔ **PORT MANAGEMENT - CRITICAL!** ⛔
 
-**ALWAYS use ./start.sh script (not pnpm commands!):**
+**ALWAYS use ./start.sh with & (background!):**
 ```bash
-cd frontend
-./start.sh          # Production on $APP_PORT_1
-./start.sh --test   # Test Mode on $APP_PORT_1
+cd frontend && ./start.sh &          # Production on $APP_PORT_1
+cd frontend && ./start.sh --test &   # Test Mode on $APP_PORT_1
 ```
 
 The script automatically:
-1. Validates $APP_PORT_1 is set
+1. Validates $APP_PORT_1 is set and in range 50000-54999
 2. Kills process on $APP_PORT_1
 3. Verifies port is free
 4. Uses --strictPort (won't pick random port)
 
-❌ NEVER: `pnpm dev`, `pnpm start:prod`, `pnpm start:test` (will show error!)
-✅ ALWAYS: `./start.sh` or `./start.sh --test`
+❌ NEVER: `pnpm dev`, `pnpm start:prod`, `pnpm start:test`, `export APP_PORT_1=...`
+✅ ALWAYS: `cd frontend && ./start.sh &` (with &!)
 
 ---
 
