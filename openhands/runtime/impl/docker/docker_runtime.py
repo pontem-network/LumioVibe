@@ -550,22 +550,43 @@ class DockerRuntime(ActionExecutionClient):
             # Process overlay mounts (read-only lower with per-container COW)
             overlay_mounts = self._process_overlay_mounts()
 
-            self.container = self.docker_client.containers.run(
-                self.runtime_container_image,
-                command=command,
-                # Override the default 'bash' entrypoint because the command is a binary.
-                entrypoint=[],
-                network_mode=network_mode,
-                ports=port_mapping,
-                working_dir='/openhands/code/',  # do not change this!
-                name=self.container_name,
-                detach=True,
-                environment=environment,
-                volumes=volumes,  # type: ignore
-                mounts=overlay_mounts,  # type: ignore
-                device_requests=device_requests,
-                **(self.config.sandbox.docker_runtime_kwargs or {}),
-            )
+            def _create_container():
+                return self.docker_client.containers.run(
+                    self.runtime_container_image,
+                    command=command,
+                    # Override the default 'bash' entrypoint because the command is a binary.
+                    entrypoint=[],
+                    network_mode=network_mode,
+                    ports=port_mapping,
+                    working_dir='/openhands/code/',  # do not change this!
+                    name=self.container_name,
+                    detach=True,
+                    environment=environment,
+                    volumes=volumes,  # type: ignore
+                    mounts=overlay_mounts,  # type: ignore
+                    device_requests=device_requests,
+                    **(self.config.sandbox.docker_runtime_kwargs or {}),
+                )
+
+            try:
+                self.container = _create_container()
+            except docker.errors.APIError as api_error:
+                if api_error.status_code == 409:
+                    self.log(
+                        'warning',
+                        f'Container {self.container_name} already exists. Removing and recreating...',
+                    )
+                    try:
+                        old_container = self.docker_client.containers.get(
+                            self.container_name
+                        )
+                        old_container.remove(force=True)
+                    except docker.errors.NotFound:
+                        pass
+                    self.container = _create_container()
+                else:
+                    raise
+
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
         except Exception as e:

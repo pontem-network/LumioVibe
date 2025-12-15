@@ -171,8 +171,9 @@ cat > "$OUTPUT_DIR/spec.md" <<EOF
 Address: $DEPLOYER_ADDRESS
 
 ## Contract
-Module: ${PROJECT_NAME}::counter
-Status: Ready to deploy
+File: contract/sources/contract.move
+Module: ${PROJECT_NAME}::counter (⚠️ RENAME MODULE to match your project!)
+Status: Ready to customize and deploy
 
 ## Commands
 

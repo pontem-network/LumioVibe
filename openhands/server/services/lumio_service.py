@@ -20,10 +20,10 @@ class LumioService:
             True if the user is whitelisted, False otherwise
         """
         if not self.contract_address:
-            logger.warning(
-                'VIBE_BALANCE_CONTRACT not configured, skipping whitelist check'
+            logger.error(
+                'VIBE_BALANCE_CONTRACT not configured - whitelist check failed (fail-closed)'
             )
-            return True
+            return False
 
         # Normalize address format
         if not user_address.startswith('0x'):

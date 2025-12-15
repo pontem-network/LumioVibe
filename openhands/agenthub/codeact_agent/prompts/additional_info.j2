@@ -54,8 +54,9 @@ const result = await callEntry('stake', [amount]);
 if (result) await refreshData();
 ```
 
-**THREE FILES MUST BE CUSTOMIZED (not template defaults!):**
-- `useContract.ts` - MODULE_NAME + ALL functions
+**FOUR FILES MUST BE CUSTOMIZED (not template defaults!):**
+- `contract/sources/contract.move` - RENAME module from `counter` to YOUR module name!
+- `useContract.ts` - MODULE_NAME must match your contract module!
 - `Documentation.tsx` - YOUR contract functions (not counter!)
 - `Home.tsx` - YOUR contract UI
 
@@ -63,7 +64,25 @@ if (result) await refreshData();
 
 ---
 
-⛔ **DECIMALS: CONVERT ONCE ONLY!** ⛔
+⛔ **UNIT TESTS BEFORE DEPLOY/BROWSER** ⛔
+
+**Move Tests (Phase 2.2):**
+```bash
+cd contract && lumio move test --package-dir .
+```
+- Edit `contract_tests.move` for YOUR contract
+- ALL tests must pass before deploy!
+
+**Frontend Tests (Phase 4.2):**
+```bash
+cd frontend && pnpm test
+```
+- Use `toChainUnits`/`toHumanUnits` from `src/utils/decimals.ts`
+- Add contract-specific tests to `decimals.test.ts`
+
+---
+
+⛔ **DECIMALS: USE UTILITIES!** ⛔
 
 ```typescript
 // ❌ WRONG - double conversion:
@@ -72,6 +91,43 @@ await stake(parseFloat(input) * 1e8);  // handler ALSO converts!
 
 // ✅ CORRECT - convert in ONE place only!
 ```
+
+---
+
+⛔ **PORT MANAGEMENT - CRITICAL!** ⛔
+
+**ALWAYS use npm scripts (not raw vite commands!):**
+```bash
+pnpm start:prod   # Production on $APP_PORT_1
+pnpm start:test   # Test Mode on $APP_PORT_2
+```
+
+These scripts automatically:
+1. Kill process on target port
+2. Use --strictPort (won't pick random port)
+
+❌ NEVER: `pnpm dev --host --port $APP_PORT_1` (Vite picks random port if busy!)
+✅ ALWAYS: `pnpm start:prod` or `pnpm start:test`
+
+---
+
+⛔ **QA VERIFICATION (Phase 4.3) - MANDATORY!** ⛔
+
+**Run verification script BEFORE browser testing:**
+```bash
+bash /openhands/templates/verify-integration.sh PROJECT_DIR
+```
+
+**Manual QA Checklist:**
+- [ ] "Connect Wallet" button visible
+- [ ] CONTRACT_ADDRESS matches deployed address
+- [ ] MODULE_NAME matches contract module (NOT 'counter'!)
+- [ ] ALL entry/view functions have wrappers
+- [ ] Using toChainUnits/toHumanUnits (no manual 1e8!)
+- [ ] Numbers display as "1.5" not "150000000"
+- [ ] No "undefined" or "[object Object]" in UI
+
+**⛔ DO NOT proceed until verification script PASSES!**
 
 ---
 
@@ -98,6 +154,27 @@ await stake(parseFloat(input) * 1e8);  // handler ALSO converts!
 2. Verify fix works + nothing else broke
 3. **THEN** start Production Mode on $APP_PORT_1
 4. Never complete with only Test Mode running!
+
+---
+
+⛔ **BROWSER TEST REPORT (MANDATORY!)** ⛔
+
+**Before Production Mode, create Browser Test Report with:**
+1. ALL entry functions tested - TX hash for EACH!
+2. ALL view functions tested - format verified!
+3. User journeys completed - first-time, full workflow, error recovery
+4. Edge cases tested - zeros, max values, invalid inputs
+5. OVERALL: PASS status
+
+**Report Template:**
+```
+| Function | Tested | TX Hash | UI Updated |
+|----------|--------|---------|------------|
+| initialize | ✅/❌ | 0x... | ✅/❌ |
+| [each function] | | | |
+```
+
+**⛔ NO Production Mode without Browser Test Report showing PASS!**
 
 ---
 
@@ -132,10 +209,19 @@ This script will:
 ---
 
 **Before finish():**
-- [ ] useContract.ts MODULE_NAME matches contract (NOT 'counter'!)
+- [ ] contract.move module renamed from 'counter' to YOUR module name!
+- [ ] **Move tests pass:** `lumio move test` shows all green
+- [ ] useContract.ts MODULE_NAME matches contract module (NOT 'counter'!)
+- [ ] **Frontend tests pass:** `pnpm test` shows all green
 - [ ] Documentation.tsx describes YOUR functions (NOT counter template!)
-- [ ] Decimals converted in ONE place only (no double conversion!)
-- [ ] Full regression test passed in Test Mode
+- [ ] Using `toChainUnits`/`toHumanUnits` (no manual 1e8 conversion!)
+- [ ] **⛔ QA verification PASSED:** `bash verify-integration.sh` shows green
+- [ ] **⛔ Visual inspection done:** all UI elements visible, no "undefined"
+- [ ] **⛔ Browser Test Report CREATED** with evidence (TX hashes!)
+- [ ] **⛔ All entry functions tested** with TX evidence
+- [ ] **⛔ All view functions tested** with format verification
+- [ ] **⛔ User journeys completed** (first-time, full workflow, error recovery)
+- [ ] **⛔ Browser Test Report shows OVERALL: PASS**
 - [ ] **⛔ Production Mode MUST BE running on $APP_PORT_1** ← USER'S APP!
 - [ ] **⛔ Contract initialized for Production** (if has initialize())
 - [ ] No console errors

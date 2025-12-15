@@ -1,4 +1,5 @@
 import os
+import secrets
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
@@ -21,7 +22,16 @@ from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 
 OPENHANDS_DIR = os.path.expanduser('~/.openhands')
-SESSION_SECRET_KEY = os.environ.get('SESSION_SECRET_KEY', 'MNMC-toqC-j2rd-aaU8')
+
+_env_session_secret = os.environ.get('SESSION_SECRET_KEY')
+if _env_session_secret:
+    SESSION_SECRET_KEY = _env_session_secret
+else:
+    SESSION_SECRET_KEY = secrets.token_urlsafe(32)
+    logger.openhands_logger.warning(
+        'SESSION_SECRET_KEY not set in environment. Generated random secret. '
+        'Set SESSION_SECRET_KEY environment variable for persistent sessions across restarts.'
+    )
 
 
 class OpenHandsConfig(BaseModel):

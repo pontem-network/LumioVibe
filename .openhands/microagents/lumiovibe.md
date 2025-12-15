@@ -303,7 +303,7 @@ cd {project_name}
 **This ONE command creates EVERYTHING:**
 - ✅ Lumio account initialized and funded (if not exists)
 - ✅ Deployer address obtained
-- ✅ `contract/` with Move.toml (address already set!) + counter.move
+- ✅ `contract/` with Move.toml (address already set!) + contract.move template
 - ✅ Contract compiled (framework cached!)
 - ✅ `frontend/` with COMPLETE React app:
   - All config files (package.json, vite.config.ts, tsconfig.json, tailwind.config.js)
@@ -314,17 +314,34 @@ cd {project_name}
 - ✅ spec.md with project info
 
 **After running scaffold-fast.sh, you only need to:**
-1. Customize the Move contract for user's requirements
-2. Compile, get approval, deploy
-3. Update useContract.ts with the deployed address
-4. Customize Home.tsx for contract functions
-5. Run `pnpm install && pnpm dev --host --port $APP_PORT_1`
+1. **⚠️ Rename module in contract.move** - change `counter` to your actual module name!
+2. Customize the Move contract for user's requirements
+3. Compile, get approval, deploy
+4. **⚠️ Update MODULE_NAME in useContract.ts** to match the renamed module!
+5. Customize Home.tsx for contract functions
+6. Run `pnpm install && pnpm start:prod`
 
 ---
 
 ### Phase 2: Implement Contract
 
-1. **Write contract** based on confirmed spec.md
+<IMPORTANT>
+⚠️ The scaffold creates `contract/sources/contract.move` with module name `counter`.
+You MUST rename the module to match your project!
+
+Example: For a voting dApp, change:
+```move
+module my_project::counter {  // ❌ Wrong - default template
+```
+to:
+```move
+module my_project::voting {   // ✅ Correct - your module name
+```
+
+Then update `MODULE_NAME` in `useContract.ts` to match!
+</IMPORTANT>
+
+1. **Write contract** based on confirmed spec.md (in `contract/sources/contract.move`)
 2. **Compile with retry logic:**
 
 ```bash
@@ -339,6 +356,119 @@ lumio move compile --package-dir .
 | 2 | Analyze error pattern more carefully, fix, retry |
 | 3 | **STOP AND ASK USER:** "I've tried twice. The error is {X}. Should I try {alternative approach}?" |
 | 4-5 | Only if user explicitly says continue |
+
+---
+
+### Phase 2.2: Move Unit Tests
+
+<IMPORTANT>
+⚠️ Write tests BEFORE deploying! Deployment is IRREVERSIBLE.
+Tests catch bugs for FREE (no gas), deployment bugs are EXPENSIVE.
+</IMPORTANT>
+
+The scaffold creates `contract/sources/contract_tests.move` with example tests.
+You MUST customize these tests for YOUR contract!
+
+#### Step 1: Update Test Module
+
+```move
+#[test_only]
+module my_project::my_module_tests {  // ← Match YOUR module name!
+    use my_project::my_module;
+
+    // ... tests
+}
+```
+
+#### Step 2: Write Tests by Category
+
+**2.1: Happy Path Tests** (normal operations work)
+```move
+#[test(account = @my_project)]
+fun test_initialize_succeeds(account: &signer) {
+    my_module::initialize(account);
+    assert!(my_module::is_initialized(signer::address_of(account)), 1);
+}
+
+#[test(user = @0x123, admin = @my_project)]
+fun test_stake_succeeds(user: &signer, admin: &signer) {
+    my_module::initialize(admin);
+    my_module::stake(user, 1000000000);
+    let (staked, _, _, _) = my_module::get_stake_info(signer::address_of(user));
+    assert!(staked == 1000000000, 2);
+}
+```
+
+**2.2: Error Path Tests** (invalid operations fail correctly)
+```move
+#[test(account = @my_project)]
+#[expected_failure(abort_code = 2)] // E_ALREADY_INITIALIZED
+fun test_double_init_fails(account: &signer) {
+    my_module::initialize(account);
+    my_module::initialize(account); // Should abort!
+}
+
+#[test(user = @0x123)]
+#[expected_failure(abort_code = 5)] // E_INSUFFICIENT_BALANCE
+fun test_stake_too_much_fails(user: &signer) {
+    my_module::stake(user, 999999999999999); // Should abort!
+}
+```
+
+**2.3: Edge Case Tests** (boundary conditions)
+```move
+#[test(account = @my_project)]
+fun test_stake_minimum_amount(account: &signer) {
+    my_module::initialize(account);
+    my_module::stake(account, 1); // Minimum possible
+    // Verify it worked
+}
+
+#[test(account = @my_project)]
+fun test_stake_maximum_amount(account: &signer) {
+    my_module::initialize(account);
+    my_module::stake(account, 18446744073709551615); // u64::MAX
+    // Verify it worked or failed gracefully
+}
+```
+
+#### Step 3: Run Tests
+
+```bash
+cd contract
+lumio move test --package-dir .
+```
+
+**Expected output:**
+```
+Running Move unit tests
+[ PASS    ] my_project::my_module_tests::test_initialize_succeeds
+[ PASS    ] my_project::my_module_tests::test_stake_succeeds
+[ PASS    ] my_project::my_module_tests::test_double_init_fails
+...
+Test result: OK. Total tests: 6; passed: 6; failed: 0
+```
+
+#### Step 4: Fix Until All Green
+
+<IMPORTANT>
+⛔ DO NOT proceed to deployment until ALL tests pass!
+
+If tests fail:
+1. Read the error message carefully
+2. Fix the contract OR fix the test (if test was wrong)
+3. Re-run tests
+4. Repeat until green
+
+**Smart Retry Rules apply here too** - after 2 failed fix attempts, ask user!
+</IMPORTANT>
+
+**Test Checklist before deployment:**
+- [ ] Happy path tests pass for ALL entry functions
+- [ ] Error path tests verify ALL error codes
+- [ ] Edge cases tested (zero, min, max values)
+- [ ] Test module name matches contract module name
+- [ ] `lumio move test` shows "Test result: OK"
 
 ---
 
@@ -595,8 +725,12 @@ The scaffold creates Documentation.tsx with COUNTER example:
 
 **Start dev server ONCE on the mapped port:**
 ```bash
-pnpm dev --host --port $APP_PORT_1
+pnpm start:prod
 ```
+
+This command automatically:
+1. Kills any process on `$APP_PORT_1`
+2. Starts Vite with `--strictPort` (won't pick random port)
 
 The frontend will be accessible via the **App tab** in OpenHands UI (port is auto-detected).
 
@@ -608,7 +742,333 @@ The frontend will be accessible via the **App tab** in OpenHands UI (port is aut
 
 ---
 
-### Phase 4.5: AGGRESSIVE Testing in TEST MODE
+### Phase 4.2: Frontend Unit Tests
+
+<IMPORTANT>
+⚠️ Run unit tests BEFORE browser testing!
+Unit tests catch logic bugs faster than clicking through UI.
+</IMPORTANT>
+
+The scaffold creates `src/utils/decimals.ts` with conversion utilities and
+`src/utils/decimals.test.ts` with example tests.
+
+#### Step 1: Use Decimal Utilities
+
+Instead of manual conversion in every file, use the centralized utilities:
+
+```typescript
+// ❌ WRONG - manual conversion everywhere
+const chainAmount = parseFloat(input) * 100000000;
+const displayAmount = balance / 100000000;
+
+// ✅ CORRECT - use utilities
+import { toChainUnits, toHumanUnits, formatAmount } from '../utils/decimals';
+const chainAmount = toChainUnits(parseFloat(input));
+const displayAmount = toHumanUnits(balance);
+```
+
+#### Step 2: Add Contract-Specific Tests
+
+Edit `src/utils/decimals.test.ts` to add tests for YOUR contract logic:
+
+```typescript
+describe('staking calculations', () => {
+  it('calculates reward correctly', () => {
+    const stakedAmount = toChainUnits(100); // 100 tokens
+    const rewardRate = 0.1; // 10% APY
+    const expectedReward = toChainUnits(10);
+    // Add your reward calculation logic and test it
+  });
+
+  it('validates minimum stake amount', () => {
+    const minStake = toChainUnits(1); // 1 token minimum
+    expect(isValidStakeAmount(toChainUnits(0.5))).toBe(false);
+    expect(isValidStakeAmount(toChainUnits(1))).toBe(true);
+  });
+});
+```
+
+#### Step 3: Run Tests
+
+```bash
+cd frontend
+pnpm test
+```
+
+**Expected output:**
+```
+✓ src/utils/decimals.test.ts (6 tests) 2ms
+  ✓ decimal conversions
+    ✓ converts 1 human unit to correct chain units
+    ✓ converts fractional human units correctly
+    ✓ converts chain units to human units
+    ✓ handles zero correctly
+    ✓ formats amount with default decimals
+    ✓ formats amount with custom decimals
+
+Test Files  1 passed (1)
+Tests       6 passed (6)
+```
+
+#### Step 4: Fix Until All Green
+
+<IMPORTANT>
+⛔ DO NOT proceed to browser testing until unit tests pass!
+
+If tests fail:
+1. Read the error message
+2. Fix the utility OR fix the test
+3. Re-run `pnpm test`
+4. Repeat until green
+</IMPORTANT>
+
+**Frontend Test Checklist:**
+- [ ] Decimal conversion tests pass
+- [ ] Contract-specific logic tests added and pass
+- [ ] `pnpm test` shows all green
+- [ ] Using `toChainUnits`/`toHumanUnits` instead of manual conversion
+
+---
+
+### Phase 4.3: QA Verification (MANDATORY - DO NOT SKIP!)
+
+<IMPORTANT>
+⛔⛔⛔ THIS PHASE IS MANDATORY! ⛔⛔⛔
+
+User has NEVER been able to use the app after generation due to integration bugs.
+You MUST complete ALL checklists below before browser testing!
+
+Common bugs that break the app:
+- Missing "Connect Wallet" button
+- Fields showing "undefined" or not displaying at all
+- Decimal values showing raw chain units (150000000 instead of 1.5)
+- MODULE_NAME mismatch between contract and frontend
+- Missing function wrappers in useContract.ts
+</IMPORTANT>
+
+#### Step 0: Run Automated Verification Script
+
+```bash
+bash /openhands/templates/verify-integration.sh PROJECT_DIR
+```
+
+This script automatically checks:
+- File existence
+- Contract address match
+- Module name match
+- Function coverage
+- Decimal usage
+- UI element presence
+- TypeScript compilation
+
+**⛔ If script shows FAIL - fix issues before proceeding!**
+
+#### Checklist 1: UI Completeness (verify against spec.md)
+
+<IMPORTANT>
+Open spec.md and verify EVERY item is implemented in the UI!
+</IMPORTANT>
+
+**1.1 Core UI Elements:**
+- [ ] **"Connect Wallet" button** is visible when not connected
+- [ ] **Account address** displays when connected (truncated: 0x1234...5678)
+- [ ] **Network indicator** shows "Lumio Testnet"
+- [ ] **Loading states** show during transactions
+- [ ] **Error messages** display when operations fail
+
+**1.2 Data Display (from spec.md):**
+For EACH piece of data in spec.md, verify:
+- [ ] Field is displayed in UI (not missing!)
+- [ ] Field shows actual value (not "undefined", not empty)
+- [ ] Field shows human-readable format (1.5 not 150000000)
+- [ ] Field updates after relevant transactions
+
+**1.3 Action Buttons (from spec.md):**
+For EACH entry function in spec.md, verify:
+- [ ] Button/form exists in UI
+- [ ] Button is clickable when conditions met
+- [ ] Button is disabled during transaction
+- [ ] Button calls correct contract function
+
+**1.4 Documentation Page:**
+- [ ] ALL entry functions from contract are documented
+- [ ] ALL view functions from contract are documented
+- [ ] Function signatures match contract exactly
+- [ ] Descriptions are accurate (not template "counter" text!)
+
+---
+
+#### Checklist 2: Decimals Verification
+
+<IMPORTANT>
+⛔ DECIMALS ARE THE #1 SOURCE OF BUGS! ⛔
+
+Lumio uses 8 decimals. 1 token = 100,000,000 smallest units.
+</IMPORTANT>
+
+**2.1 Code Review:**
+```bash
+# Search for manual decimal conversion (should find NONE!)
+grep -r "1e8\|100000000\|\* 10" frontend/src --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v decimals.ts
+```
+- [ ] **No manual conversion found** (all use toChainUnits/toHumanUnits)
+- [ ] **decimals.ts utilities imported** in files that handle amounts
+
+**2.2 Display Verification:**
+- [ ] Balances show human format: "1.5" not "150000000"
+- [ ] Input fields accept human format: user types "10" not "1000000000"
+- [ ] Transaction amounts are converted correctly before sending
+
+**2.3 Round-trip Test:**
+```
+1. Note current balance displayed (e.g., "100.0")
+2. Perform action with amount "1.5"
+3. Verify balance changed by exactly 1.5 (not 150000000!)
+4. Verify displayed values are still human-readable
+```
+
+---
+
+#### Checklist 3: Integration Verification
+
+<IMPORTANT>
+⛔ INTEGRATION MISMATCHES BREAK EVERYTHING! ⛔
+
+The frontend MUST match the deployed contract EXACTLY.
+</IMPORTANT>
+
+**3.1 Address Match:**
+```bash
+# Get deployed address from spec.md
+grep "Address:" spec.md
+
+# Get address in useContract.ts
+grep "CONTRACT_ADDRESS" frontend/src/hooks/useContract.ts
+```
+- [ ] **Addresses match exactly** (including 0x prefix)
+
+**3.2 Module Name Match:**
+```bash
+# Get module name from contract
+grep "^module" contract/sources/contract.move
+
+# Get module name in useContract.ts
+grep "MODULE_NAME" frontend/src/hooks/useContract.ts
+```
+- [ ] **Module names match exactly** (e.g., 'staking' not 'counter')
+
+**3.3 Function Coverage:**
+
+For EACH entry function in contract:
+```move
+public entry fun stake(...) { ... }
+public entry fun unstake(...) { ... }
+public entry fun claim_rewards(...) { ... }
+```
+
+Verify useContract.ts has wrapper:
+```typescript
+const stake = useCallback(...);
+const unstake = useCallback(...);
+const claimRewards = useCallback(...);
+```
+
+- [ ] **ALL entry functions have wrappers**
+- [ ] **ALL view functions have wrappers**
+- [ ] **ALL functions are exported from hook**
+
+**3.4 Function Call Test:**
+```bash
+# Start test mode
+cd frontend && pnpm start:test &
+
+# Wait for server, then test view function via browser console:
+# const result = await fetch('https://api.testnet.lumio.io/v1/view', {...})
+```
+- [ ] **View function returns data** (not error)
+- [ ] **Entry function executes** (transaction hash returned)
+
+---
+
+#### Checklist 4: Visual Inspection
+
+<IMPORTANT>
+Actually LOOK at the app! Don't just check code!
+</IMPORTANT>
+
+**4.1 Open the app in browser:**
+```bash
+# Ensure test mode is running
+cd frontend && pnpm start:test &
+# Open http://localhost:$APP_PORT_2 in browser
+```
+
+**4.2 Screenshot mental checklist:**
+- [ ] Page loads without blank screen
+- [ ] No JavaScript errors in console (F12 → Console)
+- [ ] Header/navigation visible
+- [ ] Main content area has your contract UI (not template)
+- [ ] All expected fields are visible
+- [ ] All expected buttons are visible
+- [ ] No "undefined" or "NaN" values displayed
+- [ ] No "[object Object]" displayed
+- [ ] Numbers are human-readable (1.5 not 150000000)
+
+**4.3 Click-through test:**
+- [ ] Click every button - no crashes
+- [ ] Fill every input - values accepted
+- [ ] Navigate to every page - all load
+
+---
+
+#### QA Report Template
+
+After completing all checklists, create a QA report:
+
+```markdown
+## QA Verification Report
+
+### UI Completeness
+- Connect Wallet: ✅/❌
+- Data fields: X/Y implemented
+- Action buttons: X/Y implemented
+- Documentation: ✅/❌
+
+### Decimals
+- Using utilities: ✅/❌
+- Display format correct: ✅/❌
+- Round-trip test: ✅/❌
+
+### Integration
+- Address match: ✅/❌
+- Module name match: ✅/❌
+- Functions covered: X/Y
+
+### Visual Inspection
+- Page loads: ✅/❌
+- No console errors: ✅/❌
+- All elements visible: ✅/❌
+
+### Issues Found
+1. [Issue description] → [Fix required]
+2. ...
+
+### Status: PASS / FAIL
+```
+
+<IMPORTANT>
+⛔ DO NOT proceed to Phase 4.5 until QA Report shows PASS!
+
+If ANY check fails:
+1. Fix the issue
+2. Re-run the failed checklist
+3. Update QA report
+4. Repeat until ALL PASS
+</IMPORTANT>
+
+---
+
+### Phase 4.5: AGGRESSIVE Browser Testing in TEST MODE
 
 <IMPORTANT>
 **Check user's message for `<lumio-settings>` tag to determine testing mode:**
@@ -631,20 +1091,78 @@ The frontend will be accessible via the **App tab** in OpenHands UI (port is aut
 
 Every contract and frontend has bugs until proven otherwise. Your job is to BREAK the app, not confirm it works.
 
+<IMPORTANT>
+⛔⛔⛔ USER HAS NEVER BEEN ABLE TO USE THE APP! ⛔⛔⛔
+
+Previous generations had bugs that made the app unusable:
+- Missing UI elements
+- Broken transactions
+- Wrong decimal display
+- Unhandled errors
+
+YOU MUST ACTUALLY TEST EVERY FUNCTION and prove it works!
+</IMPORTANT>
+
 **MANDATORY Testing Categories:**
-1. ✅ Happy Path - normal operations work
-2. ⛔ Edge Cases - boundary values, zeros, max values
-3. ⛔ Error Paths - invalid operations rejected gracefully
-4. ⛔ State Consistency - data matches chain, balances add up
-5. ⛔ Console Clean - no JS errors
+1. ✅ Spec-based Scenarios - test EVERY function from spec.md
+2. ✅ User Journey - complete E2E flow as real user
+3. ✅ Happy Path - normal operations work
+4. ⛔ Edge Cases - boundary values, zeros, max values
+5. ⛔ Error Paths - invalid operations rejected gracefully
+6. ⛔ State Consistency - data matches chain, balances add up
+7. ⛔ Console Clean - no JS errors
+
+---
+
+#### Step 0: Generate Test Scenarios from spec.md
+
+<IMPORTANT>
+⛔ BEFORE testing, create a test plan from spec.md!
+
+Open spec.md and list ALL functions that need testing.
+</IMPORTANT>
+
+**Create Test Plan:**
+```markdown
+## Test Plan for [Project Name]
+
+### Entry Functions to Test:
+1. initialize() - Admin initializes contract
+   - Precondition: Contract not initialized
+   - Action: Click Initialize button
+   - Expected: Success message, status changes to "Initialized"
+
+2. stake(amount: u64) - User stakes tokens
+   - Precondition: Has balance, contract initialized
+   - Action: Enter 10, click Stake
+   - Expected: Balance decreases by 10, Staked increases by 10
+
+3. [Add ALL entry functions from spec.md]
+
+### View Functions to Verify:
+1. get_balance(addr) - Shows user balance
+   - Where displayed: Balance field
+   - Expected format: "100.5" (human readable)
+
+2. [Add ALL view functions from spec.md]
+
+### User Journeys:
+1. New User Flow:
+   - Connect wallet → See initial state → Initialize (if needed) → First action
+
+2. Complete Workflow:
+   - [Full workflow specific to your contract]
+```
 
 ---
 
 #### Step 1: Start Test Mode Server
 
 ```bash
-cd frontend && VITE_WALLET_MODE=test pnpm dev --host --port $APP_PORT_2 &
+cd frontend && pnpm start:test &
 ```
+
+This automatically kills any process on `$APP_PORT_2` and starts with `--strictPort`.
 
 ---
 
@@ -793,24 +1311,176 @@ For EACH view function:
 
 ---
 
-#### Step 9: Testing Summary Checklist
+#### Step 9: Spec-Based Function Testing
 
-**Before Production Mode, ALL must pass:**
+<IMPORTANT>
+⛔⛔⛔ TEST EVERY FUNCTION FROM SPEC.MD! ⛔⛔⛔
 
-| Category | Tests | Pass? |
-|----------|-------|-------|
-| Console | No red errors | [ ] |
-| Mock Detection | Data changes after TX | [ ] |
-| Edge Cases | Zeros, max values handled | [ ] |
-| Error Paths | Invalid ops rejected | [ ] |
-| State | Values match chain | [ ] |
-| Happy Path | All functions work | [ ] |
+Go through your test plan and execute EVERY test case.
+Document the result for EACH function!
+</IMPORTANT>
 
-**Found bugs? FIX THEM before Production Mode!**
+**For EACH entry function in spec.md:**
+
+```markdown
+## Function: [function_name]
+
+**Test executed:** YES/NO
+**Preconditions met:** YES/NO
+**Action performed:** [describe what you clicked/entered]
+**Transaction hash:** 0x... (or N/A if failed)
+**Result:** SUCCESS / FAILED
+**UI updated correctly:** YES/NO
+**Console errors:** NONE / [list errors]
+
+**Evidence:**
+- Before: [value before action]
+- After: [value after action]
+- Change matches expected: YES/NO
+```
+
+**For EACH view function in spec.md:**
+
+```markdown
+## View: [function_name]
+
+**Displays in UI:** YES/NO
+**Value format:** Human-readable / Raw chain units
+**Updates after TX:** YES/NO
+**Handles null/empty:** YES/NO
+```
 
 ---
 
-#### Step 10: Start Production Mode (MANDATORY!)
+#### Step 10: User Journey Testing
+
+<IMPORTANT>
+⛔ COMPLETE THE FULL USER FLOW AS A REAL USER WOULD! ⛔
+</IMPORTANT>
+
+**Journey 1: First-time User**
+```markdown
+1. [ ] Open app → Page loads without errors
+2. [ ] See "Connect Wallet" or "TEST MODE" banner
+3. [ ] View initial state → All fields show values (not undefined)
+4. [ ] Check balances → Shows human-readable amounts
+5. [ ] Initialize (if needed) → TX succeeds, state updates
+6. [ ] Perform first action → TX succeeds, UI updates
+7. [ ] Verify result → Data correct, console clean
+```
+
+**Journey 2: Full Workflow (specific to your contract)**
+```markdown
+Example for staking contract:
+1. [ ] View balance: 100 LUM displayed
+2. [ ] Enter stake amount: 10
+3. [ ] Click Stake → TX submitted
+4. [ ] Verify: Balance now 90, Staked now 10
+5. [ ] Wait for rewards (if applicable)
+6. [ ] Claim rewards → TX submitted
+7. [ ] Verify: Rewards received
+8. [ ] Unstake → TX submitted
+9. [ ] Verify: Balance restored
+```
+
+**Journey 3: Error Recovery**
+```markdown
+1. [ ] Trigger an error (invalid input, insufficient balance)
+2. [ ] Verify error message displays clearly
+3. [ ] Verify app doesn't crash
+4. [ ] Verify can continue using app after error
+```
+
+---
+
+#### Step 11: Browser Test Report (MANDATORY!)
+
+<IMPORTANT>
+⛔⛔⛔ YOU MUST CREATE THIS REPORT BEFORE PRODUCTION MODE! ⛔⛔⛔
+
+This report proves you actually tested the app.
+If you cannot fill this report = you did not test properly!
+</IMPORTANT>
+
+**Create Browser Test Report:**
+
+```markdown
+## Browser Test Report
+
+**Project:** [name]
+**Date:** [date]
+**Test Mode URL:** http://localhost:$APP_PORT_2
+
+### 1. Page Load Test
+- Page loads: ✅/❌
+- Console errors on load: NONE / [list]
+- All UI elements visible: ✅/❌
+- "Connect Wallet" or TEST banner: ✅/❌
+
+### 2. Entry Function Tests
+
+| Function | Tested | TX Hash | Result | UI Updated |
+|----------|--------|---------|--------|------------|
+| initialize | ✅/❌ | 0x... | ✅/❌ | ✅/❌ |
+| stake | ✅/❌ | 0x... | ✅/❌ | ✅/❌ |
+| [add all] | | | | |
+
+### 3. View Function Tests
+
+| Function | Displays | Format OK | Updates |
+|----------|----------|-----------|---------|
+| get_balance | ✅/❌ | ✅/❌ | ✅/❌ |
+| [add all] | | | |
+
+### 4. User Journey Tests
+
+| Journey | Completed | Issues Found |
+|---------|-----------|--------------|
+| First-time user | ✅/❌ | [list or NONE] |
+| Full workflow | ✅/❌ | [list or NONE] |
+| Error recovery | ✅/❌ | [list or NONE] |
+
+### 5. Edge Case Tests
+
+| Test | Result |
+|------|--------|
+| Empty input | ✅/❌ |
+| Zero value | ✅/❌ |
+| Max value | ✅/❌ |
+| Invalid input | ✅/❌ |
+| Double-click | ✅/❌ |
+
+### 6. Issues Found & Fixed
+
+| Issue | Severity | Fixed | How |
+|-------|----------|-------|-----|
+| [description] | HIGH/MED/LOW | ✅/❌ | [fix] |
+
+### 7. Final Status
+
+- All entry functions work: ✅/❌
+- All view functions work: ✅/❌
+- User journeys complete: ✅/❌
+- No critical issues: ✅/❌
+- Console clean: ✅/❌
+
+**OVERALL: PASS / FAIL**
+```
+
+<IMPORTANT>
+⛔ DO NOT proceed to Production Mode if:
+- ANY entry function FAILED
+- ANY view function shows wrong format
+- User journey could not complete
+- Console has red errors
+- Overall status is FAIL
+
+FIX ALL ISSUES and re-test before proceeding!
+</IMPORTANT>
+
+---
+
+#### Step 12: Start Production Mode (MANDATORY!)
 
 <IMPORTANT>
 ⛔⛔⛔ PRODUCTION MODE IS MANDATORY - USER CANNOT USE THE APP WITHOUT IT! ⛔⛔⛔
@@ -823,8 +1493,10 @@ Test Mode on $APP_PORT_2 is only for YOUR verification - users cannot interact w
 </IMPORTANT>
 
 ```bash
-cd frontend && pnpm dev --host --port $APP_PORT_1 &
+cd frontend && pnpm start:prod &
 ```
+
+This automatically kills any process on `$APP_PORT_1` and starts with `--strictPort`.
 
 **Verify Production Mode:**
 - [ ] Server running on $APP_PORT_1
@@ -834,7 +1506,7 @@ cd frontend && pnpm dev --host --port $APP_PORT_1 &
 
 ---
 
-#### Step 11: Initialize Contract for Production (MANDATORY!)
+#### Step 13: Initialize Contract for Production (MANDATORY!)
 
 <IMPORTANT>
 ⛔⛔⛔ CONTRACT MUST BE INITIALIZED FOR PRODUCTION! ⛔⛔⛔
@@ -942,8 +1614,10 @@ When user reports a bug or asks for changes (and testing="true"):
 #### Step 1: Start Test Mode
 
 ```bash
-cd frontend && VITE_WALLET_MODE=test pnpm dev --host --port $APP_PORT_2 &
+cd frontend && pnpm start:test &
 ```
+
+This automatically kills any process on `$APP_PORT_2` and starts with `--strictPort`.
 
 ---
 
@@ -989,8 +1663,10 @@ RE-RUN ALL test categories from Phase 4.5!
 **Only after ALL regression tests pass:**
 
 ```bash
-cd frontend && pnpm dev --host --port $APP_PORT_1 &
+cd frontend && pnpm start:prod &
 ```
+
+This automatically kills any process on `$APP_PORT_1` and starts with `--strictPort`.
 
 **If this is a new contract deployment (redeploy-contract.sh was used):**
 ```bash
@@ -1076,8 +1752,9 @@ Note: The frontend uses Vite HMR - any code changes will auto-reload without res
 | Insufficient balance | `lumio account fund-with-faucet --amount 100000000` |
 | Module exists | Different name or new account |
 | Build errors | Check TypeScript types |
-| Port in use | ALWAYS use `$APP_PORT_1` - it's pre-allocated and guaranteed free |
-| App not visible in UI | Make sure you used `--port $APP_PORT_1`, not default 5173 |
+| Port in use | Use `pnpm start:prod` or `pnpm start:test` - they auto-kill old process |
+| Vite picked random port | You used `pnpm dev` instead of `pnpm start:prod` - random port not mapped! |
+| App not visible in UI | Use `pnpm start:prod` (not `pnpm dev`), check App tab |
 | Browser shows blank page | Check console errors, verify React renders |
 | Browser shows error | Read error message, fix component code (HMR will reload) |
 | "Connect Wallet" not visible | Check usePontem hook and button rendering |
@@ -1085,6 +1762,37 @@ Note: The frontend uses Vite HMR - any code changes will auto-reload without res
 **NEVER run `lumio init` manually** - scaffold-fast.sh handles initialization automatically with proper flags.
 
 **NEVER restart Vite dev server** - use HMR for all code changes.
+
+**NEVER use `pnpm dev --host --port`** - use `pnpm start:prod` or `pnpm start:test` instead!
+
+---
+
+### ⚠️ Port Management
+
+<IMPORTANT>
+⛔⛔⛔ CRITICAL: USE NPM SCRIPTS, NOT RAW VITE! ⛔⛔⛔
+
+The Docker runtime maps ONLY specific ports (`$APP_PORT_1`, `$APP_PORT_2`).
+If Vite picks a random port, it will NOT be accessible!
+
+**Problem:** `pnpm dev --host --port 58805` → port busy → Vite picks 58808 → NOT MAPPED!
+
+**Solution:** Use the npm scripts that auto-kill + strictPort:
+```bash
+pnpm start:prod   # Kills $APP_PORT_1 process, starts with --strictPort
+pnpm start:test   # Kills $APP_PORT_2 process, starts with --strictPort
+```
+
+**If still having port issues:**
+```bash
+# Manual kill (shouldn't be needed with npm scripts)
+kill $(lsof -t -i:$APP_PORT_1) 2>/dev/null || true
+kill $(lsof -t -i:$APP_PORT_2) 2>/dev/null || true
+
+# Then start
+pnpm start:prod
+```
+</IMPORTANT>
 
 ---
 
@@ -1112,14 +1820,21 @@ The frontend supports TWO wallet modes:
 | **Production** (default) | - | Pontem Wallet popup, user confirms each TX |
 | **Test** | `VITE_WALLET_MODE=test` | Auto-signed with deployer's private key |
 
-**Commands:**
+**Commands (use these npm scripts!):**
 ```bash
 # Production Mode (for users) - on APP_PORT_1
-pnpm dev --host --port $APP_PORT_1
+pnpm start:prod
 
 # Test Mode (for agent testing) - on APP_PORT_2
-VITE_WALLET_MODE=test pnpm dev --host --port $APP_PORT_2
+pnpm start:test
 ```
+
+**What these scripts do:**
+1. Kill any existing process on the target port
+2. Start Vite with `--strictPort` (fails if port still busy, won't pick random port)
+3. Set correct environment variables
+
+⚠️ **NEVER use `pnpm dev --host --port` directly!** Vite will pick random port if busy.
 
 **Why Test Mode exists:**
 - Agent cannot use Pontem Wallet (browser extension)
@@ -1396,15 +2111,41 @@ You are DONE when ALL true:
 - ✅ User approved deployment in Phase 2.5
 - ✅ spec.md has contract address
 
+**Unit Tests Passed:**
+- ✅ **Move tests:** `lumio move test` shows "Test result: OK"
+- ✅ **Frontend tests:** `pnpm test` shows all green
+- ✅ Test module renamed from `counter_tests` to match YOUR module
+
 **Files Customized (NO template defaults!):**
+- ✅ `contract.move`: Module renamed from `counter` to YOUR module
+- ✅ `contract_tests.move`: Tests customized for YOUR contract
 - ✅ `useContract.ts`: MODULE_NAME is YOUR module (not 'counter')
 - ✅ `useContract.ts`: ALL entry/view functions have wrappers
 - ✅ `Documentation.tsx`: Describes YOUR functions (not counter)
 - ✅ `Home.tsx`: UI matches YOUR contract
 
 **Decimals Consistency:**
-- ✅ Conversion happens in exactly ONE place (not double-converted)
-- ✅ Same constant used everywhere (100000000 or 1e8, pick one)
+- ✅ Using `toChainUnits`/`toHumanUnits` from `src/utils/decimals.ts`
+- ✅ NO manual `* 100000000` or `* 1e8` in code
+
+**⛔ QA Verification PASSED (Phase 4.3):**
+- ✅ `bash /openhands/templates/verify-integration.sh` shows PASS
+- ✅ "Connect Wallet" button is visible
+- ✅ CONTRACT_ADDRESS matches deployed address
+- ✅ MODULE_NAME matches contract module
+- ✅ ALL entry/view functions have wrappers in useContract.ts
+- ✅ Numbers display human-readable (1.5 not 150000000)
+- ✅ NO "undefined", "NaN", or "[object Object]" in UI
+- ✅ Visual inspection completed - all UI elements visible
+
+**⛔ Browser Test Report COMPLETED (Phase 4.5):**
+- ✅ Test scenarios generated from spec.md
+- ✅ ALL entry functions tested with evidence (TX hashes!)
+- ✅ ALL view functions tested (display format verified)
+- ✅ User journeys completed (first-time, full workflow, error recovery)
+- ✅ Edge cases tested (zeros, max values, invalid inputs)
+- ✅ **Browser Test Report created** with OVERALL: PASS
+- ✅ Console clean during ALL tests
 
 **AGGRESSIVE Testing Passed:**
 - ✅ Console clean - NO red errors
@@ -1451,3 +2192,4 @@ You are DONE when ALL true:
 18. **⚠️ Documentation.tsx must be updated** - NO template counter docs, describe YOUR contract functions
 19. **⚠️ Decimals: convert ONCE** - either in useContract.ts OR in handlers, never both!
 20. **⚠️ AGGRESSIVE TESTING** - assume bugs exist, test edge cases, error paths, state consistency
+21. **⛔ Browser Test Report MANDATORY** - create report with evidence (TX hashes!) before Production Mode

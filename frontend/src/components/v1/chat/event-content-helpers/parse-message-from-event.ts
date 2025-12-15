@@ -1,6 +1,9 @@
 import { MessageEvent } from "#/types/v1/core";
 import i18n from "#/i18n";
 
+const stripLumioSettings = (message: string): string =>
+  message.replace(/<lumio-settings[^>]*\/>\n?/g, "").trim();
+
 export const parseMessageFromEvent = (event: MessageEvent): string => {
   const message = event.llm_message;
 
@@ -30,12 +33,12 @@ export const parseMessageFromEvent = (event: MessageEvent): string => {
     message.content.some((content) => content.type === "image");
 
   if (!hasImages) {
-    return textContent;
+    return stripLumioSettings(textContent);
   }
 
   // If there are images, try to split by the augmented prompt delimiter
   const delimiter = i18n.t("CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE");
   const parts = textContent.split(delimiter);
 
-  return parts[0];
+  return stripLumioSettings(parts[0]);
 };

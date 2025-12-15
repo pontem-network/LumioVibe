@@ -1,5 +1,4 @@
 import os
-from datetime import datetime, timezone
 from http.cookies import SimpleCookie
 
 from openhands.core.config.utils import load_openhands_config
@@ -8,7 +7,6 @@ from openhands.server.config.server_config import ServerConfig
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.session import get_session_id_from_usid_token, load_session_file
-from openhands.utils.conversation_summary import get_default_conversation_title
 from openhands.utils.import_utils import get_impl
 
 
@@ -47,14 +45,21 @@ class ConversationValidator:
         if user_id is None:
             return None
 
-        metadata = await self._ensure_metadata_exists(conversation_id, user_id)
+        metadata = await self._validate_conversation_ownership(conversation_id, user_id)
+        if metadata is None:
+            return None
         return metadata.user_id
 
-    async def _ensure_metadata_exists(
+    async def _validate_conversation_ownership(
         self,
         conversation_id: str,
         user_id: str | None,
-    ) -> ConversationMetadata:
+    ) -> ConversationMetadata | None:
+        """Validate that conversation exists and user owns it.
+
+        Returns metadata if valid, None if conversation doesn't exist or user doesn't own it.
+        SECURITY: Does NOT auto-create conversations to prevent IDOR attacks.
+        """
         config = load_openhands_config()
         server_config = ServerConfig()
 
@@ -68,22 +73,20 @@ class ConversationValidator:
 
         try:
             metadata = await conversation_store.get_metadata(conversation_id)
+            # Validate ownership - user must own the conversation
+            if metadata.user_id and user_id and metadata.user_id != user_id:
+                logger.warning(
+                    f'User {user_id} attempted to access conversation {conversation_id} owned by {metadata.user_id}',
+                    extra={'session_id': conversation_id},
+                )
+                return None
+            return metadata
         except FileNotFoundError:
-            logger.info(
-                f'Creating new conversation metadata for {conversation_id}',
+            logger.warning(
+                f'Conversation {conversation_id} not found - access denied',
                 extra={'session_id': conversation_id},
             )
-            await conversation_store.save_metadata(
-                ConversationMetadata(
-                    conversation_id=conversation_id,
-                    user_id=user_id,
-                    title=get_default_conversation_title(conversation_id),
-                    last_updated_at=datetime.now(timezone.utc),
-                    selected_repository=None,
-                )
-            )
-            metadata = await conversation_store.get_metadata(conversation_id)
-        return metadata
+            return None
 
 
 def create_conversation_validator() -> ConversationValidator:
