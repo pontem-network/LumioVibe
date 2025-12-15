@@ -52,6 +52,8 @@ class LumioService:
             'arguments': [user_address],
         }
 
+        logger.debug(f'is_whitelisted: POST {url} for {user_address}')
+
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(url, json=payload, timeout=10.0)
