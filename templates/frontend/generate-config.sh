@@ -248,12 +248,30 @@ EOF
 #!/bin/bash
 # Frontend start script - ALWAYS use this to run the frontend
 # Usage: ./start.sh [--test]
+#
+# ⛔ DO NOT set APP_PORT_1 manually! It must be set by the runtime.
 
 set -e
 
+# Check APP_PORT_1 is set
 if [ -z "$APP_PORT_1" ]; then
-    echo "ERROR: APP_PORT_1 environment variable is not set!"
+    echo "⛔ ERROR: APP_PORT_1 environment variable is not set!"
     echo "This script must be run inside LumioVibe runtime."
+    echo ""
+    echo "DO NOT run: export APP_PORT_1=XXXX && ./start.sh"
+    echo "The port is automatically assigned by the runtime."
+    exit 1
+fi
+
+# Validate APP_PORT_1 is in correct range (50000-54999)
+# This prevents manual override attempts
+if [ "$APP_PORT_1" -lt 50000 ] || [ "$APP_PORT_1" -gt 54999 ]; then
+    echo "⛔ ERROR: APP_PORT_1=$APP_PORT_1 is outside valid range (50000-54999)!"
+    echo ""
+    echo "DO NOT set APP_PORT_1 manually!"
+    echo "The port is automatically assigned by the runtime."
+    echo ""
+    echo "Just run: ./start.sh"
     exit 1
 fi
 

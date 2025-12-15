@@ -2303,11 +2303,18 @@ cd frontend
 - `pnpm dev` - will pick random port!
 - `pnpm dev --port XXXX` - port may be busy!
 - `vite --port XXXX` - no auto-kill!
+- `export APP_PORT_1=XXXX` - DO NOT set port manually!
 
 ✅ **ONLY allowed command:**
 ```bash
+cd frontend
 ./start.sh          # Production
 ./start.sh --test   # Test mode
+```
+
+⛔ **NEVER do this:**
+```bash
+export APP_PORT_1=51633 && ./start.sh  # WRONG! Script validates port range!
 ```
 </IMPORTANT>
 
