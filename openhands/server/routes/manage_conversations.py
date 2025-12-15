@@ -471,7 +471,11 @@ async def get_conversation(
             )
             if app_conversation:
                 # Check ownership for V1 conversations
-                if user_id and app_conversation.created_by_user_id and app_conversation.created_by_user_id != user_id:
+                if (
+                    user_id
+                    and app_conversation.created_by_user_id
+                    and app_conversation.created_by_user_id != user_id
+                ):
                     logger.warning(
                         f'User {user_id} attempted to access V1 conversation {conversation_id} owned by {app_conversation.created_by_user_id}',
                         extra={'session_id': conversation_id},
@@ -557,7 +561,11 @@ async def _try_delete_v1_conversation(
         )
         if app_conversation_info:
             # Check ownership before deleting
-            if user_id and app_conversation_info.created_by_user_id and app_conversation_info.created_by_user_id != user_id:
+            if (
+                user_id
+                and app_conversation_info.created_by_user_id
+                and app_conversation_info.created_by_user_id != user_id
+            ):
                 logger.warning(
                     f'User {user_id} attempted to delete V1 conversation {conversation_id} owned by {app_conversation_info.created_by_user_id}',
                     extra={'session_id': conversation_id},

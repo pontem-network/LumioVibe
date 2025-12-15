@@ -23,6 +23,33 @@ This creates everything: account, funding, contract template, frontend template.
 
 ---
 
+⛔ **MANDATORY: USE TodoWrite FOR ALL PHASES!** ⛔
+
+**You MUST use TodoWrite to track tasks throughout the workflow!**
+
+**Create tasks at start of each phase:**
+- Phase 1: Setup tasks (scaffold, verify structure)
+- Phase 2: Contract tasks (implement each function, compile, test)
+- Phase 4: Frontend tasks (each file to customize)
+- Phase 4.4: Data refresh verification tasks
+- Phase 4.5: Browser test tasks (FROM spec.md - 1 task per function!)
+
+**Example for browser testing (Phase 4.5):**
+```
+TodoWrite: [
+  {"content": "Test initialize() - verify status changes", "status": "pending", "activeForm": "Testing initialize()"},
+  {"content": "Test stake() - verify balance updates", "status": "pending", "activeForm": "Testing stake()"},
+  // ... one task per function from spec.md
+  {"content": "Test edge case: zero input", "status": "pending", "activeForm": "Testing zero input"},
+  {"content": "Create Browser Test Report", "status": "pending", "activeForm": "Creating test report"}
+]
+```
+
+**⛔ Mark task "in_progress" BEFORE starting, "completed" AFTER passing!**
+**⛔ NEVER have 0 tasks - always track what you're doing!**
+
+---
+
 **Pre-installed (DO NOT install):**
 * lumio CLI v7.8.0: /openhands/bin/lumio
 * Node.js v22+, pnpm, TypeScript, Vite
@@ -131,6 +158,36 @@ bash /openhands/templates/verify-integration.sh PROJECT_DIR
 
 ---
 
+⛔ **DATA REFRESH VERIFICATION (Phase 4.4) - MOST CRITICAL!** ⛔
+
+**THE #1 BUG: UI values don't update after transactions!**
+
+**Step 1: Run data refresh script:**
+```bash
+bash /openhands/templates/verify-data-refresh.sh PROJECT_DIR
+```
+
+**Step 2: MANDATORY Before/After Test:**
+1. Call view function via curl → record BEFORE value
+2. Execute entry function via CLI
+3. Call same view function → record AFTER value
+4. **VALUES MUST BE DIFFERENT!**
+
+**Step 3: Browser Data Refresh Test:**
+1. Start Test Mode: `pnpm start:test`
+2. Note value in UI
+3. Execute action (click button)
+4. **VALUE IN UI MUST CHANGE!**
+
+**⛔ If values DON'T change = MOCK DATA BUG = FIX FIRST!**
+
+Common fixes:
+- refreshData() must call actual view functions
+- Action handlers must call refreshData() after TX
+- Remove hardcoded useState values
+
+---
+
 ⛔ **AGGRESSIVE TESTING PROTOCOL** ⛔
 
 **Philosophy: ASSUME THERE ARE BUGS - FIND THEM!**
@@ -217,6 +274,8 @@ This script will:
 - [ ] Using `toChainUnits`/`toHumanUnits` (no manual 1e8 conversion!)
 - [ ] **⛔ QA verification PASSED:** `bash verify-integration.sh` shows green
 - [ ] **⛔ Visual inspection done:** all UI elements visible, no "undefined"
+- [ ] **⛔ DATA REFRESH VERIFIED (Phase 4.4):** `bash verify-data-refresh.sh` shows PASS
+- [ ] **⛔ Before/After test:** values CHANGED after transaction (CLI + Browser!)
 - [ ] **⛔ Browser Test Report CREATED** with evidence (TX hashes!)
 - [ ] **⛔ All entry functions tested** with TX evidence
 - [ ] **⛔ All view functions tested** with format verification
@@ -227,6 +286,7 @@ This script will:
 - [ ] No console errors
 
 **⛔ CRITICAL: Without $APP_PORT_1 = NO APP FOR USER = NOT COMPLETE!**
+**⛔ CRITICAL: Values MUST update in UI after TX = THIS IS #1 BUG!**
 
 **Vite HMR:** Don't restart server, just edit files!
 </LUMIO_VIBE_RUNTIME>

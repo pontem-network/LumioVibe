@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import "./wallet.css";
 import { useAuthWallet } from "#/hooks/use-auth";
 
-// @todo
-const UPDATE_INTERVAL = 5000;
+const UPDATE_INTERVAL = 30000;
 
 export function WalletDisplayBalance() {
   const balanceLabelText = "balance";
@@ -13,16 +12,20 @@ export function WalletDisplayBalance() {
   const [balance, setBalance] = useState(0.0);
 
   useEffect(() => {
-    const interval: NodeJS.Timeout = setInterval(
-      () => auth.balance().then(setBalance),
-      UPDATE_INTERVAL,
-    );
+    if (!auth.connected) return undefined;
+
     auth.balance().then(setBalance);
 
-    return () => {
-      if (interval !== null) clearInterval(interval);
-    };
-  }, [auth]);
+    const interval = setInterval(() => {
+      if (auth.connected) {
+        auth.balance().then(setBalance);
+      }
+    }, UPDATE_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [auth, auth.connected]);
+
+  if (!auth.connected) return null;
 
   return (
     <div className="wallet_view_balance">

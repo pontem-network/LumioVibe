@@ -10,7 +10,6 @@ import { getConfig, LumioConfig } from "#/services/vibe-balance";
 
 declare const window: PontemWindow;
 
-const DECIMALS = 8;
 const NUMBER_OF_DECIMALS = 4;
 
 type SignMessageWithoutSignature = Omit<SignMessageResponse, "signature">;
@@ -218,37 +217,33 @@ export class AuthState {
   }
 
   async balance(): Promise<number> {
-    const { pontem } = window;
-    if (!this.connected || !pontem) return 0;
+    if (!this.connected) return 0;
     const { account } = this.token;
 
     if (!account) return 0.0;
 
-    const balanceResponse: number[] = await fetchWithProc(
-      `${this.lumio_settings.rpcUrl}v1/view`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          function: `${this.lumio_settings.contractAddress}::vibe_balance::get_balance`,
-          type_arguments: [],
-          arguments: [this.token.account],
-        }),
+    try {
+      const balanceResponse: {
+        virtual_balance_coins: number;
+        on_chain_balance_coins: number;
+        accumulated_tokens: number;
+        pending_deduction_coins: number;
+      } = await fetchWithProc("/api/token/balance", {
+        method: "GET",
         headers: {
-          "Content-Type": "application/json",
           Accept: "application/json",
         },
-      },
-    );
+      });
 
-    if (balanceResponse.constructor === Array) {
-      const balance: number =
-        Math.round(balanceResponse[0] / 10 ** (DECIMALS - NUMBER_OF_DECIMALS)) /
-        10 ** NUMBER_OF_DECIMALS;
-
-      return balance;
+      return (
+        Math.round(
+          balanceResponse.virtual_balance_coins * 10 ** NUMBER_OF_DECIMALS,
+        ) /
+        10 ** NUMBER_OF_DECIMALS
+      );
+    } catch {
+      return 0.0;
     }
-
-    return 0.0;
   }
 
   async topUpBalance(amount: number = 1000): Promise<void> {

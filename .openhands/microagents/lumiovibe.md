@@ -108,6 +108,37 @@ After scaffold-fast.sh, you only customize the contract code and update UI!
 Config is stored at /workspace/.lumio/config.yaml after first scaffold run.
 </IMPORTANT>
 
+## ⛔ CRITICAL: Task Management with TodoWrite
+
+<IMPORTANT>
+⛔⛔⛔ YOU MUST USE TodoWrite THROUGHOUT THE WORKFLOW! ⛔⛔⛔
+
+**Why tasks are mandatory:**
+1. User sees your progress in real-time
+2. You don't forget steps
+3. Proves you completed each phase
+4. Makes debugging easier if something fails
+
+**When to create/update tasks:**
+- Phase 0: Create tasks for assumption review
+- Phase 1: Create tasks for setup steps
+- Phase 2: Create tasks for contract implementation + tests
+- Phase 3: Create task for deployment
+- Phase 4: Create tasks for EACH file to customize
+- Phase 4.4: Create tasks for data refresh tests
+- Phase 4.5: Create tasks for EACH browser test (from spec.md!)
+- Phase 5: Create task for completion report
+
+**Task status rules:**
+- `pending` - Not started yet
+- `in_progress` - Currently working on (only 1 at a time!)
+- `completed` - Finished successfully
+
+**⛔ NEVER have 0 tasks! Always have at least your current step as a task.**
+</IMPORTANT>
+
+---
+
 ## 5-Phase Workflow with User Checkpoints
 
 ### Phase 0: Propose Solution (CRITICAL - DO NOT SKIP)
@@ -295,6 +326,17 @@ DO NOT run `lumio init` or `lumio account` commands manually!
 DO NOT write frontend files from scratch - scaffold-fast.sh creates everything!
 </IMPORTANT>
 
+**First, create tasks for Phase 1:**
+```
+TodoWrite with todos:
+[
+  {"content": "Run scaffold-fast.sh to create project", "status": "in_progress", "activeForm": "Running scaffold-fast.sh"},
+  {"content": "Verify project structure created", "status": "pending", "activeForm": "Verifying project structure"},
+  {"content": "Check deployer address obtained", "status": "pending", "activeForm": "Checking deployer address"}
+]
+```
+
+**Then run:**
 ```bash
 bash /openhands/templates/scaffold-fast.sh {project_name}
 cd {project_name}
@@ -340,6 +382,22 @@ module my_project::voting {   // ✅ Correct - your module name
 
 Then update `MODULE_NAME` in `useContract.ts` to match!
 </IMPORTANT>
+
+**First, create tasks for Phase 2 contract implementation:**
+
+```
+TodoWrite with todos:
+[
+  {"content": "Rename module from 'counter' to actual module name", "status": "in_progress", "activeForm": "Renaming module"},
+  {"content": "Implement data structures from spec.md", "status": "pending", "activeForm": "Implementing structs"},
+  {"content": "Implement entry functions from spec.md", "status": "pending", "activeForm": "Implementing entry functions"},
+  {"content": "Implement view functions from spec.md", "status": "pending", "activeForm": "Implementing view functions"},
+  {"content": "Add error codes and validation", "status": "pending", "activeForm": "Adding error handling"},
+  {"content": "Compile contract (lumio move compile)", "status": "pending", "activeForm": "Compiling contract"},
+  {"content": "Write Move unit tests", "status": "pending", "activeForm": "Writing Move tests"},
+  {"content": "Run Move tests (lumio move test)", "status": "pending", "activeForm": "Running Move tests"}
+]
+```
 
 1. **Write contract** based on confirmed spec.md (in `contract/sources/contract.move`)
 2. **Compile with retry logic:**
@@ -539,6 +597,26 @@ Vite has HOT MODULE REPLACEMENT (HMR). Once started, it automatically reloads wh
 Only restart if you see actual SERVER crash (not file/compilation errors).
 </IMPORTANT>
 
+**First, create tasks for Phase 4 frontend customization:**
+
+<IMPORTANT>
+⛔ You MUST create tasks for EACH file that needs customization!
+This ensures you don't forget any file.
+</IMPORTANT>
+
+```
+TodoWrite with todos:
+[
+  {"content": "Install frontend dependencies (pnpm install)", "status": "in_progress", "activeForm": "Installing dependencies"},
+  {"content": "Update useContract.ts - set MODULE_NAME and add all function wrappers", "status": "pending", "activeForm": "Updating useContract.ts"},
+  {"content": "Update Home.tsx - create UI for contract functions", "status": "pending", "activeForm": "Updating Home.tsx"},
+  {"content": "Update Documentation.tsx - describe all contract functions", "status": "pending", "activeForm": "Updating Documentation.tsx"},
+  {"content": "Run pnpm build to verify no TypeScript errors", "status": "pending", "activeForm": "Building frontend"},
+  {"content": "Start dev server on $APP_PORT_1", "status": "pending", "activeForm": "Starting dev server"}
+]
+```
+
+**Then install dependencies:**
 ```bash
 cd frontend
 pnpm install
@@ -1068,6 +1146,207 @@ If ANY check fails:
 
 ---
 
+### Phase 4.4: DATA REFRESH VERIFICATION (CRITICAL - DO NOT SKIP!)
+
+<IMPORTANT>
+⛔⛔⛔ THIS IS THE MOST CRITICAL PHASE! ⛔⛔⛔
+
+The #1 reason users cannot use generated apps:
+**Values in the UI don't update after transactions!**
+
+This happens because:
+1. View functions don't work or aren't called
+2. refreshData() doesn't actually fetch from blockchain
+3. Contract is not initialized
+4. useContract.ts has wrong/missing function wrappers
+
+YOU MUST VERIFY DATA ACTUALLY UPDATES BEFORE PROCEEDING!
+</IMPORTANT>
+
+#### Step 1: Run Data Refresh Verification Script
+
+```bash
+bash /openhands/templates/verify-data-refresh.sh PROJECT_DIR
+```
+
+This script automatically checks:
+- View functions return data from blockchain
+- Contract is initialized
+- useContract.ts has callView wrappers for all view functions
+- No mock data patterns detected
+
+**⛔ If script shows FAIL - fix issues before proceeding!**
+
+---
+
+#### Step 2: MANDATORY Before/After Data Test
+
+<IMPORTANT>
+⛔⛔⛔ YOU CANNOT SKIP THIS TEST! ⛔⛔⛔
+
+This is the ONLY way to prove data actually updates.
+If you skip this, the user will get a broken app!
+</IMPORTANT>
+
+**2.1: Record BEFORE values**
+```bash
+# Get deployer address
+DEPLOYER=$(grep "account:" /workspace/.lumio/config.yaml | awk '{print $2}')
+
+# Call a view function and record the result
+curl -s -X POST "https://api.testnet.lumio.io/v1/view" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "function": "'$DEPLOYER'::'MODULE_NAME'::'VIEW_FUNCTION'",
+    "type_arguments": [],
+    "arguments": ["'$DEPLOYER'"]
+  }'
+```
+
+**Record the output:**
+```markdown
+## Before/After Data Test
+
+**View function:** get_balance (or your function)
+**BEFORE value:** [RECORD HERE]
+**Timestamp:** [NOW]
+```
+
+**2.2: Execute a transaction**
+```bash
+cd contract && lumio move run \
+  --function-id $DEPLOYER::MODULE_NAME::ENTRY_FUNCTION \
+  --args [ARGS] \
+  --assume-yes
+```
+
+**Wait 3-5 seconds for blockchain confirmation.**
+
+**2.3: Record AFTER values**
+```bash
+# Same curl command as before
+curl -s -X POST "https://api.testnet.lumio.io/v1/view" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "function": "'$DEPLOYER'::'MODULE_NAME'::'VIEW_FUNCTION'",
+    "type_arguments": [],
+    "arguments": ["'$DEPLOYER'"]
+  }'
+```
+
+**Update the record:**
+```markdown
+**AFTER value:** [RECORD HERE]
+**VALUE CHANGED:** YES / NO
+```
+
+**2.4: VERIFY THE CHANGE**
+
+<IMPORTANT>
+⛔ If BEFORE == AFTER (values didn't change):
+1. The entry function might not modify what the view function reads
+2. Try a DIFFERENT entry function that should change the value
+3. Make sure you're testing the right view function
+
+⛔ If values NEVER change no matter what transaction:
+1. Contract might not be working correctly
+2. View functions might be returning constants
+3. THIS IS A CRITICAL BUG - FIX BEFORE PROCEEDING!
+</IMPORTANT>
+
+---
+
+#### Step 3: Browser Data Refresh Test
+
+<IMPORTANT>
+After CLI verification passes, test in browser!
+</IMPORTANT>
+
+**3.1: Start Test Mode**
+```bash
+cd frontend && pnpm start:test &
+```
+
+**3.2: Open browser and check:**
+1. [ ] Page loads without errors
+2. [ ] Data fields show actual values (not "undefined", not "0" if should be non-zero)
+3. [ ] Values match what the CLI view function returned
+
+**3.3: Execute transaction via UI and verify:**
+1. [ ] Click an action button (stake, transfer, etc.)
+2. [ ] Transaction completes (shows TX hash or success message)
+3. [ ] **VALUES IN UI MUST CHANGE!**
+4. [ ] Check console - no errors
+
+**3.4: CRITICAL CHECK:**
+```markdown
+## Browser Data Refresh Test
+
+**Action performed:** [e.g., "Staked 10 tokens"]
+**Value before action:** [e.g., "Balance: 100"]
+**Value after action:** [e.g., "Balance: 90"]
+**VALUES CHANGED IN UI:** YES / NO
+**Console errors:** NONE / [list]
+```
+
+<IMPORTANT>
+⛔⛔⛔ IF VALUES DID NOT CHANGE IN UI = MOCK DATA BUG! ⛔⛔⛔
+
+Common fixes:
+1. Check refreshData() actually calls view functions
+2. Check view function wrappers in useContract.ts
+3. Check that action handlers call await refreshData() after successful TX
+4. Check for hardcoded useState values
+
+DO NOT PROCEED UNTIL VALUES UPDATE IN UI!
+</IMPORTANT>
+
+---
+
+#### Data Refresh Verification Report (MANDATORY)
+
+Create this report before proceeding to Phase 4.5:
+
+```markdown
+## Data Refresh Verification Report
+
+### Script Verification
+- verify-data-refresh.sh result: PASS / FAIL
+- View functions working: X/Y
+- Contract initialized: YES / NO
+
+### CLI Before/After Test
+- View function tested: [name]
+- BEFORE value: [value]
+- Transaction executed: [TX hash]
+- AFTER value: [value]
+- **DATA CHANGED:** YES / NO
+
+### Browser Data Refresh Test
+- Test Mode running: YES / NO
+- Values display correctly: YES / NO
+- Executed action: [description]
+- **UI VALUES CHANGED:** YES / NO
+- Console errors: NONE / [list]
+
+### OVERALL: PASS / FAIL
+
+⛔ If FAIL - which test failed and why:
+[explanation]
+```
+
+<IMPORTANT>
+⛔ DO NOT proceed to Phase 4.5 if:
+- verify-data-refresh.sh shows FAIL
+- CLI Before/After test shows values didn't change
+- Browser values don't update after transaction
+- DATA CHANGED = NO anywhere
+
+FIX THE DATA REFRESH ISSUE FIRST!
+</IMPORTANT>
+
+---
+
 ### Phase 4.5: AGGRESSIVE Browser Testing in TEST MODE
 
 <IMPORTANT>
@@ -1114,45 +1393,86 @@ YOU MUST ACTUALLY TEST EVERY FUNCTION and prove it works!
 
 ---
 
-#### Step 0: Generate Test Scenarios from spec.md
+#### Step 0: CREATE TEST TASKS FROM spec.md (MANDATORY!)
 
 <IMPORTANT>
-⛔ BEFORE testing, create a test plan from spec.md!
+⛔⛔⛔ YOU MUST CREATE TASKS BEFORE TESTING! ⛔⛔⛔
 
-Open spec.md and list ALL functions that need testing.
+This is NOT optional! You MUST use TodoWrite to create a task for EACH test.
+Without tasks, you will forget tests and deliver broken app!
+
+**WHY tasks are mandatory:**
+1. Forces you to think about ALL functions before testing
+2. Tracks progress visually for the user
+3. Ensures NOTHING is forgotten
+4. Proves you actually tested everything
 </IMPORTANT>
 
-**Create Test Plan:**
-```markdown
-## Test Plan for [Project Name]
+**Step 0.1: Read spec.md and extract ALL functions**
 
-### Entry Functions to Test:
-1. initialize() - Admin initializes contract
-   - Precondition: Contract not initialized
-   - Action: Click Initialize button
-   - Expected: Success message, status changes to "Initialized"
-
-2. stake(amount: u64) - User stakes tokens
-   - Precondition: Has balance, contract initialized
-   - Action: Enter 10, click Stake
-   - Expected: Balance decreases by 10, Staked increases by 10
-
-3. [Add ALL entry functions from spec.md]
-
-### View Functions to Verify:
-1. get_balance(addr) - Shows user balance
-   - Where displayed: Balance field
-   - Expected format: "100.5" (human readable)
-
-2. [Add ALL view functions from spec.md]
-
-### User Journeys:
-1. New User Flow:
-   - Connect wallet → See initial state → Initialize (if needed) → First action
-
-2. Complete Workflow:
-   - [Full workflow specific to your contract]
+```bash
+cat PROJECT_DIR/spec.md
 ```
+
+**Step 0.2: Create test tasks using TodoWrite**
+
+<IMPORTANT>
+⛔ YOU MUST CALL TodoWrite with tasks for EACH function!
+
+Example for a staking contract:
+</IMPORTANT>
+
+```
+TodoWrite with todos:
+[
+  // Entry function tests
+  {"content": "Test initialize() - click button, verify status changes", "status": "pending", "activeForm": "Testing initialize()"},
+  {"content": "Test stake() - enter amount, verify balance decreases", "status": "pending", "activeForm": "Testing stake()"},
+  {"content": "Test unstake() - enter amount, verify balance increases", "status": "pending", "activeForm": "Testing unstake()"},
+  {"content": "Test claim_rewards() - click button, verify rewards received", "status": "pending", "activeForm": "Testing claim_rewards()"},
+
+  // View function tests
+  {"content": "Verify get_balance() displays correctly", "status": "pending", "activeForm": "Verifying get_balance()"},
+  {"content": "Verify get_stake_info() displays all fields", "status": "pending", "activeForm": "Verifying get_stake_info()"},
+
+  // User journeys
+  {"content": "Complete new user journey: connect → init → first stake", "status": "pending", "activeForm": "Testing new user journey"},
+  {"content": "Complete full workflow: stake → wait → claim → unstake", "status": "pending", "activeForm": "Testing full workflow"},
+
+  // Edge cases
+  {"content": "Test edge case: zero amount input", "status": "pending", "activeForm": "Testing zero amount"},
+  {"content": "Test edge case: max balance input", "status": "pending", "activeForm": "Testing max balance"},
+  {"content": "Test edge case: invalid input (letters)", "status": "pending", "activeForm": "Testing invalid input"},
+
+  // Error paths
+  {"content": "Test error: insufficient balance", "status": "pending", "activeForm": "Testing insufficient balance error"},
+  {"content": "Test error: double-click prevention", "status": "pending", "activeForm": "Testing double-click"},
+
+  // Final checks
+  {"content": "Verify console has no errors", "status": "pending", "activeForm": "Checking console"},
+  {"content": "Create Browser Test Report", "status": "pending", "activeForm": "Creating test report"}
+]
+```
+
+**Step 0.3: Verify tasks were created**
+
+After calling TodoWrite, you should see the task list displayed.
+Count the tasks - you should have:
+- 1 task per entry function
+- 1 task per view function
+- 2-3 user journey tasks
+- 3-5 edge case tasks
+- 2-3 error path tasks
+- 2 final check tasks
+
+**Minimum: 10+ tasks for any non-trivial contract!**
+
+<IMPORTANT>
+⛔ DO NOT proceed to Step 1 until you have created ALL test tasks!
+⛔ If you skip this, you WILL forget to test something!
+⛔ Mark each task as "in_progress" when you START testing it
+⛔ Mark each task as "completed" ONLY when test PASSES
+</IMPORTANT>
 
 ---
 
@@ -1544,12 +1864,18 @@ Before marking project complete, verify:
    - [ ] All view functions from contract have wrappers
    - [ ] Functions are exported from hook
 
-2. **Contract is working:**
+2. **⛔ DATA REFRESH VERIFIED (Phase 4.4):**
+   - [ ] verify-data-refresh.sh shows PASS
+   - [ ] CLI Before/After test: values CHANGED after transaction
+   - [ ] Browser test: UI values CHANGED after transaction
+   - [ ] Data Refresh Verification Report created with OVERALL: PASS
+
+3. **Contract is working:**
    - [ ] Contract is initialized (is_initialized() returns true)
    - [ ] At least one transaction executed successfully
-   - [ ] Data updated after transaction
+   - [ ] Data updated after transaction (VERIFIED in Phase 4.4!)
 
-3. **⛔⛔⛔ BOTH SERVERS MUST BE RUNNING! ⛔⛔⛔**
+4. **⛔⛔⛔ BOTH SERVERS MUST BE RUNNING! ⛔⛔⛔**
    - [ ] **Production Mode on $APP_PORT_1** ← THIS IS THE USER'S APPLICATION!
    - [ ] Test Mode on $APP_PORT_2 (for verification)
 
@@ -1573,13 +1899,15 @@ Before marking project complete, verify:
 - Contract not initialized
 - **Production Mode NOT running on $APP_PORT_1** ← CRITICAL!
 - Only Test Mode running on $APP_PORT_2 (no Production!)
-- Data doesn't change after transactions
+- **Data Refresh Verification (Phase 4.4) not completed!** ← CRITICAL!
+- **Values don't change after transactions in UI** ← THIS IS THE #1 BUG!
 - viewFunction/callFunction errors in console
 
 **The project is NOT complete until:**
 1. **Production Mode is running on $APP_PORT_1** - this is what user sees!
 2. **Contract is initialized** - so user can interact with it!
-3. User can use the dApp with Pontem Wallet in Production Mode!
+3. **Data Refresh Verification PASSED** - UI values actually update!
+4. User can use the dApp with Pontem Wallet in Production Mode!
 </IMPORTANT>
 
 ---
@@ -2137,6 +2465,13 @@ You are DONE when ALL true:
 - ✅ Numbers display human-readable (1.5 not 150000000)
 - ✅ NO "undefined", "NaN", or "[object Object]" in UI
 - ✅ Visual inspection completed - all UI elements visible
+
+**⛔ DATA REFRESH VERIFIED (Phase 4.4) - CRITICAL!:**
+- ✅ `bash /openhands/templates/verify-data-refresh.sh` shows PASS
+- ✅ **CLI Before/After test:** values CHANGED after transaction
+- ✅ **Browser test:** UI values CHANGED after transaction
+- ✅ Data Refresh Verification Report created with OVERALL: PASS
+- ✅ NO mock data - all values come from view functions
 
 **⛔ Browser Test Report COMPLETED (Phase 4.5):**
 - ✅ Test scenarios generated from spec.md

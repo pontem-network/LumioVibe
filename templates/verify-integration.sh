@@ -194,9 +194,42 @@ if grep -q '"counter"\|Counter\|increment\|get_value' "$PROJECT_DIR/frontend/src
 fi
 
 # ============================================
-# SECTION 7: Build Check
+# SECTION 7: View Functions Quick Test
 # ============================================
-log_section "7. TypeScript Build Check"
+log_section "7. View Functions Quick Test"
+
+LUMIO_RPC="https://api.testnet.lumio.io/v1"
+
+# Extract contract address and module
+CONTRACT_ADDR=$(grep "CONTRACT_ADDRESS" "$PROJECT_DIR/frontend/src/hooks/useContract.ts" 2>/dev/null | grep -oE "0x[a-fA-F0-9]+" | head -1)
+MODULE=$(grep "MODULE_NAME" "$PROJECT_DIR/frontend/src/hooks/useContract.ts" 2>/dev/null | grep -oE "'[^']+'" | tr -d "'")
+
+if [ -n "$CONTRACT_ADDR" ] && [ -n "$MODULE" ]; then
+    # Try is_initialized view function (common pattern)
+    log_info "Testing is_initialized() view function..."
+    RESULT=$(curl -s -X POST "${LUMIO_RPC}/view" \
+        -H "Content-Type: application/json" \
+        -d "{\"function\": \"${CONTRACT_ADDR}::${MODULE}::is_initialized\", \"type_arguments\": [], \"arguments\": []}" 2>/dev/null)
+
+    if echo "$RESULT" | grep -q "true\|false"; then
+        log_pass "is_initialized() returns data: $RESULT"
+    elif echo "$RESULT" | grep -q "error\|Error"; then
+        log_warn "is_initialized() returned error (might not exist or contract not deployed)"
+        echo "       Response: $(echo $RESULT | head -c 200)"
+    else
+        log_warn "is_initialized() returned unexpected: $(echo $RESULT | head -c 100)"
+    fi
+else
+    log_warn "Could not test view functions - missing CONTRACT_ADDRESS or MODULE_NAME"
+fi
+
+log_info "For full view function testing, run:"
+echo "       bash /openhands/templates/verify-data-refresh.sh $PROJECT_DIR"
+
+# ============================================
+# SECTION 8: Build Check
+# ============================================
+log_section "8. TypeScript Build Check"
 
 cd "$PROJECT_DIR/frontend"
 if pnpm tsc --noEmit 2>/dev/null; then
@@ -221,14 +254,24 @@ echo ""
 
 if [ $FAIL -gt 0 ]; then
     echo -e "${RED}⛔ VERIFICATION FAILED!${NC}"
-    echo "Fix the issues above before proceeding to browser testing."
+    echo "Fix the issues above before proceeding."
     exit 1
 elif [ $WARN -gt 0 ]; then
     echo -e "${YELLOW}⚠️ VERIFICATION PASSED WITH WARNINGS${NC}"
     echo "Review warnings above - they may indicate issues."
+    echo ""
+    echo -e "${BLUE}NEXT STEP: Run Data Refresh Verification (Phase 4.4):${NC}"
+    echo "   bash /openhands/templates/verify-data-refresh.sh $PROJECT_DIR"
+    echo ""
+    echo "This verifies that view functions work and data updates after transactions."
     exit 0
 else
     echo -e "${GREEN}✅ VERIFICATION PASSED!${NC}"
-    echo "Proceed to browser testing."
+    echo ""
+    echo -e "${BLUE}NEXT STEP: Run Data Refresh Verification (Phase 4.4):${NC}"
+    echo "   bash /openhands/templates/verify-data-refresh.sh $PROJECT_DIR"
+    echo ""
+    echo "This verifies that view functions work and data updates after transactions."
+    echo "⛔ DO NOT SKIP! This is the #1 cause of broken apps!"
     exit 0
 fi

@@ -13,6 +13,7 @@ class ServerConfig(ServerConfigInterface):
     lumio_rpc_url = os.environ.get('LUMIO_RPC_URL', 'https://api.testnet.lumio.io/')
     lumio_chain_id = int(os.environ.get('LUMIO_CHAIN_ID', '2'))
     vibe_balance_contract = os.environ.get('VIBE_BALANCE_CONTRACT', '')
+    vibe_admin_private_key = os.environ.get('VIBE_ADMIN_PRIVATE_KEY', '')
     enable_billing = os.environ.get('ENABLE_BILLING', 'false') == 'true'
     hide_llm_settings = os.environ.get('HIDE_LLM_SETTINGS', 'false') == 'true'
     # This config is used to hide the microagent management page from the users for now. We will remove this once we release the new microagent management page.
