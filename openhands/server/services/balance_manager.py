@@ -153,11 +153,13 @@ class BalanceManager:
                     tokens_to_deduct.append(tokens)
 
             if not users_to_deduct:
+                logger.debug('_flush_all_deductions: no pending deductions')
                 return
 
+            total_tokens = sum(tokens_to_deduct)
             logger.info(
-                f'Batch flushing {len(users_to_deduct)} users: '
-                f'{sum(tokens_to_deduct)} total tokens'
+                f'_flush_all_deductions: flushing {len(users_to_deduct)} users, '
+                f'{total_tokens} total tokens'
             )
 
             success = await self.lumio_service.batch_deduct(
@@ -165,6 +167,10 @@ class BalanceManager:
             )
 
             if success:
+                logger.info(
+                    f'_flush_all_deductions: batch_deduct completed, '
+                    f'clearing accumulated tokens for {len(users_to_deduct)} users'
+                )
                 for user_address, tokens in zip(users_to_deduct, tokens_to_deduct):
                     self._accumulated_tokens[user_address] = 0
                     coins = (tokens * self._token_price) // 1_000_000
@@ -172,6 +178,14 @@ class BalanceManager:
                         self._balances[user_address] = max(
                             0, self._balances[user_address] - coins
                         )
+                    logger.debug(
+                        f'  cleared {user_address}: {tokens} tokens ({coins} octas)'
+                    )
+            else:
+                logger.error(
+                    f'_flush_all_deductions: batch_deduct FAILED, '
+                    f'keeping {total_tokens} tokens in accumulator for retry'
+                )
 
     async def schedule_deduction(self, user_address: str, tokens: int) -> None:
         """Add tokens to pending deductions (will be flushed periodically)."""
