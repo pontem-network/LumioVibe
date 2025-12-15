@@ -547,6 +547,29 @@ class DockerRuntime(ActionExecutionClient):
         try:
             if self.runtime_container_image is None:
                 raise ValueError('Runtime container image is not set')
+
+            try:
+                self.docker_client.images.get(self.runtime_container_image)
+            except docker.errors.ImageNotFound:
+                if self.base_container_image is None:
+                    raise ValueError(
+                        f'Image {self.runtime_container_image} not found locally and '
+                        f'base_container_image is not set. Cannot rebuild.'
+                    )
+                self.log(
+                    'info',
+                    f'Image {self.runtime_container_image} not found locally. Rebuilding...',
+                )
+                self.runtime_container_image = build_runtime_image(
+                    self.base_container_image,
+                    self.runtime_builder,
+                    platform=self.config.sandbox.platform,
+                    extra_deps=self.config.sandbox.runtime_extra_deps,
+                    force_rebuild=False,
+                    extra_build_args=self.config.sandbox.runtime_extra_build_args,
+                    enable_browser=self.config.enable_browser,
+                )
+
             # Process overlay mounts (read-only lower with per-container COW)
             overlay_mounts = self._process_overlay_mounts()
 

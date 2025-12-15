@@ -24,6 +24,7 @@ class LumioService:
 
         if admin_private_key:
             self._init_admin_key(admin_private_key)
+            self._verify_admin_address()
 
     async def is_whitelisted(self, user_address: str) -> bool:
         """Check if a user address is whitelisted in the vibe-balance contract.
@@ -50,6 +51,8 @@ class LumioService:
             'type_arguments': [],
             'arguments': [user_address],
         }
+
+        logger.debug(f'is_whitelisted: POST {url} for {user_address}')
 
         try:
             async with httpx.AsyncClient() as client:
@@ -152,6 +155,25 @@ class LumioService:
         except Exception as e:
             logger.error(f'Failed to initialize admin key: {e}')
 
+    def _verify_admin_address(self) -> None:
+        """Verify that admin address matches contract address for batch operations."""
+        if not self._admin_address or not self.contract_address:
+            return
+
+        admin_normalized = self._admin_address.lower()
+        contract_normalized = self.contract_address.lower()
+
+        if admin_normalized == contract_normalized:
+            logger.info(
+                f'Admin address verification: OK (matches contract {self.contract_address})'
+            )
+        else:
+            logger.error(
+                f'Admin address MISMATCH! Admin: {self._admin_address}, '
+                f'Contract: {self.contract_address}. '
+                f'batch_deduct will fail - BalanceStore is at contract address.'
+            )
+
     async def _get_sequence_number(self, address: str) -> int:
         """Get account sequence number for transaction."""
         url = f'{self.rpc_url}/v1/accounts/{address}'
@@ -229,14 +251,24 @@ class LumioService:
             True if transaction was submitted successfully, False otherwise
         """
         if not users or not tokens_amounts:
+            logger.debug('batch_deduct: empty users or amounts, skipping')
             return True
 
         if len(users) != len(tokens_amounts):
-            logger.error('Users and amounts length mismatch')
+            logger.error('batch_deduct: users and amounts length mismatch')
             return False
 
         normalized_users = [u if u.startswith('0x') else f'0x{u}' for u in users]
         str_amounts = [str(a) for a in tokens_amounts]
+
+        total_tokens = sum(tokens_amounts)
+        logger.info(
+            f'batch_deduct: starting deduction for {len(users)} users, '
+            f'total tokens: {total_tokens}, admin: {self._admin_address}, '
+            f'contract: {self.contract_address}'
+        )
+        for i, (user, amount) in enumerate(zip(normalized_users, tokens_amounts)):
+            logger.debug(f'  batch_deduct [{i}] {user}: {amount} tokens')
 
         payload = {
             'type': 'entry_function_payload',
@@ -245,4 +277,13 @@ class LumioService:
             'arguments': [normalized_users, str_amounts],
         }
 
-        return await self._submit_transaction(payload)
+        success = await self._submit_transaction(payload)
+        if success:
+            logger.info(
+                f'batch_deduct: SUCCESS - deducted {total_tokens} tokens from {len(users)} users'
+            )
+        else:
+            logger.error(
+                f'batch_deduct: FAILED - could not deduct {total_tokens} tokens from {len(users)} users'
+            )
+        return success
