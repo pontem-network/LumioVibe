@@ -589,10 +589,60 @@ export function useContract() {
 ### Verification Checklist
 
 Before marking frontend complete:
+
+**Files Customized:**
+- [ ] `useContract.ts`: MODULE_NAME is YOUR module (not 'counter')
+- [ ] `useContract.ts`: ALL entry/view functions have wrappers
+- [ ] `Documentation.tsx`: Describes YOUR functions (not counter template!)
+- [ ] `Home.tsx`: UI matches YOUR contract
+
+**Data Integrity:**
 - [ ] NO hardcoded/mock data in useState initializers
 - [ ] NO "Mock" or "TODO" comments in data functions
 - [ ] ALL data comes from callView
 - [ ] ALL actions use callEntry
 - [ ] Data refreshes after successful transactions
+
+**Decimals Consistency:**
+- [ ] Conversion happens in ONE place only (not double-converted!)
+- [ ] Same constant used everywhere (100000000 or 1e8, pick one)
+
+**Testing:**
 - [ ] Test Mode verifies data changes after TX
 - [ ] Production Mode shows Connect Wallet button
+
+---
+
+## ⛔ CRITICAL: Update Documentation.tsx!
+
+<IMPORTANT>
+The scaffold creates Documentation.tsx with COUNTER template content!
+
+**❌ If your docs show these = NOT UPDATED:**
+- `initialize()` - "Creates a Counter resource"
+- `increment()` - "Increments your counter"
+- `get_value()` - "Returns counter value"
+
+**✅ You MUST update to describe YOUR contract!**
+</IMPORTANT>
+
+---
+
+## ⛔ CRITICAL: Decimals - Convert ONCE Only!
+
+```typescript
+// ❌ WRONG: Double conversion
+// useContract.ts:
+const stake = (amount: number) => callEntry('stake', [(amount * 1e8).toString()]);
+// Home.tsx:
+await stake(parseFloat(input) * 1e8);  // Converts AGAIN!
+
+// ✅ CORRECT: Convert in ONE place
+// Option A - in handler:
+const stake = (amount: number) => callEntry('stake', [amount.toString()]);
+await stake(parseFloat(input) * 100000000);
+
+// Option B - in hook:
+const stake = (humanAmount: number) => callEntry('stake', [(humanAmount * 1e8).toString()]);
+await stake(parseFloat(input));
+```

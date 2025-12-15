@@ -200,6 +200,119 @@ The fix is complete. You can test unstaking in Production Mode with your Pontem 
 
 --------------------- END OF EXAMPLE 2 ---------------------
 
+--------------------- EXAMPLE 3: CONTRACT CHANGE WITH ABI INCOMPATIBILITY ---------------------
+
+USER: Add a new field to track total rewards distributed in the contract.
+
+A: I'll add the new field. First, let me modify the contract:
+<function=str_replace_editor>
+<parameter=command>str_replace</parameter>
+<parameter=path>/workspace/staking_app/contract/sources/staking.move</parameter>
+<parameter=old_str>struct StakingPool has key {
+    total_staked: u64,
+}</parameter>
+<parameter=new_str>struct StakingPool has key {
+    total_staked: u64,
+    total_rewards_distributed: u64,
+}</parameter>
+</function>
+
+USER: EXECUTION RESULT of [str_replace_editor]:
+File updated successfully.
+
+A: Contract modified. Now compiling and deploying:
+<function=execute_bash>
+<parameter=command>
+cd /workspace/staking_app/contract && lumio move compile --package-dir . && lumio move publish --package-dir . --assume-yes
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+Error: BACKWARD_INCOMPATIBLE_MODULE_UPDATE - cannot upgrade module with incompatible ABI changes
+
+A: ABI incompatible! I need to create a new account and redeploy. Using the redeploy script:
+<function=execute_bash>
+<parameter=command>
+bash /openhands/templates/redeploy-contract.sh /workspace/staking_app
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+Old address: 0x123...abc
+New address: 0x456...def
+Contract redeployed successfully!
+Updated: Move.toml, useContract.ts, types/index.ts
+
+A: Contract redeployed to new address! Now I need to restart frontend servers and run full regression:
+<function=execute_bash>
+<parameter=command>
+pkill -f "vite.*staking_app" || true
+cd /workspace/staking_app/frontend && VITE_WALLET_MODE=test pnpm dev --host --port $APP_PORT_2 &
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+VITE ready. Local: http://localhost:55000/
+
+A: Test Mode restarted with new contract address. Running full regression test:
+<function=execute_browser>
+<parameter=command>
+goto('http://localhost:55000')
+</parameter>
+</function>
+
+USER: BROWSER OBSERVATION:
+Page shows: TEST MODE, account 0x456...def, "Initialize" button (contract needs init)
+
+A: New contract needs initialization:
+<function=execute_browser>
+<parameter=command>
+click('Initialize')
+</parameter>
+</function>
+
+USER: BROWSER OBSERVATION:
+Transaction submitted. Status: ✅ Initialized
+
+A: Testing all features with the new contract:
+<function=execute_browser>
+<parameter=command>
+click('Stake 10 tokens')
+</parameter>
+</function>
+
+USER: BROWSER OBSERVATION:
+Staked: 10 ✅, Total Rewards Distributed: 0 (new field working!)
+
+A: All features work! Now starting Production Mode:
+<function=execute_bash>
+<parameter=command>
+cd /workspace/staking_app/frontend && pnpm dev --host --port $APP_PORT_1 &
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+VITE ready. Local: http://localhost:50000/
+
+A: Contract upgrade complete!
+
+Summary:
+- Added `total_rewards_distributed` field to contract
+- ABI was incompatible, so created new account via redeploy script
+- New contract address: 0x456...def
+- All files updated automatically
+- Full regression passed
+
+Servers:
+- [x] Test Mode: $APP_PORT_2 ✅
+- [x] Production Mode: $APP_PORT_1 ✅
+
+The new field is now available. Connect with Pontem Wallet to use it.
+<function=finish>
+</function>
+
+--------------------- END OF EXAMPLE 3 ---------------------
+
 Do NOT assume the environment is the same as in the example above.
 
 --------------------- NEW TASK DESCRIPTION ---------------------

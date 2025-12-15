@@ -54,34 +54,93 @@ const result = await callEntry('stake', [amount]);
 if (result) await refreshData();
 ```
 
-**useContract.ts MUST match your contract:**
-- Change MODULE_NAME to actual module
-- Add wrapper for EVERY entry/view function
-- Export ALL functions
+**THREE FILES MUST BE CUSTOMIZED (not template defaults!):**
+- `useContract.ts` - MODULE_NAME + ALL functions
+- `Documentation.tsx` - YOUR contract functions (not counter!)
+- `Home.tsx` - YOUR contract UI
 
 **If data doesn't change after TX = MOCK DATA = FIX IT!**
 
 ---
 
-⛔ **TESTING & COMPLETION RULES** ⛔
+⛔ **DECIMALS: CONVERT ONCE ONLY!** ⛔
 
-1. **Update useContract.ts** - change MODULE_NAME from 'counter' to your module!
-2. **Test ONLY in Test Mode** - `VITE_WALLET_MODE=test` on $APP_PORT_2
-3. **Initialize contract** - if has `initialize()`, call it first!
-4. **Verify data changes after TX** - if not = MOCK DATA = FIX!
-5. **Start Production Mode** - `pnpm dev --host --port $APP_PORT_1` REQUIRED!
+```typescript
+// ❌ WRONG - double conversion:
+const stake = (a) => callEntry('stake', [(a*1e8).toString()]); // hook converts
+await stake(parseFloat(input) * 1e8);  // handler ALSO converts!
+
+// ✅ CORRECT - convert in ONE place only!
+```
+
+---
+
+⛔ **AGGRESSIVE TESTING PROTOCOL** ⛔
+
+**Philosophy: ASSUME THERE ARE BUGS - FIND THEM!**
+
+1. **Console Clean** - NO red errors before testing!
+2. **Mock Detection** - data MUST change after TX
+3. **Edge Cases** - test zeros, max values, invalid inputs
+4. **Error Paths** - invalid ops must be REJECTED gracefully
+5. **State Consistency** - balances must add up!
+
+**Testing Checklist:**
+- [ ] Zero/empty inputs → validation error
+- [ ] Over-balance amounts → "insufficient" error
+- [ ] Invalid input (letters in numbers) → rejected
+- [ ] Double-click → no double-submit
+- [ ] Data changes after TX (not mocked!)
+- [ ] Console stays clean during all tests
 
 ⛔ **AFTER ANY FIX/CHANGE:**
-1. Run Test Mode regression (test ALL, not just the fix!)
-2. Verify the fix works
+1. Run FULL regression (ALL tests, not just the fix!)
+2. Verify fix works + nothing else broke
 3. **THEN** start Production Mode on $APP_PORT_1
-4. Never report complete with only Test Mode running!
+4. Never complete with only Test Mode running!
+
+---
+
+⛔ **CONTRACT CHANGES & ABI INCOMPATIBILITY** ⛔
+
+When modifying contract code and redeploying:
+
+**If publish fails with "BACKWARD_INCOMPATIBLE_MODULE_UPDATE":**
+```
+Error: BACKWARD_INCOMPATIBLE_MODULE_UPDATE - cannot upgrade module
+```
+
+This means ABI changed incompatibly. You MUST create new account:
+
+```bash
+bash /openhands/templates/redeploy-contract.sh PROJECT_DIR
+```
+
+This script will:
+1. Create new Lumio account
+2. Fund it from faucet
+3. Update Move.toml with new address
+4. Update frontend (useContract.ts, types/index.ts)
+5. Compile and deploy contract
+
+**After redeploy:**
+1. Restart frontend servers (kill old, start new)
+2. Initialize contract if needed
+3. Run FULL regression test
+4. Start Production Mode
+
+---
 
 **Before finish():**
 - [ ] useContract.ts MODULE_NAME matches contract (NOT 'counter'!)
+- [ ] Documentation.tsx describes YOUR functions (NOT counter template!)
+- [ ] Decimals converted in ONE place only (no double conversion!)
 - [ ] Full regression test passed in Test Mode
-- [ ] Production Mode running on $APP_PORT_1
+- [ ] **⛔ Production Mode MUST BE running on $APP_PORT_1** ← USER'S APP!
+- [ ] **⛔ Contract initialized for Production** (if has initialize())
 - [ ] No console errors
+
+**⛔ CRITICAL: Without $APP_PORT_1 = NO APP FOR USER = NOT COMPLETE!**
 
 **Vite HMR:** Don't restart server, just edit files!
 </LUMIO_VIBE_RUNTIME>
