@@ -122,11 +122,12 @@ class DockerRuntime(ActionExecutionClient):
         self._app_port_locks: list[PortLock] = []
 
         if os.environ.get('DOCKER_HOST_ADDR'):
+            scheme = os.environ.get('DOCKER_HOST_SCHEME', 'http')
             logger.info(
-                f'Using DOCKER_HOST_IP: {os.environ["DOCKER_HOST_ADDR"]} for local_runtime_url'
+                f'Using DOCKER_HOST_ADDR: {os.environ["DOCKER_HOST_ADDR"]} (scheme: {scheme}) for local_runtime_url'
             )
             self.config.sandbox.local_runtime_url = (
-                f'http://{os.environ["DOCKER_HOST_ADDR"]}'
+                f'{scheme}://{os.environ["DOCKER_HOST_ADDR"]}'
             )
 
         self.docker_client: docker.DockerClient = self._init_docker_client()
@@ -804,8 +805,9 @@ class DockerRuntime(ActionExecutionClient):
         hosts: dict[str, int] = {}
 
         host_addr = os.environ.get('DOCKER_HOST_ADDR', 'localhost')
+        scheme = os.environ.get('DOCKER_HOST_SCHEME', 'http')
         for port in self._app_ports:
-            hosts[f'http://{host_addr}:{port}'] = port
+            hosts[f'{scheme}://{host_addr}:{port}'] = port
 
         return hosts
 
