@@ -91,6 +91,7 @@ The frontend application uses the following environment variables:
 | `VITE_FRONTEND_PORT`        | Port to run the frontend application                                   | `3001`           |
 | `VITE_INSECURE_SKIP_VERIFY` | Skip TLS certificate verification                                      | `false`          |
 | `VITE_GITHUB_TOKEN`         | GitHub token for repository access (used in some tests)                | -                |
+| `VITE_PROXY_MODE`           | Route runtime requests through /runtime/{port} instead of hostname:port | `false`          |
 
 You can create a `.env` file in the frontend directory with these variables based on the `.env.sample` file.
 
