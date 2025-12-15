@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.dependencies import get_dependencies
 from openhands.server.services.lumio_service import LumioService
-from openhands.server.shared import server_config
+from openhands.server.shared import balance_manager, server_config
 from openhands.server.user_auth import get_user_settings_store
 from openhands.server.user_auth.default_user_auth import DefaultUserAuth
 from openhands.storage.data_models.settings import AuthWallet, Settings
@@ -29,6 +29,7 @@ def get_lumio_service() -> LumioService:
     return LumioService(
         rpc_url=server_config.lumio_rpc_url,
         contract_address=server_config.vibe_balance_contract,
+        admin_private_key=server_config.vibe_admin_private_key or None,
     )
 
 
@@ -266,3 +267,54 @@ async def delete_token(
     await request.state.session.clear_session()
 
     return True
+
+
+class BalanceResponse(BaseModel):
+    on_chain_balance: int
+    on_chain_balance_coins: float
+    accumulated_tokens: int
+    pending_deduction_octas: int
+    pending_deduction_coins: float
+    virtual_balance: int
+    virtual_balance_coins: float
+    token_price_per_million: int
+
+
+@app.get('/balance')
+async def get_balance(
+    user_settings_store: SettingsStore = Depends(get_user_settings_store),
+) -> BalanceResponse:
+    """Get user's current balance and usage stats."""
+    user_setting: Settings | None = await user_settings_store.load()
+
+    if user_setting is None or not user_setting.wallet.account:
+        raise HTTPException(status_code=401, detail='Not authenticated')
+
+    user_address = user_setting.wallet.account
+
+    await balance_manager.initialize()
+
+    if balance_manager.get_cached_balance(user_address) is None:
+        await balance_manager.refresh_balance(user_address)
+
+    stats = balance_manager.get_stats(user_address)
+    return BalanceResponse(**stats)
+
+
+@app.post('/balance/refresh')
+async def refresh_balance(
+    user_settings_store: SettingsStore = Depends(get_user_settings_store),
+) -> BalanceResponse:
+    """Refresh user's balance from blockchain."""
+    user_setting: Settings | None = await user_settings_store.load()
+
+    if user_setting is None or not user_setting.wallet.account:
+        raise HTTPException(status_code=401, detail='Not authenticated')
+
+    user_address = user_setting.wallet.account
+
+    await balance_manager.initialize()
+    await balance_manager.refresh_balance(user_address)
+
+    stats = balance_manager.get_stats(user_address)
+    return BalanceResponse(**stats)

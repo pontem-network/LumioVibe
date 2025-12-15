@@ -66,19 +66,34 @@ EOF
 
     # src/pages/Home.tsx
     cat > "$OUTPUT_DIR/frontend/src/pages/Home.tsx" <<EOF
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePontem } from '../hooks/usePontem';
 import { useContract } from '../hooks/useContract';
 
+// ⚠️ CRITICAL: This is an EXAMPLE page for a counter contract!
+// You MUST customize this for YOUR contract!
+//
+// ⚠️⚠️⚠️ ABSOLUTE RULES - NO EXCEPTIONS: ⚠️⚠️⚠️
+// 1. ALL data MUST come from callView - NEVER use hardcoded/mock values!
+// 2. ALL actions MUST call callEntry - NEVER just console.log!
+// 3. After successful transaction, call refreshData() to update from chain!
+//
+// ❌ FORBIDDEN: setBalance(1000000); or "// Mock data for now"
+// ✅ CORRECT: const bal = await getBalance(account); setBalance(bal);
+
 export default function Home() {
   const { connected, account, error: walletError, isInstalled, isTestMode } = usePontem();
+  // ⚠️ Update these imports to match YOUR useContract exports!
   const { initialize, increment, getCount, isInitialized, loading, error: txError, contractAddress } = useContract();
+
+  // ✅ State initialized to empty/zero - NOT mock values!
   const [initialized, setInitialized] = useState(false);
   const [count, setCount] = useState<number>(0);
 
   useEffect(() => { if (account) refreshData(); }, [account]);
 
-  const refreshData = async () => {
+  // ✅ CORRECT: All data fetched from blockchain via view functions
+  const refreshData = useCallback(async () => {
     if (!account) return;
     const isInit = await isInitialized(account);
     setInitialized(!!isInit);
@@ -86,10 +101,17 @@ export default function Home() {
       const c = await getCount(account);
       if (c !== null) setCount(c);
     }
-  };
+  }, [account, isInitialized, getCount]);
 
-  const handleInitialize = async () => { if (await initialize()) setTimeout(refreshData, 2000); };
-  const handleIncrement = async () => { if (await increment()) setTimeout(refreshData, 2000); };
+  // ✅ CORRECT: Actions call real entry functions, then refresh
+  const handleInitialize = async () => {
+    const result = await initialize();
+    if (result) await refreshData();  // ✅ Refresh from chain after TX
+  };
+  const handleIncrement = async () => {
+    const result = await increment();
+    if (result) await refreshData();  // ✅ Refresh from chain after TX
+  };
 
   if (!isInstalled && !isTestMode) return (
     <div className="text-center py-20">

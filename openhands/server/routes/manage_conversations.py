@@ -455,6 +455,7 @@ async def search_conversations(
 @app.get('/conversations/{conversation_id}')
 async def get_conversation(
     conversation_id: str = Depends(validate_conversation_id),
+    user_id: str | None = Depends(get_user_id),
     conversation_store: ConversationStore | None = Depends(get_conversation_store),
     app_conversation_service: AppConversationService = app_conversation_service_dependency,
 ) -> ConversationInfo | None:
@@ -469,12 +470,30 @@ async def get_conversation(
                 conversation_uuid
             )
             if app_conversation:
+                # Check ownership for V1 conversations
+                if (
+                    user_id
+                    and app_conversation.created_by_user_id
+                    and app_conversation.created_by_user_id != user_id
+                ):
+                    logger.warning(
+                        f'User {user_id} attempted to access V1 conversation {conversation_id} owned by {app_conversation.created_by_user_id}',
+                        extra={'session_id': conversation_id},
+                    )
+                    return None
                 return _to_conversation_info(app_conversation)
         except (ValueError, TypeError, Exception):
             # Not a V1 conversation or service error
             pass
 
         metadata = await conversation_store.get_metadata(conversation_id)
+        # Check ownership for V0 conversations
+        if user_id and metadata.user_id and metadata.user_id != user_id:
+            logger.warning(
+                f'User {user_id} attempted to access conversation {conversation_id} owned by {metadata.user_id}',
+                extra={'session_id': conversation_id},
+            )
+            return None
         num_connections = len(
             await conversation_manager.get_connections(filter_to_sids={conversation_id})
         )
@@ -507,6 +526,7 @@ async def delete_conversation(
     # Try V1 conversation first
     v1_result = await _try_delete_v1_conversation(
         conversation_id,
+        user_id,
         app_conversation_service,
         app_conversation_info_service,
         sandbox_service,
@@ -522,6 +542,7 @@ async def delete_conversation(
 
 async def _try_delete_v1_conversation(
     conversation_id: str,
+    user_id: str | None,
     app_conversation_service: AppConversationService,
     app_conversation_info_service: AppConversationInfoService,
     sandbox_service: SandboxService,
@@ -539,6 +560,17 @@ async def _try_delete_v1_conversation(
             )
         )
         if app_conversation_info:
+            # Check ownership before deleting
+            if (
+                user_id
+                and app_conversation_info.created_by_user_id
+                and app_conversation_info.created_by_user_id != user_id
+            ):
+                logger.warning(
+                    f'User {user_id} attempted to delete V1 conversation {conversation_id} owned by {app_conversation_info.created_by_user_id}',
+                    extra={'session_id': conversation_id},
+                )
+                return False
             # This is a V1 conversation, delete it using the app conversation service
             # Pass the conversation ID for secure deletion
             result = await app_conversation_service.delete_app_conversation(
@@ -589,7 +621,14 @@ async def _delete_v0_conversation(conversation_id: str, user_id: str | None) -> 
     """Delete a V0 conversation using the legacy logic."""
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     try:
-        await conversation_store.get_metadata(conversation_id)
+        metadata = await conversation_store.get_metadata(conversation_id)
+        # Check ownership before deleting
+        if user_id and metadata.user_id and metadata.user_id != user_id:
+            logger.warning(
+                f'User {user_id} attempted to delete conversation {conversation_id} owned by {metadata.user_id}',
+                extra={'session_id': conversation_id},
+            )
+            return False
     except FileNotFoundError:
         return False
 
@@ -745,9 +784,22 @@ async def start_conversation(
         )
 
     try:
-        # Check that the conversation exists
+        # Check that the conversation exists and user owns it
         try:
-            await conversation_store.get_metadata(conversation_id)
+            metadata = await conversation_store.get_metadata(conversation_id)
+            if metadata.user_id and metadata.user_id != user_id:
+                logger.warning(
+                    f'User {user_id} attempted to start conversation {conversation_id} owned by {metadata.user_id}',
+                    extra={'session_id': conversation_id},
+                )
+                return JSONResponse(
+                    content={
+                        'status': 'error',
+                        'conversation_id': conversation_id,
+                        'message': 'Access denied: you do not own this conversation',
+                    },
+                    status_code=status.HTTP_403_FORBIDDEN,
+                )
         except Exception:
             return JSONResponse(
                 content={

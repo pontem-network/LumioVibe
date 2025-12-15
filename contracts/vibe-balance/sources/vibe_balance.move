@@ -74,7 +74,7 @@ module vibe_balance::vibe_balance {
         let balance_store = BalanceStore {
             balances: table::new(),
             whitelist: table::new(),
-            token_price_in_coins: 1,
+            token_price_in_coins: 10_000,
             treasury: coin::zero<LumioCoin>(),
         };
 
@@ -215,7 +215,7 @@ module vibe_balance::vibe_balance {
         });
     }
 
-    public entry fun set_token_price(admin: &signer, price_in_coins: u64) acquires BalanceStore {
+    public entry fun set_token_price(admin: &signer, price_per_million: u64) acquires BalanceStore {
         let admin_addr = signer::address_of(admin);
 
         assert!(exists<BalanceStore>(admin_addr), error::not_found(E_NOT_INITIALIZED));
@@ -223,11 +223,11 @@ module vibe_balance::vibe_balance {
         let balance_store = borrow_global_mut<BalanceStore>(admin_addr);
 
         let old_price = balance_store.token_price_in_coins;
-        balance_store.token_price_in_coins = price_in_coins;
+        balance_store.token_price_in_coins = price_per_million;
 
         event::emit(TokenPriceUpdatedEvent {
             old_price,
-            new_price: price_in_coins,
+            new_price: price_per_million,
         });
     }
 
@@ -245,7 +245,7 @@ module vibe_balance::vibe_balance {
         );
 
         let balance_store = borrow_global_mut<BalanceStore>(admin_addr);
-        let token_price = balance_store.token_price_in_coins;
+        let price_per_million = balance_store.token_price_in_coins;
 
         let total_users = std::vector::length(&users);
         let total_tokens_deducted = 0u64;
@@ -256,32 +256,26 @@ module vibe_balance::vibe_balance {
             let user_addr = *std::vector::borrow(&users, i);
             let tokens_to_deduct = *std::vector::borrow(&tokens_amounts, i);
 
-            let coins_to_deduct = tokens_to_deduct * token_price;
+            let coins_to_deduct = (tokens_to_deduct * price_per_million) / 1_000_000;
 
-            assert!(
-                table::contains(&balance_store.balances, user_addr),
-                error::not_found(E_INSUFFICIENT_BALANCE)
-            );
+            if (coins_to_deduct > 0 && table::contains(&balance_store.balances, user_addr)) {
+                let current_balance = *table::borrow(&balance_store.balances, user_addr);
 
-            let current_balance = *table::borrow(&balance_store.balances, user_addr);
+                if (current_balance >= coins_to_deduct) {
+                    let new_balance = current_balance - coins_to_deduct;
+                    *table::borrow_mut(&mut balance_store.balances, user_addr) = new_balance;
 
-            assert!(
-                current_balance >= coins_to_deduct,
-                error::invalid_state(E_INSUFFICIENT_BALANCE)
-            );
+                    total_tokens_deducted = total_tokens_deducted + tokens_to_deduct;
+                    total_coins_deducted = total_coins_deducted + coins_to_deduct;
 
-            let new_balance = current_balance - coins_to_deduct;
-            *table::borrow_mut(&mut balance_store.balances, user_addr) = new_balance;
-
-            total_tokens_deducted = total_tokens_deducted + tokens_to_deduct;
-            total_coins_deducted = total_coins_deducted + coins_to_deduct;
-
-            event::emit(TokensDeductedEvent {
-                user: user_addr,
-                tokens_deducted: tokens_to_deduct,
-                coins_deducted: coins_to_deduct,
-                new_balance,
-            });
+                    event::emit(TokensDeductedEvent {
+                        user: user_addr,
+                        tokens_deducted: tokens_to_deduct,
+                        coins_deducted: coins_to_deduct,
+                        new_balance,
+                    });
+                };
+            };
 
             i = i + 1;
         };
@@ -315,7 +309,7 @@ module vibe_balance::vibe_balance {
         let admin_addr = @vibe_balance;
 
         if (!exists<BalanceStore>(admin_addr)) {
-            return 1
+            return 10_000
         };
 
         let balance_store = borrow_global<BalanceStore>(admin_addr);

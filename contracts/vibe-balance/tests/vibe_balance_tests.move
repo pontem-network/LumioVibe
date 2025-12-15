@@ -10,7 +10,7 @@ module vibe_balance::vibe_balance_tests {
         vibe_balance::initialize(admin);
 
         let token_price = vibe_balance::get_token_price();
-        assert!(token_price == 1, 0);
+        assert!(token_price == 10_000, 0);
     }
 
     #[test(admin = @vibe_balance)]
@@ -147,12 +147,12 @@ module vibe_balance::vibe_balance_tests {
         vibe_balance::initialize(admin);
 
         let initial_price = vibe_balance::get_token_price();
-        assert!(initial_price == 1, 1);
+        assert!(initial_price == 10_000, 1);
 
-        vibe_balance::set_token_price(admin, 10);
+        vibe_balance::set_token_price(admin, 20_000);
 
         let new_price = vibe_balance::get_token_price();
-        assert!(new_price == 10, 2);
+        assert!(new_price == 20_000, 2);
     }
 
     #[test(admin = @vibe_balance, lumio_framework = @lumio_framework, user = @0x123)]
@@ -178,7 +178,7 @@ module vibe_balance::vibe_balance_tests {
         std::vector::push_back(&mut users, user_addr);
 
         let tokens = std::vector::empty<u64>();
-        std::vector::push_back(&mut tokens, 100);
+        std::vector::push_back(&mut tokens, 10_000);
 
         vibe_balance::batch_deduct(admin, users, tokens);
 
@@ -199,7 +199,7 @@ module vibe_balance::vibe_balance_tests {
 
         vibe_balance::initialize(admin);
         vibe_balance::add_to_whitelist(admin, user_addr);
-        vibe_balance::set_token_price(admin, 10);
+        vibe_balance::set_token_price(admin, 100_000);
 
         let (burn_cap, mint_cap) = lumio_coin::initialize_for_test(lumio_framework);
         coin::register<LumioCoin>(user);
@@ -213,7 +213,7 @@ module vibe_balance::vibe_balance_tests {
         std::vector::push_back(&mut users, user_addr);
 
         let tokens = std::vector::empty<u64>();
-        std::vector::push_back(&mut tokens, 10);
+        std::vector::push_back(&mut tokens, 1_000);
 
         vibe_balance::batch_deduct(admin, users, tokens);
 
@@ -225,8 +225,7 @@ module vibe_balance::vibe_balance_tests {
     }
 
     #[test(admin = @vibe_balance, lumio_framework = @lumio_framework, user = @0x123)]
-    #[expected_failure(abort_code = 0x30003)]
-    public fun test_batch_deduct_insufficient_balance(
+    public fun test_batch_deduct_small_amount_skipped(
         admin: &signer,
         lumio_framework: &signer,
         user: &signer
@@ -248,9 +247,12 @@ module vibe_balance::vibe_balance_tests {
         std::vector::push_back(&mut users, user_addr);
 
         let tokens = std::vector::empty<u64>();
-        std::vector::push_back(&mut tokens, 200);
+        std::vector::push_back(&mut tokens, 10);
 
         vibe_balance::batch_deduct(admin, users, tokens);
+
+        let balance = vibe_balance::get_balance(user_addr);
+        assert!(balance == 100, 1);
 
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
@@ -287,8 +289,8 @@ module vibe_balance::vibe_balance_tests {
         std::vector::push_back(&mut users, user2_addr);
 
         let tokens = std::vector::empty<u64>();
-        std::vector::push_back(&mut tokens, 100);
-        std::vector::push_back(&mut tokens, 50);
+        std::vector::push_back(&mut tokens, 10_000);
+        std::vector::push_back(&mut tokens, 5_000);
 
         vibe_balance::batch_deduct(admin, users, tokens);
 

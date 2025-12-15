@@ -120,6 +120,8 @@ import { LUMIO_RPC, IS_TEST_MODE, TEST_PRIVATE_KEY } from '../types/pontem';
 import { Aptos, AptosConfig, Network, Ed25519PrivateKey, Account } from '@aptos-labs/ts-sdk';
 
 const CONTRACT_ADDRESS = '$DEPLOYER_ADDRESS';
+// ⚠️ CRITICAL: Change MODULE_NAME to match your actual Move module!
+// Example: 'moon_coin', 'voting', 'nft_marketplace', etc.
 const MODULE_NAME = 'counter';
 
 const lumioConfig = new AptosConfig({
@@ -217,12 +219,23 @@ export function useContract() {
     }
   }, []);
 
+  // ⚠️ CRITICAL: These are EXAMPLE functions for a counter contract!
+  // You MUST update these to match YOUR contract's entry and view functions!
+  //
+  // Example for a staking contract:
+  //   const stake = useCallback((amount: number) => callEntry('stake_lumio', [amount.toString()]), [callEntry]);
+  //   const unstake = useCallback((amount: number) => callEntry('unstake_lumio', [amount.toString()]), [callEntry]);
+  //   const getStakingInfo = useCallback((addr: string) => callView<[number,number,number,number]>('get_staking_info', [addr]), [callView]);
+  //
+  // ⚠️ NEVER use mock/hardcoded data! ALL data must come from callView!
+
   const initialize = useCallback(() => callEntry('initialize'), [callEntry]);
   const increment = useCallback(() => callEntry('increment'), [callEntry]);
   const getCount = useCallback((addr: string) => callView<number>('get_value', [addr]), [callView]);
   const isInitialized = useCallback((addr: string) => callView<boolean>('exists_at', [addr]), [callView]);
 
   return {
+    // ⚠️ Update these exports to include YOUR contract functions!
     initialize, increment, getCount, isInitialized,
     callEntry, callView, loading, error, account,
     contractAddress: CONTRACT_ADDRESS,

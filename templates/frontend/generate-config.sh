@@ -6,7 +6,7 @@ generate_frontend_config() {
     local OUTPUT_DIR="$1"
     local PROJECT_NAME="$2"
 
-    mkdir -p "$OUTPUT_DIR/frontend/src"/{types,hooks,pages,components}
+    mkdir -p "$OUTPUT_DIR/frontend/src"/{types,hooks,pages,components,utils,test}
 
     # package.json
     cat > "$OUTPUT_DIR/frontend/package.json" <<EOF
@@ -19,7 +19,11 @@ generate_frontend_config() {
     "dev": "vite",
     "dev:test": "VITE_WALLET_MODE=test vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start:prod": "kill \$(lsof -t -i:\$APP_PORT_1) 2>/dev/null || true; vite --host --port \$APP_PORT_1 --strictPort",
+    "start:test": "kill \$(lsof -t -i:\$APP_PORT_2) 2>/dev/null || true; VITE_WALLET_MODE=test vite --host --port \$APP_PORT_2 --strictPort"
   },
   "dependencies": {
     "@aptos-labs/ts-sdk": "^1.33.1",
@@ -28,14 +32,18 @@ generate_frontend_config() {
     "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
+    "@testing-library/react": "^14.2.1",
+    "@testing-library/jest-dom": "^6.4.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^24.0.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
     "typescript": "^5.7.2",
-    "vite": "^6.0.3"
+    "vite": "^6.0.3",
+    "vitest": "^1.3.1"
   }
 }
 EOF
@@ -63,7 +71,84 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+  },
 })
+EOF
+
+    # Test setup
+    cat > "$OUTPUT_DIR/frontend/src/test/setup.ts" <<EOF
+import '@testing-library/jest-dom';
+EOF
+
+    # Utils for testing (decimal conversion etc)
+    cat > "$OUTPUT_DIR/frontend/src/utils/decimals.ts" <<EOF
+// Lumio uses 8 decimals like Aptos
+export const DECIMALS = 8;
+export const MULTIPLIER = 100000000; // 10^8
+
+// Convert human-readable amount to chain units (smallest units)
+export function toChainUnits(humanAmount: number): bigint {
+  return BigInt(Math.round(humanAmount * MULTIPLIER));
+}
+
+// Convert chain units to human-readable amount
+export function toHumanUnits(chainUnits: bigint | number): number {
+  return Number(chainUnits) / MULTIPLIER;
+}
+
+// Format for display with specified decimal places
+export function formatAmount(chainUnits: bigint | number, decimals: number = 4): string {
+  const human = toHumanUnits(chainUnits);
+  return human.toFixed(decimals);
+}
+EOF
+
+    # Test file for decimals utility
+    cat > "$OUTPUT_DIR/frontend/src/utils/decimals.test.ts" <<EOF
+import { describe, it, expect } from 'vitest';
+import { toChainUnits, toHumanUnits, formatAmount, MULTIPLIER } from './decimals';
+
+describe('decimal conversions', () => {
+  it('converts 1 human unit to correct chain units', () => {
+    expect(toChainUnits(1)).toBe(BigInt(MULTIPLIER));
+  });
+
+  it('converts fractional human units correctly', () => {
+    expect(toChainUnits(1.5)).toBe(BigInt(150000000));
+    expect(toChainUnits(0.00000001)).toBe(BigInt(1));
+  });
+
+  it('converts chain units to human units', () => {
+    expect(toHumanUnits(BigInt(MULTIPLIER))).toBe(1);
+    expect(toHumanUnits(BigInt(150000000))).toBe(1.5);
+  });
+
+  it('handles zero correctly', () => {
+    expect(toChainUnits(0)).toBe(BigInt(0));
+    expect(toHumanUnits(BigInt(0))).toBe(0);
+  });
+
+  it('formats amount with default decimals', () => {
+    expect(formatAmount(BigInt(123456789))).toBe('1.2346');
+  });
+
+  it('formats amount with custom decimals', () => {
+    expect(formatAmount(BigInt(123456789), 2)).toBe('1.23');
+  });
+
+  // ⚠️ ADD YOUR CONTRACT-SPECIFIC TESTS BELOW!
+  // Example for staking:
+  // it('calculates reward correctly', () => {
+  //   const staked = toChainUnits(100);
+  //   const rewardRate = 0.1; // 10%
+  //   const expectedReward = toChainUnits(10);
+  //   expect(calculateReward(staked, rewardRate)).toBe(expectedReward);
+  // });
+});
 EOF
 
     # tsconfig.json

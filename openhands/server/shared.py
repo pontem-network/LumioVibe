@@ -10,6 +10,8 @@ from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
 )
 from openhands.server.monitoring import MonitoringListener
+from openhands.server.services.balance_manager import BalanceManager
+from openhands.server.services.lumio_service import LumioService
 from openhands.server.types import ServerConfigInterface
 from openhands.storage import get_file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -75,3 +77,11 @@ ConversationStoreImpl = get_impl(
     ConversationStore,
     server_config.conversation_store_class,
 )
+
+lumio_service = LumioService(
+    rpc_url=server_config.lumio_rpc_url,
+    contract_address=server_config.vibe_balance_contract,
+    admin_private_key=server_config.vibe_admin_private_key or None,
+)
+
+balance_manager = BalanceManager.get_instance(lumio_service)

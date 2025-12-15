@@ -161,8 +161,10 @@ async def disconnect(connection_id: str) -> None:
 def _invalid_session_api_key(query_params: dict[str, list[Any]]):
     session_api_key = os.getenv('SESSION_API_KEY')
     if not session_api_key:
+        logger.debug('SESSION_API_KEY not configured, skipping WebSocket API key check')
         return False
-    query_api_keys = query_params['session_api_key']
+    query_api_keys = query_params.get('session_api_key', [])
     if not query_api_keys:
+        logger.warning('WebSocket connection attempted without session_api_key')
         return True
     return query_api_keys[0] != session_api_key

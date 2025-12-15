@@ -4,6 +4,7 @@ import socketio
 from authx_extra.session import SessionMiddleware
 
 from openhands.core.config.openhands_config import SESSION_SECRET_KEY
+from openhands.core.logger import openhands_logger as logger
 from openhands.server.app import app as base_app
 from openhands.server.listen_socket import sio
 from openhands.server.middleware import (
@@ -21,6 +22,17 @@ if os.getenv('SERVE_FRONTEND', 'true').lower() == 'true':
         '/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
     )
 
+_is_production = os.getenv('ENVIRONMENT', '').lower() == 'production'
+_secure_cookies = (
+    os.getenv('SECURE_COOKIES', 'true' if _is_production else 'false').lower() == 'true'
+)
+
+if _is_production and not _secure_cookies:
+    logger.warning(
+        'SECURITY WARNING: Running in production without secure cookies. '
+        'Set SECURE_COOKIES=true for HTTPS deployments.'
+    )
+
 base_app.add_middleware(LocalhostCORSMiddleware)
 base_app.add_middleware(CacheControlMiddleware)
 base_app.add_middleware(TokenRateLimitMiddleware)
@@ -32,8 +44,8 @@ base_app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET_KEY,
     store=MemoryIOSession(),
-    http_only=False,
-    secure=False,
+    http_only=True,
+    secure=_secure_cookies,
     max_age=3600,
     session_cookie='usid',
     session_object='session',

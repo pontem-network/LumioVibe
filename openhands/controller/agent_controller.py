@@ -34,6 +34,7 @@ from openhands.core.exceptions import (
     AgentStuckInLoopError,
     FunctionCallNotExistsError,
     FunctionCallValidationError,
+    InsufficientBalanceError,
     LLMContextWindowExceedError,
     LLMMalformedActionError,
     LLMNoActionError,
@@ -898,10 +899,27 @@ class AgentController:
             action = self._replay_manager.step()
         else:
             try:
+                if self.user_id:
+                    self._check_balance_before_llm()
+
+                tokens_before = self._get_accumulated_tokens()
                 action = self.agent.step(self.state)
+                tokens_after = self._get_accumulated_tokens()
+
+                if self.user_id:
+                    tokens_used = tokens_after - tokens_before
+                    if tokens_used > 0:
+                        self._schedule_token_deduction(tokens_used)
+
                 if action is None:
                     raise LLMNoActionError('No action was returned')
                 action._source = EventSource.AGENT  # type: ignore [attr-defined]
+            except InsufficientBalanceError as e:
+                self.event_stream.add_event(
+                    ErrorObservation(content=str(e)),
+                    EventSource.AGENT,
+                )
+                return
             except (
                 LLMMalformedActionError,
                 LLMNoActionError,
@@ -1356,6 +1374,40 @@ Agent is now continuing with the same task...
             # If no user message found, fall back to regular recovery
             print('\n⚠️  No previous user message found. Using standard recovery.')
             await self._perform_loop_recovery(stuck_analysis)
+
+    def _get_accumulated_tokens(self) -> int:
+        """Get current accumulated token count from agent's LLM metrics."""
+        try:
+            usage = self.agent.llm.metrics.accumulated_token_usage
+            return usage.prompt_tokens + usage.completion_tokens
+        except Exception:
+            return 0
+
+    def _check_balance_before_llm(self) -> None:
+        """Check if user has sufficient balance before LLM call."""
+        if not self.user_id:
+            return
+        try:
+            from openhands.server.shared import balance_manager
+
+            if not balance_manager.check_balance(self.user_id):
+                raise InsufficientBalanceError()
+        except ImportError:
+            pass
+
+    def _schedule_token_deduction(self, tokens_used: int) -> None:
+        """Add tokens to pending deductions (flushed periodically in batch)."""
+        if not self.user_id:
+            return
+        try:
+            from openhands.server.shared import balance_manager
+
+            balance_manager.add_tokens(self.user_id, tokens_used)
+            logger.debug(f'Added {tokens_used} tokens for {self.user_id}')
+        except ImportError:
+            pass
+        except Exception as e:
+            logger.error(f'Error adding token deduction: {e}')
 
     def save_state(self):
         self.state_tracker.save_state()

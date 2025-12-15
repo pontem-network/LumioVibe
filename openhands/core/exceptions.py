@@ -233,3 +233,17 @@ class MicroagentValidationError(MicroagentError):
 
     def __init__(self, message: str = 'Microagent validation failed') -> None:
         super().__init__(message)
+
+
+# ============================================
+# Balance Exceptions
+# ============================================
+
+
+class InsufficientBalanceError(Exception):
+    """Raised when user has insufficient balance for LLM calls."""
+
+    def __init__(
+        self, message: str = 'Insufficient balance. Please top up to continue.'
+    ) -> None:
+        super().__init__(message)
