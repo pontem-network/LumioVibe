@@ -242,4 +242,50 @@ interface ImportMeta {
   readonly env: ImportMetaEnv
 }
 EOF
+
+    # start.sh - ONLY way to run frontend
+    cat > "$OUTPUT_DIR/frontend/start.sh" <<'STARTSCRIPT'
+#!/bin/bash
+# Frontend start script - ALWAYS use this to run the frontend
+# Usage: ./start.sh [--test]
+
+set -e
+
+if [ -z "$APP_PORT_1" ]; then
+    echo "ERROR: APP_PORT_1 environment variable is not set!"
+    echo "This script must be run inside LumioVibe runtime."
+    exit 1
+fi
+
+PORT="$APP_PORT_1"
+MODE=""
+
+if [ "$1" = "--test" ] || [ "$1" = "-t" ]; then
+    MODE="test"
+    echo "Starting frontend in TEST mode (no wallet required)..."
+else
+    echo "Starting frontend in PRODUCTION mode (Pontem Wallet required)..."
+fi
+
+# Kill any process on APP_PORT_1
+echo "Killing any process on port $PORT..."
+lsof -ti:$PORT | xargs kill -9 2>/dev/null || true
+sleep 1
+
+# Double check port is free
+if lsof -ti:$PORT >/dev/null 2>&1; then
+    echo "ERROR: Port $PORT is still in use!"
+    lsof -i:$PORT
+    exit 1
+fi
+
+echo "Starting on port $PORT..."
+
+if [ "$MODE" = "test" ]; then
+    VITE_WALLET_MODE=test exec pnpm vite --host --port $PORT --strictPort
+else
+    exec pnpm vite --host --port $PORT --strictPort
+fi
+STARTSCRIPT
+    chmod +x "$OUTPUT_DIR/frontend/start.sh"
 }

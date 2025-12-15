@@ -100,11 +100,13 @@ Replace in all files:
 
 ```bash
 pnpm install
-pnpm dev --host --port $APP_PORT_1
+./start.sh          # Production mode
+./start.sh --test   # Test mode (no wallet needed)
 ```
 
 <IMPORTANT>
-⚠️ ALWAYS use `$APP_PORT_1` - this port is mapped from Docker to host!
+⚠️ ALWAYS use `./start.sh` - it automatically uses $APP_PORT_1 and kills previous instances!
+⚠️ NEVER use `pnpm dev` directly - Vite may pick random unmapped port!
 ⚠️ Start the server ONCE and NEVER restart - Vite HMR handles all changes automatically.
 </IMPORTANT>
 

@@ -192,14 +192,19 @@ lumio move publish --package-dir . --assume-yes
 ### Run frontend (Test Mode - no wallet needed)
 \`\`\`bash
 cd $OUTPUT_DIR/frontend
-pnpm dev:test --host --port \$APP_PORT_1
+./start.sh --test
 \`\`\`
 
 ### Run frontend (Production Mode - requires Pontem Wallet)
 \`\`\`bash
 cd $OUTPUT_DIR/frontend
-pnpm dev --host --port \$APP_PORT_1
+./start.sh
 \`\`\`
+
+⚠️ IMPORTANT: ALWAYS use ./start.sh to run frontend!
+- It automatically uses APP_PORT_1
+- It kills any previous instance on that port
+- NEVER use "pnpm dev" or specify ports manually!
 EOF
 
 echo ""
