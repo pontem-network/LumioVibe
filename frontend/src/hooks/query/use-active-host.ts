@@ -4,6 +4,7 @@ import React from "react";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useRuntimeIsReady } from "#/hooks/use-runtime-is-ready";
+import { transformRuntimeHostUrl } from "#/utils/websocket-url";
 
 export const useActiveHost = () => {
   const [activeHost, setActiveHost] = React.useState<string | null>(null);
@@ -14,7 +15,7 @@ export const useActiveHost = () => {
     queryKey: [conversationId, "hosts"],
     queryFn: async () => {
       const hosts = await ConversationService.getWebHosts(conversationId);
-      return { hosts };
+      return { hosts: hosts.map(transformRuntimeHostUrl) };
     },
     enabled: runtimeIsReady && !!conversationId,
     initialData: { hosts: [] },

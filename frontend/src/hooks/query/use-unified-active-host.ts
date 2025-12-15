@@ -7,6 +7,7 @@ import { useRuntimeIsReady } from "#/hooks/use-runtime-is-ready";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useBatchSandboxes } from "./use-batch-sandboxes";
 import { useConversationConfig } from "./use-conversation-config";
+import { transformRuntimeHostUrl } from "#/utils/websocket-url";
 
 /**
  * Unified hook to get active web host for both legacy (V0) and V1 conversations
@@ -45,14 +46,14 @@ export const useUnifiedActiveHost = () => {
         const workerUrls =
           sandbox.exposed_urls
             ?.filter((url) => url.name.startsWith("WORKER_"))
-            .map((url) => url.url) || [];
+            .map((url) => transformRuntimeHostUrl(url.url)) || [];
 
         return { hosts: workerUrls };
       }
 
       // V0 (Legacy): Use the legacy API endpoint
       const hosts = await ConversationService.getWebHosts(conversationId);
-      return { hosts };
+      return { hosts: hosts.map(transformRuntimeHostUrl) };
     },
     enabled:
       runtimeIsReady &&

@@ -2,7 +2,7 @@
  * Check if proxy mode is enabled
  * In proxy mode, runtime requests go to hostname/runtime/{port} instead of hostname:{port}
  */
-const isProxyMode = (): boolean =>
+export const isProxyMode = (): boolean =>
   import.meta.env.VITE_PROXY_MODE === "true";
 
 /**
@@ -18,6 +18,31 @@ function extractPort(url: URL): string | null {
   if (url.protocol === "https:") return "443";
   if (url.protocol === "http:") return "80";
   return null;
+}
+
+/**
+ * Transforms a runtime host URL for proxy mode
+ * In proxy mode: converts http://localhost:54928 to https://current-host/runtime/54928
+ * In normal mode: returns the URL unchanged
+ * @param hostUrl The runtime host URL (e.g., "http://localhost:54928")
+ * @returns Transformed URL for proxy mode or original URL
+ */
+export function transformRuntimeHostUrl(hostUrl: string): string {
+  if (!isProxyMode()) {
+    return hostUrl;
+  }
+
+  try {
+    const url = new URL(hostUrl);
+    const port = extractPort(url);
+    if (port) {
+      const protocol = window.location.protocol;
+      return `${protocol}//${window.location.host}/runtime/${port}`;
+    }
+  } catch {
+    // Invalid URL, return as-is
+  }
+  return hostUrl;
 }
 
 /**
