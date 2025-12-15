@@ -441,6 +441,16 @@ class AgentController:
         return False
 
     def on_event(self, event: Event) -> None:
+        self.log('info', 'on_event')
+        self.log('info', event)
+        # self.log('info', self.state.metrics)
+        self.log('info', self.state.metrics.get())
+        self.log('info', self.state.get_local_metrics())
+        self.log('info', self.conversation_stats.get_combined_metrics())
+
+        # if event.source == EventSource.USER:
+        #     return None
+
         """Callback from the event stream. Notifies the controller of incoming events.
 
         Args:
