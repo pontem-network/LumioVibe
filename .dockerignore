@@ -12,6 +12,7 @@ frontend/node_modules
 !README.md
 
 # Hidden files and directories
+!frontend/.env
 .*
 __pycache__
 
