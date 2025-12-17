@@ -6,7 +6,7 @@ import {
   SignMessageResponse,
 } from "@pontem/aptos-wallet-adapter";
 import { createContext, useContext } from "react";
-import { getConfig, LumioConfig } from "#/services/vibe-balance";
+import { vibeBalance } from "#/services/vibe-balance";
 
 declare const window: PontemWindow;
 
@@ -179,17 +179,24 @@ class AuthToken {
 export class AuthState {
   connected: boolean = false;
 
-  token: AuthToken = new AuthToken(true);
+  initializing: boolean = true;
 
-  lumio_settings: LumioConfig = getConfig();
+  token: AuthToken = new AuthToken(true);
 
   async init(): Promise<AuthState> {
     const { pontem } = window;
 
-    if (!pontem || !(await pontem.isConnected())) return this;
-    if (!(await this.token.check())) return this;
+    if (!pontem || !(await pontem.isConnected())) {
+      this.initializing = false;
+      return this;
+    }
+    if (!(await this.token.check())) {
+      this.initializing = false;
+      return this;
+    }
 
     this.connected = true;
+    this.initializing = false;
 
     return this;
   }
@@ -218,30 +225,35 @@ export class AuthState {
 
   async balance(): Promise<number> {
     if (!this.connected) return 0;
-    const { account } = this.token;
 
-    if (!account) return 0.0;
+    const { pontem } = window;
+    if (!pontem) return 0.0;
 
     try {
-      const balanceResponse: {
-        virtual_balance_coins: number;
-        on_chain_balance_coins: number;
-        accumulated_tokens: number;
-        pending_deduction_coins: number;
-      } = await fetchWithProc("/api/token/balance", {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
-      });
+      const config = vibeBalance.getConfig();
+      if (!config.contractAddress) {
+        console.warn("[VibeBalance] Contract not configured");
+        return 0.0;
+      }
+
+      const account = await pontem.account();
+      if (!account) return 0.0;
+
+      console.log("[VibeBalance] Fetching balance for:", account);
+      console.log("[VibeBalance] Contract:", config.contractAddress);
+      console.log("[VibeBalance] RPC:", config.rpcUrl);
+
+      const balanceBigInt = await vibeBalance.getBalance(account);
+      console.log("[VibeBalance] Raw balance:", balanceBigInt.toString());
+
+      const balanceNumber = Number(balanceBigInt) / 10 ** 8;
 
       return (
-        Math.round(
-          balanceResponse.virtual_balance_coins * 10 ** NUMBER_OF_DECIMALS,
-        ) /
+        Math.round(balanceNumber * 10 ** NUMBER_OF_DECIMALS) /
         10 ** NUMBER_OF_DECIMALS
       );
-    } catch {
+    } catch (error) {
+      console.error("[VibeBalance] Error fetching balance:", error);
       return 0.0;
     }
   }
@@ -249,18 +261,20 @@ export class AuthState {
   async topUpBalance(amount: number = 1000): Promise<void> {
     const { pontem } = window;
     if (!this.connected || !pontem) return;
+
+    const config = vibeBalance.getConfig();
     const network = await pontem.network();
 
-    if (network.api?.indexOf(this.lumio_settings.rpcUrl) === -1) {
+    if (network.api?.indexOf(config.rpcUrl) === -1) {
       throw new Error(
         `Please connect to the Lumio network and switch to the correct chain.
 
-        RPC: ${this.lumio_settings.rpcUrl}`,
+        RPC: ${config.rpcUrl}`,
       );
     }
 
     const { success } = await pontem.signAndSubmit({
-      function: `${this.lumio_settings.contractAddress}::vibe_balance::deposit`,
+      function: `${config.contractAddress}::vibe_balance::deposit`,
       arguments: [amount.toString()],
     });
 

@@ -71,18 +71,23 @@ export default function MainApp() {
   //   isError: isAuthError,
   // } = useIsAuthed();
 
-  const isWalletAuth = useAuthWallet().connected;
+  const authWallet = useAuthWallet();
+  const isWalletAuth = authWallet.connected;
+  const isInitializing = authWallet.initializing;
+
   React.useEffect(() => {
     if (pathname.indexOf("/settings") === 0) navigate("/");
   }, [pathname]);
 
   React.useEffect(() => {
+    if (isInitializing) return;
+
     if (!isWalletAuth && pathname !== "/auth") {
       navigate("/auth");
     } else if (isWalletAuth && pathname === "/auth") {
       navigate("/");
     }
-  }, [isWalletAuth, pathname]);
+  }, [isWalletAuth, isInitializing, pathname]);
 
   // // Always call the hook, but we'll only use the result when not on TOS page
   // const gitHubAuthUrl = useGitHubAuthUrl({
