@@ -4,11 +4,11 @@
 Working directory: {{ runtime_info.working_dir }}
 {% endif %}
 {% if runtime_info.available_hosts %}
-Available hosts for web apps:
+Available hosts for web apps (use these URLs to access your apps!):
 {% for host, port in runtime_info.available_hosts.items() -%}
-* {{ host }} (port {{ port }})
+* {{ host }} (binds to port {{ port }})
 {% endfor %}
-Use these ports for dev servers. Set server.host=true for Vite.
+Use $APP_PORT_1 for dev server binding. Use $APP_BASE_URL_1 when showing URL to user!
 {% endif %}
 
 <LUMIO_VIBE_RUNTIME>
@@ -130,10 +130,14 @@ cd frontend && ./start.sh --test &   # Test Mode on $APP_PORT_1
 ```
 
 The script automatically:
-1. Validates $APP_PORT_1 is set and in range 50000-54999
+1. Validates $APP_PORT_1 and $APP_BASE_URL_1 are set
 2. Kills process on $APP_PORT_1
 3. Verifies port is free
 4. Uses --strictPort (won't pick random port)
+5. Passes VITE_BASE_URL to frontend (accessible via import.meta.env.VITE_BASE_URL)
+
+**⚠️ To show URL to user: use `$APP_BASE_URL_1` (NOT `http://localhost:$APP_PORT_1`)!**
+The URL format depends on deployment configuration.
 
 ❌ NEVER: `pnpm dev`, `pnpm start:prod`, `pnpm start:test`, `export APP_PORT_1=...`
 ✅ ALWAYS: `cd frontend && ./start.sh &` (with &!)

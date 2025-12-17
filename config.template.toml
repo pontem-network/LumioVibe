@@ -353,6 +353,13 @@ classpath = "my_package.my_module.MyCustomAgent"
 # Useful when deploying OpenHands in a remote machine where you need to expose a specific port.
 #vscode_port = 41234
 
+# URL mask for building APP_BASE_URL_1 and APP_BASE_URL_2 environment variables.
+# Use <PORT> as placeholder for the port number.
+# Examples:
+#   - http://localhost:<PORT> (default, for local development)
+#   - https://example.com/runtime/<PORT> (for server deployment with path-based routing)
+#app_url_mask = "http://localhost:<PORT>"
+
 # Volume mounts in the format 'host_path:container_path[:mode]'
 # e.g. '/my/host/dir:/workspace:rw'
 # Multiple mounts can be specified using commas

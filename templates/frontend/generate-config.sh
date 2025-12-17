@@ -236,6 +236,7 @@ EOF
 
 interface ImportMetaEnv {
   readonly VITE_WALLET_MODE: string
+  readonly VITE_BASE_URL: string
 }
 
 interface ImportMeta {
@@ -249,7 +250,7 @@ EOF
 # Frontend start script - ALWAYS use this to run the frontend
 # Usage: ./start.sh [--test]
 #
-# ⛔ DO NOT set APP_PORT_1 manually! It must be set by the runtime.
+# ⛔ DO NOT set APP_PORT_1 or APP_BASE_URL_1 manually! They must be set by the runtime.
 
 set -e
 
@@ -275,7 +276,15 @@ if [ "$APP_PORT_1" -lt 50000 ] || [ "$APP_PORT_1" -gt 54999 ]; then
     exit 1
 fi
 
+# Check APP_BASE_URL_1 is set
+if [ -z "$APP_BASE_URL_1" ]; then
+    echo "⛔ ERROR: APP_BASE_URL_1 environment variable is not set!"
+    echo "This script must be run inside LumioVibe runtime."
+    exit 1
+fi
+
 PORT="$APP_PORT_1"
+BASE_URL="$APP_BASE_URL_1"
 MODE=""
 
 if [ "$1" = "--test" ] || [ "$1" = "-t" ]; then
@@ -298,11 +307,12 @@ if lsof -ti:$PORT >/dev/null 2>&1; then
 fi
 
 echo "Starting on port $PORT..."
+echo "Base URL: $BASE_URL"
 
 if [ "$MODE" = "test" ]; then
-    VITE_WALLET_MODE=test exec pnpm vite --host --port $PORT --strictPort
+    VITE_WALLET_MODE=test VITE_BASE_URL="$BASE_URL" exec pnpm vite --host --port $PORT --strictPort
 else
-    exec pnpm vite --host --port $PORT --strictPort
+    VITE_BASE_URL="$BASE_URL" exec pnpm vite --host --port $PORT --strictPort
 fi
 STARTSCRIPT
     chmod +x "$OUTPUT_DIR/frontend/start.sh"
