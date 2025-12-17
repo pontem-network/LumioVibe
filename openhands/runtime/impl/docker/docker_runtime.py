@@ -494,14 +494,19 @@ class DockerRuntime(ActionExecutionClient):
 
         # Combine environment variables
         environment = dict(**self.initial_env_vars)
+        app_port_1 = self._app_ports[0]
+        app_port_2 = self._app_ports[1]
+        app_url_mask = self.config.sandbox.app_url_mask
         environment.update(
             {
                 'port': str(self._container_port),
                 'PYTHONUNBUFFERED': '1',
                 # Passing in the ports means nested runtimes do not come up with their own ports!
                 'VSCODE_PORT': str(self._vscode_port),
-                'APP_PORT_1': str(self._app_ports[0]),
-                'APP_PORT_2': str(self._app_ports[1]),
+                'APP_PORT_1': str(app_port_1),
+                'APP_PORT_2': str(app_port_2),
+                'APP_BASE_URL_1': app_url_mask.replace('<PORT>', str(app_port_1)),
+                'APP_BASE_URL_2': app_url_mask.replace('<PORT>', str(app_port_2)),
                 'OPENHANDS_SESSION_ID': str(self.sid),
                 'PIP_BREAK_SYSTEM_PACKAGES': '1',
             }
@@ -804,10 +809,9 @@ class DockerRuntime(ActionExecutionClient):
     def web_hosts(self) -> dict[str, int]:
         hosts: dict[str, int] = {}
 
-        host_addr = os.environ.get('DOCKER_HOST_ADDR', 'localhost')
-        scheme = os.environ.get('DOCKER_HOST_SCHEME', 'http')
+        app_url_mask = self.config.sandbox.app_url_mask
         for port in self._app_ports:
-            hosts[f'{scheme}://{host_addr}:{port}'] = port
+            hosts[app_url_mask.replace('<PORT>', str(port))] = port
 
         return hosts
 

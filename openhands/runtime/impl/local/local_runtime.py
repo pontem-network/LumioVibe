@@ -612,9 +612,9 @@ class LocalRuntime(ActionExecutionClient):
     @property
     def web_hosts(self) -> dict[str, int]:
         hosts: dict[str, int] = {}
-        for index, port in enumerate(self._app_ports):
-            url = self._create_url(f'work-{index + 1}', port)
-            hosts[url] = port
+        app_url_mask = self.config.sandbox.app_url_mask
+        for port in self._app_ports:
+            hosts[app_url_mask.replace('<PORT>', str(port))] = port
         return hosts
 
 
@@ -679,6 +679,11 @@ def _create_server(
     env['OPENHANDS_REPO_PATH'] = code_repo_path
     env['LOCAL_RUNTIME_MODE'] = '1'
     env['VSCODE_PORT'] = str(vscode_port)
+    env['APP_PORT_1'] = str(app_ports[0])
+    env['APP_PORT_2'] = str(app_ports[1])
+    app_url_mask = config.sandbox.app_url_mask
+    env['APP_BASE_URL_1'] = app_url_mask.replace('<PORT>', str(app_ports[0]))
+    env['APP_BASE_URL_2'] = app_url_mask.replace('<PORT>', str(app_ports[1]))
 
     # Prepend the interpreter's bin directory to PATH for subprocesses
     env['PATH'] = f'{_python_bin_path()}{os.pathsep}{env.get("PATH", "")}'

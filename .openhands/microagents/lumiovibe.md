@@ -622,11 +622,16 @@ lumio move publish --package-dir . --assume-yes
 <IMPORTANT>
 ⚠️⚠️⚠️ CRITICAL: USE MAPPED DOCKER PORT ⚠️⚠️⚠️
 
-The runtime has pre-allocated ports that are mapped from Docker to host:
+The runtime has pre-allocated ports and URLs that are mapped from Docker to host:
 - `$APP_PORT_1` - PRIMARY port for user-facing frontend (50000-54999 range)
 - `$APP_PORT_2` - SECONDARY port for agent testing (55000-59999 range)
+- `$APP_BASE_URL_1` - Full URL to access frontend (e.g., `http://localhost:51234` or `https://example.com/runtime/51234`)
+- `$APP_BASE_URL_2` - Full URL to access secondary app
 
-You MUST use `$APP_PORT_1` for the main dev server! Any other port will NOT be accessible to the user.
+**To get the frontend URL for users, use `$APP_BASE_URL_1` (NOT `http://localhost:$APP_PORT_1`)!**
+The URL format depends on deployment: locally it's `http://localhost:<port>`, on server it may be `https://domain/path/<port>`.
+
+You MUST use `$APP_PORT_1` for the dev server binding! Any other port will NOT be accessible to the user.
 
 ⚠️⚠️⚠️ VITE HOT RELOAD - NEVER RESTART ⚠️⚠️⚠️
 
@@ -1121,7 +1126,8 @@ Actually LOOK at the app! Don't just check code!
 ```bash
 # Ensure test mode is running
 cd frontend && ./start.sh --test &
-# Open http://localhost:$APP_PORT_2 in browser
+# Frontend URL is available via $APP_BASE_URL_1 environment variable
+# Example: echo $APP_BASE_URL_1 → http://localhost:51234 or https://example.com/runtime/51234
 ```
 
 **4.2 Screenshot mental checklist:**
@@ -1910,7 +1916,7 @@ If you cannot fill this report = you did not test properly!
 
 **Project:** [name]
 **Date:** [date]
-**Test Mode URL:** http://localhost:$APP_PORT_2
+**Test Mode URL:** $APP_BASE_URL_1
 
 ### 1. Page Load Test
 - Page loads: ✅/❌
@@ -2216,17 +2222,18 @@ cd contract && lumio move run --function-id $DEPLOYER_ADDRESS::module_name::init
 Contract: {MODULE_NAME}
 Address: {CONTRACT_ADDRESS}
 Network: Lumio Testnet
+Frontend URL: $APP_BASE_URL_1
 
 ✅ Assumptions confirmed by user
 ✅ Contract deployed (irreversible checkpoint passed)
 ✅ Contract initialized (ready for user interactions)
-✅ Production Mode running on port $APP_PORT_1 ← YOUR APPLICATION!
-✅ Test Mode running on port $APP_PORT_2 (for verification)
-✅ Accessible via App tab in OpenHands UI
+✅ Production Mode running (bound to $APP_PORT_1)
+✅ Test Mode running (bound to $APP_PORT_2)
+✅ Accessible via App tab in OpenHands UI or at $APP_BASE_URL_1
 
 Next Steps:
 1. Connect Pontem Wallet to Lumio Testnet
-2. Click the "App" tab in OpenHands to view your dapp
+2. Click the "App" tab in OpenHands to view your dapp, or open $APP_BASE_URL_1
 3. Start using your dapp!
 
 Note: The frontend uses Vite HMR - any code changes will auto-reload without restart.
@@ -2294,10 +2301,11 @@ cd frontend
 ```
 
 **What ./start.sh does:**
-1. Checks $APP_PORT_1 is set (fails if not in LumioVibe runtime)
+1. Checks $APP_PORT_1 and $APP_BASE_URL_1 are set (fails if not in LumioVibe runtime)
 2. Kills any process on $APP_PORT_1
 3. Verifies port is free
 4. Starts Vite with --strictPort (fails if port still busy)
+5. Passes VITE_BASE_URL for frontend to know its public URL
 
 ⛔ **FORBIDDEN commands:**
 - `pnpm dev` - will pick random port!
@@ -2316,6 +2324,9 @@ cd frontend && ./start.sh --test &   # Test mode (MUST have &)
 ./start.sh                             # WRONG! Missing & - will block terminal!
 export APP_PORT_1=51633 && ./start.sh  # WRONG! Script validates port range!
 ```
+
+**⚠️ To show URL to user:** Use `$APP_BASE_URL_1` (NOT `http://localhost:$APP_PORT_1`)
+The URL format depends on deployment configuration (local vs server).
 </IMPORTANT>
 
 ---
