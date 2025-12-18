@@ -360,6 +360,13 @@ classpath = "my_package.my_module.MyCustomAgent"
 #   - https://example.com/runtime/<PORT> (for server deployment with path-based routing)
 #app_url_mask = "http://localhost:<PORT>"
 
+# URL mask for building VSCODE_BASE_URL environment variable.
+# Use <PORT> as placeholder for VSCode port.
+# Examples:
+#   - http://localhost:<PORT> (default, direct access)
+#   - https://example.com/vscode/<PORT> (for server deployment with path-based routing via nginx)
+#vscode_url_mask = "http://localhost:<PORT>"
+
 # Volume mounts in the format 'host_path:container_path[:mode]'
 # e.g. '/my/host/dir:/workspace:rw'
 # Multiple mounts can be specified using commas

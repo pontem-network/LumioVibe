@@ -76,7 +76,7 @@ class VSCodePlugin(Plugin):
         workspace_path = os.getenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX', '/workspace')
         # Compute base path for OpenVSCode Server when running behind a path-based router
         base_path_flag = ''
-        # Allow explicit override via environment
+        # Allow explicit override via environment (backward compatibility)
         explicit_base = os.getenv('OPENVSCODE_SERVER_BASE_PATH')
         if explicit_base:
             explicit_base = (
@@ -84,28 +84,27 @@ class VSCodePlugin(Plugin):
             )
             base_path_flag = f' --server-base-path {explicit_base.rstrip("/")}'
         else:
-            # If runtime_id passed explicitly (preferred), use it
-            runtime_url = os.getenv('RUNTIME_URL', '')
-            if runtime_url and runtime_id:
-                parsed = urlparse(runtime_url)
-                path = parsed.path or '/'
-                path_mode = path.startswith(f'/{runtime_id}')
-                if path_mode:
-                    base_path_flag = f' --server-base-path /{runtime_id}/vscode'
+            # Use VSCODE_BASE_URL to compute base path (e.g. https://example.com/vscode/40001)
+            vscode_base_url = os.getenv('VSCODE_BASE_URL', '')
+            if vscode_base_url:
+                parsed = urlparse(vscode_base_url)
+                if parsed.path and parsed.path != '/':
+                    base_path = parsed.path.rstrip('/')
+                    base_path_flag = f' --server-base-path {base_path}'
 
-            cmd = (
-                (
-                    f"su - {username} -s /bin/bash << 'EOF'\n"
-                    if SU_TO_USER
-                    else "/bin/bash << 'EOF'\n"
-                )
-                + f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'
-                + f'cd {workspace_path}\n'
-                + 'exec /openhands/.openvscode-server/bin/openvscode-server '
-                + f'--host 0.0.0.0 --connection-token {self.vscode_connection_token} '
-                + f'--port {self.vscode_port} --disable-workspace-trust{base_path_flag}\n'
-                + 'EOF'
+        cmd = (
+            (
+                f"su - {username} -s /bin/bash << 'EOF'\n"
+                if SU_TO_USER
+                else "/bin/bash << 'EOF'\n"
             )
+            + f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'
+            + f'cd {workspace_path}\n'
+            + 'exec /openhands/.openvscode-server/bin/openvscode-server '
+            + f'--host 0.0.0.0 --connection-token {self.vscode_connection_token} '
+            + f'--port {self.vscode_port} --disable-workspace-trust{base_path_flag}\n'
+            + 'EOF'
+        )
 
         # Using asyncio.create_subprocess_shell instead of subprocess.Popen
         # to avoid ASYNC101 linting error

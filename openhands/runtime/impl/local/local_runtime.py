@@ -684,6 +684,8 @@ def _create_server(
     app_url_mask = config.sandbox.app_url_mask
     env['APP_BASE_URL_1'] = app_url_mask.replace('<PORT>', str(app_ports[0]))
     env['APP_BASE_URL_2'] = app_url_mask.replace('<PORT>', str(app_ports[1]))
+    vscode_url_mask = config.sandbox.vscode_url_mask
+    env['VSCODE_BASE_URL'] = vscode_url_mask.replace('<PORT>', str(vscode_port))
 
     # Prepend the interpreter's bin directory to PATH for subprocesses
     env['PATH'] = f'{_python_bin_path()}{os.pathsep}{env.get("PATH", "")}'

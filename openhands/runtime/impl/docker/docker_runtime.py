@@ -497,6 +497,7 @@ class DockerRuntime(ActionExecutionClient):
         app_port_1 = self._app_ports[0]
         app_port_2 = self._app_ports[1]
         app_url_mask = self.config.sandbox.app_url_mask
+        vscode_url_mask = self.config.sandbox.vscode_url_mask
         environment.update(
             {
                 'port': str(self._container_port),
@@ -507,6 +508,9 @@ class DockerRuntime(ActionExecutionClient):
                 'APP_PORT_2': str(app_port_2),
                 'APP_BASE_URL_1': app_url_mask.replace('<PORT>', str(app_port_1)),
                 'APP_BASE_URL_2': app_url_mask.replace('<PORT>', str(app_port_2)),
+                'VSCODE_BASE_URL': vscode_url_mask.replace(
+                    '<PORT>', str(self._vscode_port)
+                ),
                 'OPENHANDS_SESSION_ID': str(self.sid),
                 'PIP_BREAK_SYSTEM_PACKAGES': '1',
             }

@@ -48,6 +48,10 @@ class SandboxConfig(BaseModel):
             Use <PORT> as placeholder for the port number. Examples:
             - http://localhost:<PORT> (default, for local development)
             - https://example.com/runtime/<PORT> (for server deployment with path-based routing)
+        vscode_url_mask: URL mask for building VSCODE_BASE_URL environment variable.
+            Use <PORT> as placeholder for VSCode port. Examples:
+            - http://localhost:<PORT> (default, direct access)
+            - https://example.com/vscode/<PORT> (for path-based routing via nginx)
     """
 
     remote_runtime_api_url: str | None = Field(default='http://localhost:8000')
@@ -95,6 +99,10 @@ class SandboxConfig(BaseModel):
     app_url_mask: str = Field(
         default='http://localhost:<PORT>',
         description='URL mask for building APP_BASE_URL_1/2. Use <PORT> as placeholder.',
+    )
+    vscode_url_mask: str = Field(
+        default='http://localhost:<PORT>',
+        description='URL mask for building VSCODE_BASE_URL. Use <PORT> as placeholder for VSCode port.',
     )
     volumes: str | None = Field(
         default=None,
