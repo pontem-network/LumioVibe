@@ -806,7 +806,10 @@ class DockerRuntime(ActionExecutionClient):
         if not token:
             return None
 
-        vscode_url = f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        base_url = self.config.sandbox.vscode_url_mask.replace(
+            '<PORT>', str(self._vscode_port)
+        )
+        vscode_url = f'{base_url}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
 
     @property

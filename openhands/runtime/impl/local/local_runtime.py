@@ -606,8 +606,10 @@ class LocalRuntime(ActionExecutionClient):
         token = super().get_vscode_token()
         if not token:
             return None
-        vscode_url = self._create_url('vscode', self._vscode_port)
-        return f'{vscode_url}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        base_url = self.config.sandbox.vscode_url_mask.replace(
+            '<PORT>', str(self._vscode_port)
+        )
+        return f'{base_url}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
 
     @property
     def web_hosts(self) -> dict[str, int]:

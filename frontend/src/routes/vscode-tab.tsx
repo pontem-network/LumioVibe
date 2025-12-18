@@ -19,12 +19,14 @@ function VSCodeTab() {
   useEffect(() => {
     if (data?.url) {
       try {
-        const iframeProtocol = new URL(data.url).protocol;
-        const currentProtocol = window.location.protocol;
+        const iframeUrl = new URL(data.url);
+        const currentOrigin = window.location.origin;
+        const iframeOrigin = iframeUrl.origin;
 
-        // Check if the iframe URL has a different protocol than the current page
+        // Check if the iframe URL has a different origin than the current page
+        // Cross-origin iframes have cookie restrictions in modern browsers
         setIsCrossProtocol(
-          VSCODE_IN_NEW_TAB() || iframeProtocol !== currentProtocol,
+          VSCODE_IN_NEW_TAB() || iframeOrigin !== currentOrigin,
         );
       } catch (e) {
         // Silently handle URL parsing errors
