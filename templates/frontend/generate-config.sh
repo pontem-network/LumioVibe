@@ -313,9 +313,9 @@ echo "Starting on port $PORT..."
 echo "Base URL: $BASE_URL"
 
 if [ "$MODE" = "test" ]; then
-    VITE_WALLET_MODE=test VITE_BASE_URL="$BASE_URL" exec pnpm vite --host --port $PORT --strictPort
+    VITE_WALLET_MODE=test VITE_BASE_URL="$BASE_URL" exec pnpm vite --host --port $PORT --strictPort </dev/null
 else
-    VITE_BASE_URL="$BASE_URL" exec pnpm vite --host --port $PORT --strictPort
+    VITE_BASE_URL="$BASE_URL" exec pnpm vite --host --port $PORT --strictPort </dev/null
 fi
 STARTSCRIPT
     chmod +x "$OUTPUT_DIR/frontend/start.sh"
