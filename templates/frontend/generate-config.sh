@@ -59,7 +59,7 @@ EOF
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>
 EOF
@@ -70,7 +70,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  base: process.env.VITE_BASE_PATH || '/',
+  base: '/',
   plugins: [react()],
   server: {
     allowedHosts: true,
@@ -241,7 +241,6 @@ EOF
 interface ImportMetaEnv {
   readonly VITE_WALLET_MODE: string
   readonly VITE_BASE_URL: string
-  readonly VITE_BASE_PATH: string
 }
 
 interface ImportMeta {
@@ -291,11 +290,6 @@ fi
 PORT="$APP_PORT_1"
 BASE_URL="$APP_BASE_URL_1"
 
-# Extract path from BASE_URL for vite base config
-# e.g. https://openhands.devops.mom/runtime/52639 -> /runtime/52639/
-BASE_PATH=$(echo "$BASE_URL" | sed -E 's|https?://[^/]*||')
-BASE_PATH="${BASE_PATH%/}/"
-
 MODE=""
 
 if [ "$1" = "--test" ] || [ "$1" = "-t" ]; then
@@ -321,9 +315,9 @@ echo "Starting on port $PORT..."
 echo "Base URL: $BASE_URL"
 
 if [ "$MODE" = "test" ]; then
-    VITE_WALLET_MODE=test VITE_BASE_URL="$BASE_URL" VITE_BASE_PATH="$BASE_PATH" exec pnpm vite --host --port $PORT --strictPort </dev/null
+    VITE_WALLET_MODE=test VITE_BASE_URL="$BASE_URL" exec pnpm vite --host --port $PORT --strictPort </dev/null
 else
-    VITE_BASE_URL="$BASE_URL" VITE_BASE_PATH="$BASE_PATH" exec pnpm vite --host --port $PORT --strictPort </dev/null
+    VITE_BASE_URL="$BASE_URL" exec pnpm vite --host --port $PORT --strictPort </dev/null
 fi
 STARTSCRIPT
     chmod +x "$OUTPUT_DIR/frontend/start.sh"
