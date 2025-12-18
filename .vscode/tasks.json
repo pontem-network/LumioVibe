@@ -14,10 +14,11 @@
                 "clear": true
             },
         },
+        // build runtime
         {
-            "label": "echo",
+            "label": "build runtime",
             "type": "shell",
-            "command": "echo test",
+            "command": "make build-runtime",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -38,6 +39,19 @@
             "presentation": {
                 "clear": true
             },
+            "options": {
+                "env": {
+                    "LLM_MODEL": "ollama/deepseek-r1:1.5b",
+                    "LLM_BASE_URL": "http://192.168.3.4:11434",
+                    "LLM_API_KEY": "-",
+                    "LLM_INPUT_COST_PER_TOKEN": "2",
+                    "LLM_OUTPUT_COST_PER_TOKEN": "3",
+                    // "LOG_ALL_EVENTS": "1",
+                    "LUMIO_RPC_URL": "https://api.testnet.lumio.io/",
+                    "LUMIO_CHAIN_ID": "2",
+                    "VIBE_BALANCE_CONTRACT": "0x9ba3255c39f9459c053e5768783b5f21e6610a8fdb6699be269495340d1d7597"
+                }
+            }
         },
         // run: frontend
         {
@@ -51,6 +65,14 @@
                 "kind": "none",
                 "isDefault": true
             },
+            "options": {
+                "env": {
+                    "LOG_ALL_EVENTS": "1",
+                    "VITE_LUMIO_RPC_URL": "https://api.testnet.lumio.io/",
+                    "VITE_LUMIO_CHAIN_ID": "2",
+                    "VITE_VIBE_BALANCE_CONTRACT": "0x9ba3255c39f9459c053e5768783b5f21e6610a8fdb6699be269495340d1d7597"
+                }
+            }
         },
         // run: lumio
         {
@@ -77,11 +99,11 @@
             "command": [
                 "echo '\n# # # OWNER # # #\n';",
                 "lumio account balance;",
-                "lumio account fund-with-faucet --amount 10000000;",
+                "lumio account fund-with-faucet --amount 100000000;",
                 "lumio account balance;",
                 "echo '\n# # # Wallet # # #\n';",
                 "lumio account balance --account 0xe6c88958b7a01cc9949325a032337ab8ea8cc20e8c4353561e7a9ff1fc55f3c4;",
-                "lumio account fund-with-faucet --amount 10000000  --account 0xe6c88958b7a01cc9949325a032337ab8ea8cc20e8c4353561e7a9ff1fc55f3c4;",
+                "lumio account fund-with-faucet --amount 100000000 --account 0xe6c88958b7a01cc9949325a032337ab8ea8cc20e8c4353561e7a9ff1fc55f3c4;",
                 "lumio account balance --account 0xe6c88958b7a01cc9949325a032337ab8ea8cc20e8c4353561e7a9ff1fc55f3c4;",
             ],
             "options": {
@@ -105,7 +127,7 @@
             "options": {
                 "cwd": "contracts/vibe-balance/",
                 "env": {
-                    "LUMIO_NETWORK": "local"
+                    "LUMIO_NETWORK": "testnet"
                 }
             },
             "presentation": {
@@ -126,7 +148,7 @@
             "options": {
                 "cwd": "contracts/vibe-balance/",
                 "env": {
-                    "LUMIO_NETWORK": "local"
+                    "LUMIO_NETWORK": "testnet"
                 }
             },
             "presentation": {

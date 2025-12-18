@@ -827,7 +827,13 @@ def load_openhands_config(
         config_file: Path to the config file. Defaults to 'config.toml' in the current directory.
     """
     config = OpenHandsConfig()
-    load_from_toml(config, config_file)
+    if os.path.exists(config_file):
+        logger.openhands_logger.info(f'Loading config from {config_file}')
+        load_from_toml(config, config_file)
+    else:
+        logger.openhands_logger.info(
+            f'Config file not found: {config_file}. Using default configuration.'
+        )
     load_from_env(config, os.environ)
     finalize_config(config)
     register_custom_agents(config)
