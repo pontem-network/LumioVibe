@@ -301,7 +301,7 @@ async def get_balance(
     return BalanceResponse(**stats)
 
 
-@app.post('/balance/refresh')
+@app.get('/balance/refresh')
 async def refresh_balance(
     user_settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> BalanceResponse:

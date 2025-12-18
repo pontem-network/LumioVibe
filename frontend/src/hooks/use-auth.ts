@@ -45,6 +45,24 @@ async function fetchWithProc<T>(
   return ans as T;
 }
 
+class BalanceResponse {
+  on_chain_balance: number = 0.0;
+
+  on_chain_balance_coins: number = 0.0;
+
+  accumulated_tokens: number = 0.0;
+
+  pending_deduction_octas: number = 0.0;
+
+  pending_deduction_coins: number = 0.0;
+
+  virtual_balance: number = 0.0;
+
+  virtual_balance_coins: number = 0.0;
+
+  token_price_per_million: number = 0.0;
+}
+
 class AuthToken {
   static STORAGE_NAME: string = "auth_token";
 
@@ -230,37 +248,21 @@ export class AuthState {
     if (!pontem) return 0.0;
 
     try {
-      const config = vibeBalance.getConfig();
-      if (!config.contractAddress) {
-        console.warn("[VibeBalance] Contract not configured");
-        return 0.0;
-      }
-
-      const account = await pontem.account();
-      if (!account) return 0.0;
-
-      console.log("[VibeBalance] Fetching balance for:", account);
-      console.log("[VibeBalance] Contract:", config.contractAddress);
-      console.log("[VibeBalance] RPC:", config.rpcUrl);
-
-      const balanceBigInt = await vibeBalance.getBalance(account);
-      console.log("[VibeBalance] Raw balance:", balanceBigInt.toString());
-
-      const balanceNumber = Number(balanceBigInt) / 10 ** 8;
+      const balance: BalanceResponse =
+        await fetchWithProc("/api/token/balance");
 
       return (
-        Math.round(balanceNumber * 10 ** NUMBER_OF_DECIMALS) /
+        Math.round(balance.virtual_balance_coins * 10 ** NUMBER_OF_DECIMALS) /
         10 ** NUMBER_OF_DECIMALS
       );
     } catch (error) {
-      console.error("[VibeBalance] Error fetching balance:", error);
       return 0.0;
     }
   }
 
-  async topUpBalance(amount: number = 1000): Promise<void> {
+  async topUpBalance(amount: number = 1000): Promise<number> {
     const { pontem } = window;
-    if (!this.connected || !pontem) return;
+    if (!this.connected || !pontem) return 0;
 
     const config = vibeBalance.getConfig();
     const network = await pontem.network();
@@ -279,6 +281,12 @@ export class AuthState {
     });
 
     if (!success) throw new Error("Failed to top up the balance");
+
+    const balance: BalanceResponse = await fetchWithProc(
+      "/api/token/balance/refresh",
+    );
+
+    return balance.virtual_balance_coins;
   }
 }
 
