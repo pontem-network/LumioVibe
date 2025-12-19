@@ -49,7 +49,7 @@ source "$SCRIPT_DIR/frontend/generate-pages.sh"
 # ============================================
 # STEP 1: Initialize Lumio CLI if needed
 # ============================================
-log_info "Step 1/5: Checking Lumio CLI..."
+log_info "Step 1/6: Checking Lumio CLI..."
 
 LUMIO_CONFIG="$WORKSPACE/.lumio/config.yaml"
 DEPLOYER_ADDRESS=""
@@ -101,22 +101,53 @@ PRIVATE_KEY="${PRIVATE_KEY#ed25519-priv-}"
 log_info "Deployer: $DEPLOYER_ADDRESS"
 
 # ============================================
-# STEP 2: Fund account
+# STEP 2: Fund account (with retry logic)
 # ============================================
-log_info "Step 2/5: Funding account..."
+log_info "Step 2/6: Funding account..."
 
-FUND_OUTPUT=$($LUMIO_BIN account fund-with-faucet --amount 100000000 2>&1) || true
-if echo "$FUND_OUTPUT" | grep -qi "success\|funded\|Added"; then
-    log_info "Account funded successfully"
-else
-    log_warn "Faucet response: $FUND_OUTPUT"
-    log_warn "Continuing anyway (account may already have funds)"
+FUNDED=false
+MAX_RETRIES=3
+RETRY_DELAY=10
+
+for attempt in $(seq 1 $MAX_RETRIES); do
+    log_info "Faucet attempt $attempt/$MAX_RETRIES..."
+    FUND_OUTPUT=$($LUMIO_BIN account fund-with-faucet --amount 100000000 2>&1) || true
+
+    if echo "$FUND_OUTPUT" | grep -qi "success\|funded\|Added"; then
+        log_info "Account funded successfully"
+        FUNDED=true
+        break
+    else
+        if [ $attempt -lt $MAX_RETRIES ]; then
+            log_warn "Faucet attempt $attempt failed, retrying in ${RETRY_DELAY}s..."
+            log_warn "Response: $(echo "$FUND_OUTPUT" | head -1)"
+            sleep $RETRY_DELAY
+        fi
+    fi
+done
+
+if [ "$FUNDED" = false ]; then
+    log_warn "⚠️ Faucet failed after $MAX_RETRIES attempts"
+    log_warn "Last response: $FUND_OUTPUT"
+    log_warn ""
+    log_warn "TROUBLESHOOTING:"
+    log_warn "1. Check if faucet is available: https://faucet.testnet.lumio.io"
+    log_warn "2. Try manually: lumio account fund-with-faucet --amount 100000000"
+    log_warn "3. If still failing, wait a few minutes and retry"
+    log_warn ""
+    log_warn "Continuing with project creation (you can fund later)..."
+fi
+
+# Verify balance
+BALANCE_OUTPUT=$($LUMIO_BIN account list 2>&1) || true
+if echo "$BALANCE_OUTPUT" | grep -qi "balance"; then
+    log_info "Balance check: $(echo "$BALANCE_OUTPUT" | grep -i "balance" | head -1)"
 fi
 
 # ============================================
 # STEP 3: Create project structure
 # ============================================
-log_info "Step 3/5: Creating project structure..."
+log_info "Step 3/6: Creating project structure..."
 
 if [ -d "$OUTPUT_DIR" ]; then
     log_warn "Directory $OUTPUT_DIR already exists, removing..."
@@ -128,7 +159,7 @@ mkdir -p "$OUTPUT_DIR"
 # ============================================
 # STEP 4: Create Move contract
 # ============================================
-log_info "Step 4/5: Creating Move contract..."
+log_info "Step 4/6: Creating Move contract..."
 
 generate_contract "$OUTPUT_DIR" "$PROJECT_NAME" "$DEPLOYER_ADDRESS"
 
@@ -146,7 +177,7 @@ cd "$WORKSPACE"
 # ============================================
 # STEP 5: Create Frontend
 # ============================================
-log_info "Step 5/5: Creating frontend..."
+log_info "Step 5/6: Creating frontend..."
 
 generate_frontend_config "$OUTPUT_DIR" "$PROJECT_NAME"
 generate_types "$OUTPUT_DIR" "$DEPLOYER_ADDRESS" "$PRIVATE_KEY"
@@ -163,49 +194,75 @@ cd "$WORKSPACE"
 # DONE
 # ============================================
 
-# Save project info
-cat > "$OUTPUT_DIR/spec.md" <<EOF
-# $PROJECT_NAME
+# Save project info template (MUST BE FILLED BY AGENT!)
+cat > "$OUTPUT_DIR/spec.md" <<'SPECEOF'
+# PROJECT_NAME_PLACEHOLDER
 
-## Deployer
-Address: $DEPLOYER_ADDRESS
+## ⛔ IMPORTANT: Fill this spec BEFORE writing any code!
 
-## Contract
-File: contract/sources/contract.move
-Module: ${PROJECT_NAME}::counter (⚠️ RENAME MODULE to match your project!)
-Status: Ready to customize and deploy
+## Project Overview
+<!-- Describe what this dApp does in 2-3 sentences -->
+TODO: Fill in project description
 
-## Commands
+## User Requirements
+<!-- What did the user ask for? -->
+TODO: Fill in user requirements
 
-### Compile contract
-\`\`\`bash
-cd $OUTPUT_DIR/contract
-lumio move compile --package-dir .
-\`\`\`
+## Data Model
 
-### Deploy contract
-\`\`\`bash
-cd $OUTPUT_DIR/contract
-lumio move publish --package-dir . --assume-yes
-\`\`\`
+### On-chain Resources (Move structs)
+<!-- What data will be stored on-chain? -->
+```move
+// Example:
+// struct Counter has key {
+//     value: u64
+// }
+```
+TODO: Define your data structures
 
-### Run frontend (Test Mode - no wallet needed)
-\`\`\`bash
-cd $OUTPUT_DIR/frontend
-./start.sh --test
-\`\`\`
+### State Variables
+<!-- What state does the frontend need to track? -->
+TODO: List state variables
 
-### Run frontend (Production Mode - requires Pontem Wallet)
-\`\`\`bash
-cd $OUTPUT_DIR/frontend
-./start.sh
-\`\`\`
+## Entry Functions (Transactions)
+<!-- Functions that modify blockchain state -->
 
-⚠️ IMPORTANT: ALWAYS use ./start.sh to run frontend!
-- It automatically uses APP_PORT_1
-- It kills any previous instance on that port
-- NEVER use "pnpm dev" or specify ports manually!
-EOF
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| TODO | TODO | TODO |
+
+## View Functions (Read-only)
+<!-- Functions that read blockchain state -->
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| TODO | TODO | TODO | TODO |
+
+## User Flows
+
+### Flow 1: First-time User
+1. TODO: Describe steps
+
+### Flow 2: Main Action
+1. TODO: Describe steps
+
+## Edge Cases
+- TODO: What happens if...
+
+## Deployment Info
+- **Address**: DEPLOYER_ADDRESS_PLACEHOLDER
+- **Network**: Lumio Testnet
+- **Module**: TODO (rename from 'counter')
+SPECEOF
+
+# Replace placeholders in spec.md (works on both Linux and macOS)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s/PROJECT_NAME_PLACEHOLDER/$PROJECT_NAME/g" "$OUTPUT_DIR/spec.md"
+    sed -i '' "s/DEPLOYER_ADDRESS_PLACEHOLDER/$DEPLOYER_ADDRESS/g" "$OUTPUT_DIR/spec.md"
+else
+    sed -i "s/PROJECT_NAME_PLACEHOLDER/$PROJECT_NAME/g" "$OUTPUT_DIR/spec.md"
+    sed -i "s/DEPLOYER_ADDRESS_PLACEHOLDER/$DEPLOYER_ADDRESS/g" "$OUTPUT_DIR/spec.md"
+fi
 
 echo ""
 echo "================================================"
@@ -215,9 +272,32 @@ echo ""
 echo "Deployer: $DEPLOYER_ADDRESS"
 echo "Location: $OUTPUT_DIR"
 echo ""
-echo "Next steps:"
-echo "  1. cd $OUTPUT_DIR/contract"
-echo "  2. lumio move compile --package-dir ."
-echo "  3. lumio move publish --package-dir . --assume-yes"
-echo "  4. cd ../frontend && pnpm dev:test --host"
+
+# ============================================
+# STEP 6: Auto-start frontend
+# ============================================
+log_info "Step 6/6: Starting frontend..."
+
+# Start frontend using universal script
+if [ -n "$APP_PORT_1" ] && [ -n "$APP_BASE_URL_1" ]; then
+    bash "$SCRIPT_DIR/start-frontend.sh" "$OUTPUT_DIR" --test
+    echo ""
+    echo "================================================"
+    echo -e "${GREEN}  Frontend is running in TEST mode!${NC}"
+    echo "================================================"
+    echo ""
+    echo "🌐 Open in browser: \$APP_BASE_URL_1"
+    echo ""
+    echo "Next steps:"
+    echo "  1. Fill in spec.md with project requirements"
+    echo "  2. Update Documentation.tsx with your spec"
+    echo "  3. Implement Move contract"
+    echo "  4. Deploy and test"
+else
+    echo ""
+    echo "⚠️  APP_PORT_1 not set - frontend not auto-started"
+    echo ""
+    echo "To start manually:"
+    echo "  bash /openhands/templates/start-frontend.sh $OUTPUT_DIR --test"
+fi
 echo ""

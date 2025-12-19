@@ -1,13 +1,8 @@
 ---
 name: pontem-wallet
-type: knowledge
+type: repo
 version: 1.0.0
-triggers:
-- wallet
-- pontem
-- signAndSubmit
-- transaction
-- connect wallet
+agent: CodeActAgent
 ---
 
 # Pontem Wallet Integration Guide for Lumio Network

@@ -1,15 +1,8 @@
 ---
 name: frontend-template
-type: knowledge
+type: repo
 version: 4.0.0
 agent: CodeActAgent
-triggers:
-- frontend
-- react
-- vite
-- ui
-- pontem
-- wallet
 ---
 
 # Frontend Template for Lumio dApps

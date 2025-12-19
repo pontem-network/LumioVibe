@@ -1,16 +1,8 @@
 ---
 name: common-errors
-type: knowledge
+type: repo
 version: 1.0.0
 agent: CodeActAgent
-triggers:
-- error
-- bug
-- fix
-- problem
-- wrong
-- incorrect
-- doesn't work
 ---
 
 # Common LumioVibe Errors - MUST READ!

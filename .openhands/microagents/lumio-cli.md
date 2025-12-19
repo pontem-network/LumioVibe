@@ -1,14 +1,8 @@
 ---
 name: lumio-cli
-type: knowledge
+type: repo
 version: 2.0.0
 agent: CodeActAgent
-triggers:
-- lumio
-- compile
-- deploy
-- publish
-- faucet
 ---
 
 # Lumio CLI Reference
@@ -118,13 +112,72 @@ lumio account list
 
 ## Troubleshooting
 
+### Quick Reference Table
+
 | Error | Solution |
 |-------|----------|
-| `Unable to find config` | Run `bash /openhands/templates/scaffold-fast.sh PROJECT_NAME` first - it initializes Lumio CLI |
-| `Account does not exist` | Run `lumio account fund-with-faucet --amount 100000000` - it will create account |
-| `Insufficient balance` | Run `lumio account fund-with-faucet --amount 100000000` again |
-| `Module already published` | Contract already deployed, use different account or module name |
+| `Unable to find config` | Run `bash /openhands/templates/scaffold-fast.sh PROJECT_NAME` |
+| `Account does not exist` | Run `lumio account fund-with-faucet --amount 100000000` |
+| `Insufficient balance` | Run `lumio account fund-with-faucet --amount 100000000` |
+| `Module already published` | Use redeploy script or rename module |
 | `Compilation failed` | Fix Move code errors shown in output |
+| `BACKWARD_INCOMPATIBLE` | Create new account (see below) |
+
+### Detailed Solutions
+
+#### Faucet Not Working
+
+```bash
+# Try with retries
+for i in 1 2 3; do
+  lumio account fund-with-faucet --amount 100000000 && break
+  echo "Attempt $i failed, waiting 30s..."
+  sleep 30
+done
+
+# Check result
+lumio account list
+```
+
+If faucet is down → wait 5-10 min, or create fresh project with scaffold-fast.sh
+
+#### ABI Incompatible / Need New Account
+
+```bash
+# Delete old config
+rm -rf /workspace/.lumio
+
+# Generate new key and init
+PRIVATE_KEY=$(openssl rand -hex 32)
+lumio init --assume-yes --network testnet --private-key $PRIVATE_KEY
+lumio account fund-with-faucet --amount 100000000
+
+# Get new address
+NEW_ADDR=$(lumio account list | grep "Account Address" | awk '{print $NF}')
+
+# Update Move.toml
+sed -i "s/deployer_address = .*/deployer_address = \"$NEW_ADDR\"/" contract/Move.toml
+
+# Update frontend
+sed -i "s/CONTRACT_ADDRESS = .*/CONTRACT_ADDRESS = '$NEW_ADDR';/" frontend/src/hooks/useContract.ts
+```
+
+#### Wrong Command Syntax
+
+```bash
+# ❌ WRONG commands (do NOT use):
+lumio init counter           # No argument for init!
+lumio account create         # Not a real command
+lumio account generate       # Not a real command
+
+# ✅ CORRECT commands:
+lumio init --assume-yes --network testnet --private-key <KEY>
+lumio account fund-with-faucet --amount 100000000
+lumio account list
+lumio move compile --package-dir .
+lumio move test --package-dir .
+lumio move publish --package-dir . --assume-yes
+```
 
 ## Important Notes
 

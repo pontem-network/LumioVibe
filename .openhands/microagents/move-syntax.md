@@ -1,14 +1,8 @@
 ---
 name: move-syntax
-type: knowledge
+type: repo
 version: 1.0.0
 agent: CodeActAgent
-triggers:
-- move
-- contract
-- module
-- struct
-- resource
 ---
 
 # Move Language Reference for Lumio

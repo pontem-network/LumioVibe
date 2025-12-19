@@ -64,105 +64,148 @@ export default function App() {
 }
 EOF
 
-    # src/pages/Home.tsx
+    # src/pages/Home.tsx - Initial placeholder page
+    # This page works BEFORE the contract is deployed
+    # Agent should customize it after writing spec.md
     cat > "$OUTPUT_DIR/frontend/src/pages/Home.tsx" <<EOF
-import { useState, useEffect, useCallback } from 'react';
 import { usePontem } from '../hooks/usePontem';
 import { useContract } from '../hooks/useContract';
 
-// ⚠️ CRITICAL: This is an EXAMPLE page for a counter contract!
-// You MUST customize this for YOUR contract!
+// ═══════════════════════════════════════════════════════════════════
+// ⚠️  THIS IS A PLACEHOLDER PAGE
+// ═══════════════════════════════════════════════════════════════════
 //
-// ⚠️⚠️⚠️ ABSOLUTE RULES - NO EXCEPTIONS: ⚠️⚠️⚠️
+// This page will display until you:
+// 1. Fill in spec.md with your project requirements
+// 2. Update Documentation.tsx with your spec
+// 3. Implement and deploy your Move contract
+// 4. Customize this page for YOUR contract
+//
+// ⚠️⚠️⚠️ WHEN CUSTOMIZING - ABSOLUTE RULES: ⚠️⚠️⚠️
 // 1. ALL data MUST come from callView - NEVER use hardcoded/mock values!
 // 2. ALL actions MUST call callEntry - NEVER just console.log!
 // 3. After successful transaction, call refreshData() to update from chain!
 //
 // ❌ FORBIDDEN: setBalance(1000000); or "// Mock data for now"
 // ✅ CORRECT: const bal = await getBalance(account); setBalance(bal);
+// ═══════════════════════════════════════════════════════════════════
 
 export default function Home() {
-  const { connected, account, error: walletError, isInstalled, isTestMode } = usePontem();
-  // ⚠️ Update these imports to match YOUR useContract exports!
-  const { initialize, increment, getCount, isInitialized, loading, error: txError, contractAddress } = useContract();
-
-  // ✅ State initialized to empty/zero - NOT mock values!
-  const [initialized, setInitialized] = useState(false);
-  const [count, setCount] = useState<number>(0);
-
-  useEffect(() => { if (account) refreshData(); }, [account]);
-
-  // ✅ CORRECT: All data fetched from blockchain via view functions
-  const refreshData = useCallback(async () => {
-    if (!account) return;
-    const isInit = await isInitialized(account);
-    setInitialized(!!isInit);
-    if (isInit) {
-      const c = await getCount(account);
-      if (c !== null) setCount(c);
-    }
-  }, [account, isInitialized, getCount]);
-
-  // ✅ CORRECT: Actions call real entry functions, then refresh
-  const handleInitialize = async () => {
-    const result = await initialize();
-    if (result) await refreshData();  // ✅ Refresh from chain after TX
-  };
-  const handleIncrement = async () => {
-    const result = await increment();
-    if (result) await refreshData();  // ✅ Refresh from chain after TX
-  };
-
-  if (!isInstalled && !isTestMode) return (
-    <div className="text-center py-20">
-      <h2 className="text-3xl font-bold mb-4">Welcome to $PROJECT_NAME</h2>
-      <p className="text-gray-400 mb-8">Install Pontem Wallet to interact with this dApp</p>
-      <a href="https://pontem.network/pontem-wallet" target="_blank" className="bg-purple-600 hover:bg-purple-700 px-8 py-4 rounded-lg font-medium">Get Pontem Wallet</a>
-    </div>
-  );
-
-  if (!connected && !isTestMode) return (
-    <div className="text-center py-20">
-      <h2 className="text-3xl font-bold mb-4">Welcome to $PROJECT_NAME</h2>
-      <p className="text-gray-400 mb-8">Connect your wallet to get started</p>
-      {walletError && <div className="bg-red-900/50 border border-red-500 rounded-lg p-4 mb-6 max-w-md mx-auto"><p className="text-red-300">{walletError}</p></div>}
-    </div>
-  );
+  const { connected, account, isTestMode } = usePontem();
+  const { contractAddress } = useContract();
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="bg-gray-800 rounded-lg p-6">
-        <h2 className="text-2xl font-bold mb-6">$PROJECT_NAME</h2>
-        {(txError || walletError) && <div className="bg-red-900/50 border border-red-500 rounded-lg p-4 mb-6"><p className="text-red-300">{txError || walletError}</p></div>}
-        <div className="space-y-4 mb-6">
-          <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
-            <span className="text-gray-300">Status</span>
-            <span className={initialized ? 'text-green-400' : 'text-yellow-400'}>{initialized ? 'Initialized' : 'Not Initialized'}</span>
+    <div className="max-w-3xl mx-auto space-y-8">
+      {/* Hero Section */}
+      <div className="text-center py-12">
+        <div className="inline-block mb-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center">
+            <span className="text-4xl">🚀</span>
           </div>
-          {initialized && (
-            <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
-              <span className="text-gray-300">Counter Value</span>
-              <span className="text-2xl font-bold text-purple-400">{count}</span>
-            </div>
-          )}
         </div>
+        <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+          $PROJECT_NAME
+        </h1>
+        <p className="text-gray-400 text-lg">
+          A decentralized application on Lumio Network
+        </p>
+      </div>
+
+      {/* Status Card */}
+      <div className="bg-gray-800/50 backdrop-blur border border-gray-700 rounded-2xl p-8">
+        <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+          <span className="text-yellow-400">⏳</span> Project Status
+        </h2>
+
         <div className="space-y-4">
-          {!initialized ? (
-            <button onClick={handleInitialize} disabled={loading} className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-50 px-6 py-4 rounded-lg font-medium">{loading ? 'Processing...' : 'Initialize Contract'}</button>
-          ) : (
-            <div className="flex gap-4">
-              <button onClick={handleIncrement} disabled={loading} className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 px-6 py-4 rounded-lg font-medium">{loading ? 'Processing...' : 'Increment'}</button>
-              <button onClick={refreshData} disabled={loading} className="bg-gray-600 hover:bg-gray-700 px-6 py-4 rounded-lg font-medium">Refresh</button>
+          <div className="flex items-center gap-3 p-4 bg-gray-700/50 rounded-xl">
+            <span className="text-2xl">✅</span>
+            <div>
+              <div className="font-medium">Project Created</div>
+              <div className="text-sm text-gray-400">Frontend is running</div>
             </div>
-          )}
+          </div>
+
+          <div className="flex items-center gap-3 p-4 bg-yellow-900/20 border border-yellow-600/30 rounded-xl">
+            <span className="text-2xl">📝</span>
+            <div>
+              <div className="font-medium text-yellow-400">Next: Fill spec.md</div>
+              <div className="text-sm text-gray-400">Define your contract requirements</div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-4 bg-gray-700/30 rounded-xl opacity-50">
+            <span className="text-2xl">📖</span>
+            <div>
+              <div className="font-medium">Update Documentation</div>
+              <div className="text-sm text-gray-400">Write docs based on spec</div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-4 bg-gray-700/30 rounded-xl opacity-50">
+            <span className="text-2xl">⚙️</span>
+            <div>
+              <div className="font-medium">Implement Contract</div>
+              <div className="text-sm text-gray-400">Write and deploy Move code</div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-4 bg-gray-700/30 rounded-xl opacity-50">
+            <span className="text-2xl">🎨</span>
+            <div>
+              <div className="font-medium">Build UI</div>
+              <div className="text-sm text-gray-400">Customize this page</div>
+            </div>
+          </div>
         </div>
       </div>
-      <div className="bg-gray-800 rounded-lg p-6">
-        <h3 className="text-lg font-semibold mb-4">Contract Info</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between"><span className="text-gray-400">Network</span><span className="text-purple-400">Lumio Testnet</span></div>
-          <div className="flex justify-between"><span className="text-gray-400">Address</span><span className="text-gray-300 font-mono text-xs break-all">{contractAddress}</span></div>
+
+      {/* Connection Info */}
+      <div className="bg-gray-800/50 backdrop-blur border border-gray-700 rounded-2xl p-6">
+        <h3 className="text-sm font-semibold text-gray-400 mb-4">CONNECTION INFO</h3>
+        <div className="space-y-3 text-sm">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Mode</span>
+            <span className={isTestMode ? 'text-yellow-400 font-medium' : 'text-green-400 font-medium'}>
+              {isTestMode ? '🧪 Test Mode' : '🔐 Production'}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Network</span>
+            <span className="text-purple-400 font-medium">Lumio Testnet</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Wallet</span>
+            <span className="text-gray-300">
+              {connected || isTestMode
+                ? \`\${account?.slice(0,6)}...\${account?.slice(-4)}\`
+                : 'Not connected'}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Contract</span>
+            <span className="text-gray-300 font-mono text-xs">
+              {contractAddress?.slice(0,10)}...{contractAddress?.slice(-6)}
+            </span>
+          </div>
         </div>
+      </div>
+
+      {/* Quick Links */}
+      <div className="flex gap-4">
+        <a
+          href="/docs"
+          className="flex-1 bg-purple-600 hover:bg-purple-700 text-center py-4 rounded-xl font-medium transition-colors"
+        >
+          📖 View Documentation
+        </a>
+        <a
+          href="https://lumio.io"
+          target="_blank"
+          className="flex-1 bg-gray-700 hover:bg-gray-600 text-center py-4 rounded-xl font-medium transition-colors"
+        >
+          🌐 About Lumio
+        </a>
       </div>
     </div>
   );

@@ -12,41 +12,69 @@ Use $APP_PORT_1 for dev server binding. Use $APP_BASE_URL_1 when showing URL to 
 {% endif %}
 
 <LUMIO_VIBE_RUNTIME>
-⚠️ LUMIO/MOVE PROJECT SETUP ⚠️
+⚠️ LUMIO/MOVE PROJECT WORKFLOW ⚠️
 
-**Start with:** `bash /openhands/templates/scaffold-fast.sh PROJECT_NAME`
+## STEP 1: Scaffold + Start Frontend (IMMEDIATE!)
+```bash
+bash /openhands/templates/scaffold-fast.sh PROJECT_NAME
+```
+This auto-creates everything AND starts frontend!
 
-This creates everything: account, funding, contract template, frontend template.
+## STEP 2: Fill spec.md (BEFORE any code!)
+Open `/workspace/PROJECT_NAME/spec.md` and fill ALL TODOs:
+- Data Model (structs)
+- Entry Functions (table)
+- View Functions (table)
+- User Flows
 
-❌ NEVER: `lumio init` manually, create Move.toml manually
-✅ Config location: /workspace/.lumio/config.yaml
+⛔ NO CODE UNTIL SPEC IS COMPLETE!
+
+## STEP 3: Update Documentation.tsx
+Convert spec.md to user-facing docs page.
+
+## STEP 4: Implement Contract
+```bash
+cd /workspace/PROJECT_NAME/contract
+lumio move compile --package-dir .
+```
+⛔ DO NOT DEPLOY YET!
+
+## STEP 4.5: Contract Tests (MANDATORY!)
+- Write tests for ALL entry functions from spec.md
+- Write tests for ALL edge cases from spec.md
+```bash
+lumio move test --package-dir .
+```
+⛔ NO DEPLOY UNTIL ALL TESTS PASS!
+
+## STEP 5: Deploy Contract
+```bash
+lumio move publish --package-dir . --assume-yes
+```
+
+## STEP 6: Customize Frontend
+- Update MODULE_NAME in useContract.ts
+- Update Home.tsx with contract UI
+
+## STEP 7: Browser Testing (FROM SPEC.MD!)
+- Test ALL User Flows from spec.md
+- Test ALL Edge Cases from spec.md
+- Verify data updates after TX
+
+## On Change Request
+First determine: SPEC change or Frontend-only?
+- SPEC change → Update spec → contract → tests → deploy → frontend → browser test
+- Frontend-only → Update frontend → browser test
+
+## Restart Frontend (if needed)
+```bash
+bash /openhands/templates/start-frontend.sh PROJECT_DIR --test
+```
 
 ---
 
-⛔ **MANDATORY: USE TodoWrite FOR ALL PHASES!** ⛔
-
-**You MUST use TodoWrite to track tasks throughout the workflow!**
-
-**Create tasks at start of each phase:**
-- Phase 1: Setup tasks (scaffold, verify structure)
-- Phase 2: Contract tasks (implement each function, compile, test)
-- Phase 4: Frontend tasks (each file to customize)
-- Phase 4.4: Data refresh verification tasks
-- Phase 4.5: Browser test tasks (FROM spec.md - 1 task per function!)
-
-**Example for browser testing (Phase 4.5):**
-```
-TodoWrite: [
-  {"content": "Test initialize() - verify status changes", "status": "pending", "activeForm": "Testing initialize()"},
-  {"content": "Test stake() - verify balance updates", "status": "pending", "activeForm": "Testing stake()"},
-  // ... one task per function from spec.md
-  {"content": "Test edge case: zero input", "status": "pending", "activeForm": "Testing zero input"},
-  {"content": "Create Browser Test Report", "status": "pending", "activeForm": "Creating test report"}
-]
-```
-
-**⛔ Mark task "in_progress" BEFORE starting, "completed" AFTER passing!**
-**⛔ NEVER have 0 tasks - always track what you're doing!**
+❌ NEVER: `lumio init` manually
+✅ Config: /workspace/.lumio/config.yaml
 
 ---
 
@@ -91,21 +119,24 @@ if (result) await refreshData();
 
 ---
 
-⛔ **UNIT TESTS BEFORE DEPLOY/BROWSER** ⛔
+⛔ **CONTRACT TESTS = MANDATORY BEFORE DEPLOY!** ⛔
 
-**Move Tests (Phase 2.2):**
+**Write tests covering spec.md:**
+- Test for EACH entry function
+- Test for EACH edge case
+- Test error conditions
+
 ```bash
 cd contract && lumio move test --package-dir .
 ```
-- Edit `contract_tests.move` for YOUR contract
-- ALL tests must pass before deploy!
 
-**Frontend Tests (Phase 4.2):**
-```bash
-cd frontend && pnpm test
+**Pre-deploy checkpoint:**
 ```
-- Use `toChainUnits`/`toHumanUnits` from `src/utils/decimals.ts`
-- Add contract-specific tests to `decimals.test.ts`
+Tests: X/X passed
+Entry functions tested: X/X
+Edge cases tested: X/X
+⛔ NO DEPLOY UNTIL 100% PASS!
+```
 
 ---
 
@@ -136,8 +167,19 @@ The script automatically:
 4. Uses --strictPort (won't pick random port)
 5. Passes VITE_BASE_URL to frontend (accessible via import.meta.env.VITE_BASE_URL)
 
-**⚠️ To show URL to user: use `$APP_BASE_URL_1` (NOT `http://localhost:$APP_PORT_1`)!**
-The URL format depends on deployment configuration.
+**⚠️ URL Usage - TWO DIFFERENT CONTEXTS:**
+
+1. **To show URL to USER (in messages):** use `$APP_BASE_URL_1`
+   - This is the external URL the user can open in their browser
+   - Example: "Your app is running at $APP_BASE_URL_1"
+
+2. **For browser() tool actions (goto):** use `http://localhost:$APP_PORT_1`
+   - The browser tool runs INSIDE the container
+   - It can only access localhost, NOT external URLs
+   - Example: `goto("http://localhost:$APP_PORT_1")`
+
+❌ NEVER for browser(): `goto("$APP_BASE_URL_1")` or `goto("https://...")`
+✅ ALWAYS for browser(): `goto("http://localhost:$APP_PORT_1")`
 
 ❌ NEVER: `pnpm dev`, `pnpm start:prod`, `pnpm start:test`, `export APP_PORT_1=...`
 ✅ ALWAYS: `cd frontend && ./start.sh &` (with &!)
@@ -194,32 +236,29 @@ Common fixes:
 
 ---
 
-⛔ **BROWSER TESTING = EXECUTION, NOT JUST SETUP!** ⛔
+⛔ **BROWSER TESTING = FROM SPEC.MD!** ⛔
 
-**"Starting test mode" is NOT testing! It's just setup!**
+**Generate tests from spec.md, not random tests!**
 
-**AFTER starting server, you MUST:**
-1. Create 10+ test tasks from spec.md
-2. Execute EACH task one by one
-3. Output result for EACH test
-4. Mark tasks completed as you go
+**Test tasks must cover:**
+1. ALL User Flows from spec.md
+2. ALL Edge Cases from spec.md
+3. ALL Entry Functions (TX + data refresh)
 
-**TEST EXECUTION LOOP (repeat for EACH task):**
+**TEST EXECUTION LOOP:**
 ```
 ═══════════════════════════════════════
-📋 TEST: [Task Name]
+📋 TEST: [Flow/Case from spec.md]
 ═══════════════════════════════════════
 Action: [What you did]
-Expected: [What should happen]
-Actual: [What actually happened]
-Evidence: [TX hash / values before-after]
+Expected: [From spec.md]
+Actual: [What happened]
+Evidence: [TX hash / values before→after]
 Result: ✅ PASS / ❌ FAIL
 ═══════════════════════════════════════
 ```
 
-**⛔ DO NOT STOP after starting server!**
-**⛔ Execute ALL test tasks!**
-**⛔ Output result for EACH test!**
+**⛔ Test ALL items from spec.md!**
 
 ---
 
@@ -237,40 +276,6 @@ At each phase, OUTPUT checkpoint:
 ```
 
 **If you can't output checkpoint = you skipped something = GO BACK!**
-
----
-
-⛔ **TESTING PROGRESS TRACKING** ⛔
-
-After every 3-4 tests, show progress:
-```
-📊 TESTING PROGRESS: X/Y tasks completed
-✅ Task 1 - PASS
-✅ Task 2 - PASS
-🔄 Task 3 - IN PROGRESS
-⏳ Task 4 - pending
-```
-
----
-
-⛔ **BROWSER TEST REPORT (MANDATORY!)** ⛔
-
-**Before Production Mode, create Browser Test Report with:**
-1. ALL entry functions tested - TX hash for EACH!
-2. ALL view functions tested - format verified!
-3. User journeys completed - first-time, full workflow, error recovery
-4. Edge cases tested - zeros, max values, invalid inputs
-5. OVERALL: PASS status
-
-**Report Template:**
-```
-| Function | Tested | TX Hash | UI Updated |
-|----------|--------|---------|------------|
-| initialize | ✅/❌ | 0x... | ✅/❌ |
-| [each function] | | | |
-```
-
-**⛔ NO Production Mode without Browser Test Report showing PASS!**
 
 ---
 
@@ -304,57 +309,45 @@ This script will:
 
 ---
 
-**Before finish():**
-- [ ] contract.move module renamed from 'counter' to YOUR module name!
-- [ ] **Move tests pass:** `lumio move test` shows all green
-- [ ] useContract.ts MODULE_NAME matches contract module (NOT 'counter'!)
-- [ ] **Frontend tests pass:** `pnpm test` shows all green
-- [ ] Documentation.tsx describes YOUR functions (NOT counter template!)
-- [ ] Using `toChainUnits`/`toHumanUnits` (no manual 1e8 conversion!)
-- [ ] **⛔ QA verification PASSED:** `bash verify-integration.sh` shows green
-- [ ] **⛔ Visual inspection done:** all UI elements visible, no "undefined"
-- [ ] **⛔ DATA REFRESH VERIFIED (Phase 4.4):** `bash verify-data-refresh.sh` shows PASS
-- [ ] **⛔ Before/After test:** values CHANGED after transaction (CLI + Browser!)
-- [ ] **⛔ Browser Test Report CREATED** with evidence (TX hashes!)
-- [ ] **⛔ All entry functions tested** with TX evidence
-- [ ] **⛔ All view functions tested** with format verification
-- [ ] **⛔ User journeys completed** (first-time, full workflow, error recovery)
-- [ ] **⛔ Browser Test Report shows OVERALL: PASS**
-- [ ] **⛔ Production Mode MUST BE running on $APP_PORT_1** ← USER'S APP!
-- [ ] **⛔ Contract initialized for Production** (if has initialize())
-- [ ] No console errors
+**Before finish() CHECKLIST:**
 
-**⛔ CRITICAL: Without $APP_PORT_1 = NO APP FOR USER = NOT COMPLETE!**
-**⛔ CRITICAL: Values MUST update in UI after TX = THIS IS #1 BUG!**
+**Contract:**
+- [ ] Module renamed from 'counter' to YOUR module
+- [ ] Contract tests cover ALL entry functions from spec.md
+- [ ] Contract tests cover ALL edge cases from spec.md
+- [ ] `lumio move test` = 100% PASS
+
+**Frontend:**
+- [ ] MODULE_NAME matches contract (NOT 'counter'!)
+- [ ] Documentation.tsx describes YOUR functions
+- [ ] Home.tsx uses YOUR contract UI
+- [ ] No mock data - all from blockchain
+
+**Browser Testing (from spec.md!):**
+- [ ] ALL User Flows from spec.md tested
+- [ ] ALL Edge Cases from spec.md tested
+- [ ] Data refresh verified after each TX
+- [ ] Browser Test Report shows PASS
+
+**Final:**
+- [ ] Production Mode running on $APP_PORT_1
+- [ ] Contract initialized (if needed)
 
 ---
 
-⛔ **FINAL COMPLETION CHECKPOINT (MANDATORY!)** ⛔
+⛔ **FINAL CHECKPOINT** ⛔
 
-**Before calling finish(), OUTPUT this checkpoint:**
 ```
 ═══════════════════════════════════════
-⛔ FINAL COMPLETION CHECKPOINT
+FINAL COMPLETION CHECKPOINT
 ═══════════════════════════════════════
-TASKS COMPLETED: X/X (must be 100%!)
-TESTS PASSED: X/X (must be 100%!)
-
-Test Results Summary:
-✅ [Test 1] - PASS
-✅ [Test 2] - PASS
-...
-
-Production Mode: RUNNING on $APP_PORT_1
-Contract Initialized: YES
-Data Refresh Verified: YES
-Browser Test Report: CREATED
-═══════════════════════════════════════
-✅ ALL CHECKS PASSED - Ready for finish()
+Contract Tests: X/X PASS
+User Flows (spec.md): X/X tested
+Edge Cases (spec.md): X/X tested
+Data Refresh: Verified ✓
+Production Mode: Running on $APP_PORT_1
 ═══════════════════════════════════════
 ```
-
-**⛔ If you cannot output this checkpoint = you skipped testing!**
-**⛔ Go back and execute ALL tests before completing!**
 
 **Vite HMR:** Don't restart server, just edit files!
 </LUMIO_VIBE_RUNTIME>
