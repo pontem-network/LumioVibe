@@ -225,9 +225,26 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import './index.css'
 
+// Extract base path from VITE_BASE_URL for router
+// e.g., https://host/runtime/51542 → /runtime/51542
+function getBasename(): string {
+  const baseUrl = import.meta.env.VITE_BASE_URL || '';
+  if (!baseUrl) return '/';
+  try {
+    const url = new URL(baseUrl);
+    return url.pathname.replace(/\\/\$/, '') || '/';
+  } catch {
+    // If not a valid URL, try to extract path
+    const match = baseUrl.match(/^https?:\\/\\/[^/]+(\\/.*?)\\/?$/);
+    return match ? match[1] : '/';
+  }
+}
+
+const basename = getBasename();
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <App />
     </BrowserRouter>
   </React.StrictMode>,
