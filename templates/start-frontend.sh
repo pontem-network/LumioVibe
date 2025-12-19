@@ -114,17 +114,28 @@ if [ ! -d "node_modules" ]; then
     pnpm install --silent 2>&1 || pnpm install
 fi
 
-# Build environment
+# Build environment and base path
 VITE_ENV="VITE_BASE_URL=$BASE_URL"
+VITE_BASE="/"
+
 if [ -n "$TEST_MODE" ]; then
     VITE_ENV="$VITE_ENV VITE_WALLET_MODE=test"
-    echo "🧪 Mode: TEST (no wallet needed)"
+    VITE_BASE="/"
+    echo "🧪 Mode: TEST (base=/, for browser() inside container)"
 else
-    echo "🔐 Mode: PRODUCTION (Pontem Wallet required)"
+    # Production: extract path from URL for nginx reverse proxy
+    # e.g., https://host/runtime/50198 → /runtime/50198/
+    VITE_BASE=$(echo "$BASE_URL" | sed -E 's|^https?://[^/]+||')
+    if [ -z "$VITE_BASE" ]; then
+        VITE_BASE="/"
+    elif [[ ! "$VITE_BASE" =~ /$ ]]; then
+        VITE_BASE="$VITE_BASE/"
+    fi
+    echo "🔐 Mode: PRODUCTION (base=$VITE_BASE, for nginx proxy)"
 fi
 
 # Start in background
-nohup env $VITE_ENV pnpm vite --host --port $PORT --strictPort > /tmp/frontend-$PROJECT_NAME.log 2>&1 &
+nohup env $VITE_ENV pnpm vite --host --port $PORT --strictPort --base "$VITE_BASE" > /tmp/frontend-$PROJECT_NAME.log 2>&1 &
 FRONTEND_PID=$!
 
 echo "📝 PID: $FRONTEND_PID"

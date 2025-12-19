@@ -314,10 +314,22 @@ fi
 echo "Starting on port $PORT..."
 echo "Base URL: $BASE_URL"
 
+# Determine base path for Vite
 if [ "$MODE" = "test" ]; then
-    VITE_WALLET_MODE=test VITE_BASE_URL="$BASE_URL" exec pnpm vite --host --port $PORT --strictPort </dev/null
+    # Test mode: base=/ for browser() inside container
+    VITE_BASE="/"
+    echo "Base path: / (test mode)"
+    VITE_WALLET_MODE=test VITE_BASE_URL="$BASE_URL" exec pnpm vite --host --port $PORT --strictPort --base "/" </dev/null
 else
-    VITE_BASE_URL="$BASE_URL" exec pnpm vite --host --port $PORT --strictPort </dev/null
+    # Production: extract path from URL for nginx reverse proxy
+    VITE_BASE=$(echo "$BASE_URL" | sed -E 's|^https?://[^/]+||')
+    if [ -z "$VITE_BASE" ]; then
+        VITE_BASE="/"
+    elif [[ ! "$VITE_BASE" =~ /$ ]]; then
+        VITE_BASE="$VITE_BASE/"
+    fi
+    echo "Base path: $VITE_BASE (production mode)"
+    VITE_BASE_URL="$BASE_URL" exec pnpm vite --host --port $PORT --strictPort --base "$VITE_BASE" </dev/null
 fi
 STARTSCRIPT
     chmod +x "$OUTPUT_DIR/frontend/start.sh"
