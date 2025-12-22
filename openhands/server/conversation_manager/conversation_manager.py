@@ -96,7 +96,7 @@ class ConversationManager(ABC):
 
     @abstractmethod
     async def delete_unused_containers(user_id: str | None):
-        """Delete unused data."""
+        """Delete unused container."""
 
     @abstractmethod
     async def maybe_start_agent_loop(
