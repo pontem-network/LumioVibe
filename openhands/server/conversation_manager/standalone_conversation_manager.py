@@ -1,11 +1,12 @@
 import asyncio
 import time
+import docker
+import socketio
+
+from docker.models.containers import Container
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable, Iterable
-
-import socketio
-
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
@@ -47,6 +48,7 @@ from .conversation_manager import ConversationManager
 
 _CLEANUP_INTERVAL = 15
 UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
+DELETE_CONTAINER_TIME_LIMIT = 60*60*24 # in seconds
 
 
 @dataclass
@@ -74,6 +76,8 @@ class StandaloneConversationManager(ConversationManager):
     _cleanup_task: asyncio.Task | None = None
     _conversation_store_class: type[ConversationStore] | None = None
     _loop: asyncio.AbstractEventLoop | None = None
+
+    docker_client: docker.DockerClient = field(default_factory=docker.from_env)
 
     async def __aenter__(self):
         # Grab a reference to the main event loop. This is the loop in which `await sio.emit` must be called
@@ -277,6 +281,15 @@ class StandaloneConversationManager(ConversationManager):
                     connections.pop(connection_id)
         return connections
 
+    async def delete_unused_containers(self):
+        containers: list[Container] = self.docker_client.containers.list(all=True)
+        containers = filter(lambda container: container.name.startswith('openhands-runtime-') and container.status == 'exited', containers)
+        old_containers: list[Container] = filter(lambda container: (datetime.now(timezone.utc) - datetime.fromisoformat(container.attrs['State']['FinishedAt'])).total_seconds() > DELETE_CONTAINER_TIME_LIMIT, containers)
+
+        for container in old_containers:
+            logger.info("remove container: %s", container.name)
+            container.remove(force=False)
+
     async def maybe_start_agent_loop(
         self,
         sid: str,
@@ -285,6 +298,8 @@ class StandaloneConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
+        await self.delete_unused_containers()
+
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
         session = self._local_agent_loops_by_sid.get(sid)
         if not session:
