@@ -285,9 +285,12 @@ class StandaloneConversationManager(ConversationManager):
         containers: list[Container] = self.docker_client.containers.list(all=True)
         containers = filter(lambda container: container.name.startswith('openhands-runtime-') and container.status == 'exited', containers)
         old_containers: list[Container] = filter(lambda container: (datetime.now(timezone.utc) - datetime.fromisoformat(container.attrs['State']['FinishedAt'])).total_seconds() > DELETE_CONTAINER_TIME_LIMIT, containers)
-        old_containers = list[:3]
 
-        for container in old_containers:
+
+        for idx, container in enumerate(old_containers):
+            if idx>=3:
+                break
+
             logger.info("remove container: %s", container.name)
             try:
                 container.remove(force=False)
