@@ -289,7 +289,10 @@ class StandaloneConversationManager(ConversationManager):
 
         for container in old_containers:
             logger.info("remove container: %s", container.name)
-            container.remove(force=False)
+            try:
+                container.remove(force=False)
+            except Exception as e:
+                logger.error("error removing container: %s", e)
 
     async def maybe_start_agent_loop(
         self,
