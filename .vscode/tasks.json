@@ -49,7 +49,8 @@
                     // "LOG_ALL_EVENTS": "1",
                     "LUMIO_RPC_URL": "https://api.testnet.lumio.io/",
                     "LUMIO_CHAIN_ID": "2",
-                    "VIBE_BALANCE_CONTRACT": "0x9ba3255c39f9459c053e5768783b5f21e6610a8fdb6699be269495340d1d7597"
+                    "VIBE_BALANCE_CONTRACT": "0x9ba3255c39f9459c053e5768783b5f21e6610a8fdb6699be269495340d1d7597",
+                    "SESSION_SECRET_KEY": "04Ho-buxv-ttv5-35Dh"
                 }
             }
         },
@@ -99,11 +100,11 @@
             "command": [
                 "echo '\n# # # OWNER # # #\n';",
                 "lumio account balance;",
-                "lumio account fund-with-faucet --amount 100000000;",
+                "lumio account fund-with-faucet --amount 1000000000;",
                 "lumio account balance;",
                 "echo '\n# # # Wallet # # #\n';",
                 "lumio account balance --account 0xe6c88958b7a01cc9949325a032337ab8ea8cc20e8c4353561e7a9ff1fc55f3c4;",
-                "lumio account fund-with-faucet --amount 100000000 --account 0xe6c88958b7a01cc9949325a032337ab8ea8cc20e8c4353561e7a9ff1fc55f3c4;",
+                "lumio account fund-with-faucet --amount 1000000000 --account 0xe6c88958b7a01cc9949325a032337ab8ea8cc20e8c4353561e7a9ff1fc55f3c4;",
                 "lumio account balance --account 0xe6c88958b7a01cc9949325a032337ab8ea8cc20e8c4353561e7a9ff1fc55f3c4;",
             ],
             "options": {
