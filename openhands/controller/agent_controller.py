@@ -915,10 +915,12 @@ class AgentController:
                     raise LLMNoActionError('No action was returned')
                 action._source = EventSource.AGENT  # type: ignore [attr-defined]
             except InsufficientBalanceError as e:
+                self.state.last_error = str(e)
                 self.event_stream.add_event(
                     ErrorObservation(content=str(e)),
                     EventSource.AGENT,
                 )
+                await self.set_agent_state_to(AgentState.PAUSED)
                 return
             except (
                 LLMMalformedActionError,
