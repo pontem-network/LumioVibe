@@ -1,7 +1,10 @@
-from dataclasses import dataclass, field
+from dataclasses import field
 from datetime import datetime, timezone
 from enum import Enum
 
+from deprecated import deprecated
+from pydantic import BaseModel
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
 class DeploymentStatus(Enum):
     STOPPED = 'stopped'
@@ -11,11 +14,13 @@ class DeploymentStatus(Enum):
     REDEPLOYING = 'redeploying'
 
 
-@dataclass
-class DeploymentMetadata:
+class DeploymentMetadata(BaseModel):
     """Metadata for a deployed application linked to a conversation."""
 
-    conversation_id: str
+    user_id: str | None = None
+    title: str | None = None
+
+    conversation_id: str | None = None
     container_id: str | None = None
     status: DeploymentStatus = DeploymentStatus.STOPPED
     contract_address: str | None = None
@@ -31,6 +36,7 @@ class DeploymentMetadata:
     deploy_count: int = 0
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
+    @deprecated('use __dict__ instead of to_dict')
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
         return {
@@ -53,31 +59,13 @@ class DeploymentMetadata:
             'created_at': self.created_at.isoformat(),
         }
 
-    @classmethod
-    def from_dict(cls, data: dict) -> 'DeploymentMetadata':
-        """Create from dictionary."""
-        return cls(
-            conversation_id=data['conversation_id'],
-            container_id=data.get('container_id'),
-            status=DeploymentStatus(data.get('status', 'stopped')),
-            contract_address=data.get('contract_address'),
-            deployer_address=data.get('deployer_address'),
-            app_port=data.get('app_port'),
-            app_url=data.get('app_url'),
-            started_at=datetime.fromisoformat(data['started_at'])
-            if data.get('started_at')
-            else None,
-            stopped_at=datetime.fromisoformat(data['stopped_at'])
-            if data.get('stopped_at')
-            else None,
-            total_runtime_seconds=data.get('total_runtime_seconds', 0.0),
-            total_cost=data.get('total_cost', 0.0),
-            error_message=data.get('error_message'),
-            last_deploy_at=datetime.fromisoformat(data['last_deploy_at'])
-            if data.get('last_deploy_at')
-            else None,
-            deploy_count=data.get('deploy_count', 0),
-            created_at=datetime.fromisoformat(data['created_at'])
-            if data.get('created_at')
-            else datetime.now(timezone.utc),
-        )
+    def from_conversation_data(data:ConversationMetadata)-> 'DeploymentMetadata':
+        deployment = DeploymentMetadata()
+        deployment.conversation_id=data.conversation_id
+        deployment.user_id=data.user_id
+        deployment.title=data.title
+
+        return deployment
+
+
+
