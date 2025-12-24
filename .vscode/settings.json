@@ -22,11 +22,19 @@
         "source.fixAll": "explicit"
     },
     "cSpell.words": [
+        "agentic",
         "ASGI",
         "authx",
+        "contextwindowexceedederror",
+        "eventstream",
+        "litellm",
         "lumio",
+        "microagent",
+        "nacl",
+        "octas",
         "openhands",
         "pontem",
+        "sambanovaexception",
         "usid"
     ]
 }
