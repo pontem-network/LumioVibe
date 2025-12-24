@@ -141,7 +141,6 @@ class DeploymentManager:
         deployments: list[DeploymentMetadata] = []
 
         for id in conv_store.ids():
-            logger.info(f'id: {id}')
             deploy_data: DeploymentMetadata | None = self._load_metadata(id, user_id)
 
             if deploy_data is None:
