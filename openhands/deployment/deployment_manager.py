@@ -92,7 +92,7 @@ class DeploymentManager:
         if not metadata:
             metadata = DeploymentMetadata(conversation_id=conversation_id)
 
-        result = metadata.to_dict()
+        result = metadata.__dict__
         result['is_deployable'] = self._is_deployable(conversation_id, user_id)
 
         if container:
