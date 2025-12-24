@@ -48,18 +48,20 @@ class DeploymentManager:
             return None
         try:
             with open(path, 'r') as f:
-                data = json.load(f)
-                return DeploymentMetadata.from_dict(data)
+                return json.load(f)
         except Exception as e:
             logger.error(f'Failed to load deployment metadata: {e}')
             return None
 
-    def _save_metadata(self, metadata: DeploymentMetadata, user_id: str) -> None:
+    def _save_metadata(self, metadata: DeploymentMetadata, user_id: str | None) -> None:
         """Save deployment metadata to file."""
-        path = self._get_metadata_path(metadata.conversation_id, user_id)
+        if user_id is not None:
+            metadata.user_id = user_id
+
+        path = self._get_metadata_path(metadata.conversation_id, metadata.user_id)
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, 'w') as f:
-            json.dump(metadata.to_dict(), f, indent=2)
+            f.write(metadata.model_dump_json(indent=2))
 
     def _get_container_name(self, conversation_id: str) -> str:
         """Generate container name for deployment."""
