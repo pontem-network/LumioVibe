@@ -1,0 +1,25 @@
+.app-card * {
+    max-width: 100%;
+}
+
+.app-card .text-info {
+    max-width: 70%;
+    flex-grow: 1;
+}
+
+.app-card .text-info>div {
+    width: calc(var(--spacing) * 3);
+}
+
+.app-card .text-info .text-info-c {
+    flex-grow: 1;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.app-card .app-title {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow-x: hidden;
+    max-width: 95%;
+}

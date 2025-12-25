@@ -3,6 +3,8 @@ import { openHands } from "./open-hands-axios";
 export interface DeploymentStatus {
   conversation_id: string;
   container_id: string | null;
+  title: string | null;
+  project_dir: string | null;
   status: "stopped" | "starting" | "running" | "error" | "redeploying";
   contract_address: string | null;
   deployer_address: string | null;
