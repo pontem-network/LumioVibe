@@ -1,4 +1,3 @@
-import json
 import os
 import time
 from datetime import datetime, timezone
@@ -141,12 +140,18 @@ class DeploymentManager:
         deployments: list[DeploymentMetadata] = []
 
         for id in conv_store.ids():
-            deploy_data: DeploymentMetadata | None = self._load_metadata(id, user_id)
+            loaded: DeploymentMetadata | None = self._load_metadata(id, user_id)
+            deploy_data: DeploymentMetadata
 
-            if deploy_data is None:
+            if loaded is None:
                 conv_data = await conv_store.get_metadata(id)
                 deploy_data = DeploymentMetadata.from_conversation_data(conv_data)
                 self._save_metadata(deploy_data, user_id)
+            else:
+                deploy_data = loaded
+
+            if deploy_data.contract_address is None:
+                continue
 
             deployments.append(deploy_data)
 
