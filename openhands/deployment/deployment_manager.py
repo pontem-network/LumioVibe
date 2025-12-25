@@ -140,17 +140,23 @@ class DeploymentManager:
         deployments: list[DeploymentMetadata] = []
 
         for id in conv_store.ids():
-            loaded_from_file: DeploymentMetadata | None = self._load_metadata(id, user_id)
+            loaded_from_file: DeploymentMetadata | None = self._load_metadata(
+                id, user_id
+            )
             deploy_data: DeploymentMetadata
 
             if loaded_from_file is None:
                 conv_data = await conv_store.get_metadata(id)
-                deploy_data = DeploymentMetadata.from_conversation_data(data=conv_data, root_path=self._file_store_path)
+                deploy_data = DeploymentMetadata.from_conversation_data(
+                    data=conv_data, root_path=self._file_store_path
+                )
 
                 self._save_metadata(deploy_data, user_id)
             else:
                 deploy_data = loaded_from_file
-                if deploy_data.init_project_name_if_not_init_with_save(self._file_store_path):
+                if deploy_data.init_project_name_if_not_init_with_save(
+                    self._file_store_path
+                ):
                     self._save_metadata(deploy_data, user_id)
 
             if not deploy_data.can_it_run(self._file_store_path):
