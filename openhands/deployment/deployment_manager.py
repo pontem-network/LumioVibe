@@ -53,7 +53,7 @@ class DeploymentManager:
             logger.error(f'Failed to load deployment metadata: {e}')
             return None
 
-    def _save_metadata(self, metadata: DeploymentMetadata, user_id: str | None) -> None:
+    def _save_metadata(self, metadata: DeploymentMetadata, user_id: str | None):
         """Save deployment metadata to file."""
         if user_id is not None:
             metadata.user_id = user_id
@@ -140,17 +140,20 @@ class DeploymentManager:
         deployments: list[DeploymentMetadata] = []
 
         for id in conv_store.ids():
-            loaded: DeploymentMetadata | None = self._load_metadata(id, user_id)
+            loaded_from_file: DeploymentMetadata | None = self._load_metadata(id, user_id)
             deploy_data: DeploymentMetadata
 
-            if loaded is None:
+            if loaded_from_file is None:
                 conv_data = await conv_store.get_metadata(id)
-                deploy_data = DeploymentMetadata.from_conversation_data(conv_data)
+                deploy_data = DeploymentMetadata.from_conversation_data(data=conv_data, root_path=self._file_store_path)
+
                 self._save_metadata(deploy_data, user_id)
             else:
-                deploy_data = loaded
+                deploy_data = loaded_from_file
+                if deploy_data.init_project_name_if_not_init_with_save(self._file_store_path):
+                    self._save_metadata(deploy_data, user_id)
 
-            if deploy_data.contract_address is None:
+            if not deploy_data.can_it_run(self._file_store_path):
                 continue
 
             deployments.append(deploy_data)

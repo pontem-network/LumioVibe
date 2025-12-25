@@ -1,10 +1,15 @@
 from dataclasses import field
 from datetime import datetime, timezone
 from enum import Enum
+import glob
+import os
+from pathlib import Path
+from venv import logger
 
 from deprecated import deprecated
 from pydantic import BaseModel
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.locations import get_conversation_workspace_dir
 
 class DeploymentStatus(Enum):
     STOPPED = 'stopped'
@@ -22,6 +27,8 @@ class DeploymentMetadata(BaseModel):
 
     conversation_id: str | None = None
     container_id: str | None = None
+    project_dir: str | None = None
+
     status: DeploymentStatus = DeploymentStatus.STOPPED
     contract_address: str | None = None
     deployer_address: str | None = None
@@ -59,13 +66,44 @@ class DeploymentMetadata(BaseModel):
             'created_at': self.created_at.isoformat(),
         }
 
-    def from_conversation_data(data:ConversationMetadata)-> 'DeploymentMetadata':
+    def from_conversation_data(data:ConversationMetadata, root_path: Path)-> 'DeploymentMetadata':
         deployment = DeploymentMetadata()
         deployment.conversation_id=data.conversation_id
         deployment.user_id=data.user_id
         deployment.title=data.title
 
+        deployment.init_project_name(root_path)
+
         return deployment
+
+
+    def init_project_name(self, root_path: Path)->bool:
+        relative_conv_dir = get_conversation_workspace_dir(self.conversation_id, self.user_id)
+
+        for found in glob.glob(f"{root_path}/{relative_conv_dir}*/spec.md"):
+            self.project_dir=os.path.basename(Path(found).parent)
+            return True
+
+        return False
+
+    def init_project_name_if_not_init_with_save(self, root_path: Path)->bool :
+        if self.project_dir is not None:
+            return False
+
+        return self.init_project_name(root_path)
+
+    def can_it_run(self, root_path: Path)-> bool:
+        if self.project_dir is None:
+            return False
+
+        relative_conv_dir = get_conversation_workspace_dir(self.conversation_id, self.user_id)
+        start_path = f"{root_path}/{relative_conv_dir}{self.project_dir}/frontend/start.sh"
+
+        return os.path.exists(start_path)
+
+
+
+
 
 
 
