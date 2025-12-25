@@ -5,6 +5,7 @@ import { cn } from "#/utils/utils";
 import PlayIcon from "#/icons/play-solid.svg?react";
 import StopIcon from "#/icons/close.svg?react";
 import ExternalLinkIcon from "#/icons/export.svg?react";
+import "./deployment.css";
 
 interface DeploymentCardProps {
   deployment: DeploymentStatus;
@@ -88,22 +89,25 @@ export function DeploymentCard({
     }
   };
 
+  const title =
+    conversationTitle ??
+    deployment.project_dir ??
+    deployment.title ??
+    deployment.conversation_id;
+
   return (
     <div
       className={cn(
-        "p-4 rounded-lg border border-gray-700 bg-[#1a1a1a] hover:bg-[#222] cursor-pointer transition-all",
+        "app-card p-4 rounded-lg border border-gray-700 bg-[#1a1a1a] hover:bg-[#222] cursor-pointer transition-all",
         isError && "border-red-500/50",
       )}
       onClick={onClick}
     >
       <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center text-info">
           <div className={cn("w-3 h-3 rounded-full", statusColor)} />
-          <div>
-            <h3 className="font-medium text-white">
-              {conversationTitle ||
-                `App ${deployment.conversation_id.slice(0, 8)}`}
-            </h3>
+          <div className="text-info-c">
+            <h3 className="app-title font-medium text-white">{title}</h3>
             <p className="text-sm text-gray-400">{statusText}</p>
           </div>
         </div>
