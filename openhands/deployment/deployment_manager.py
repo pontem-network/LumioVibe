@@ -49,7 +49,7 @@ class DeploymentManager:
             return None
         try:
             with open(path, 'r') as f:
-                return json.load(f)
+                return DeploymentMetadata.model_validate_json(f.read())
         except Exception as e:
             logger.error(f'Failed to load deployment metadata: {e}')
             return None
