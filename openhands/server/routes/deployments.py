@@ -27,7 +27,6 @@ class RedeployRequest(BaseModel):
 
 @router.get('')
 async def list_deployments(
-    request: Request,
     user_id: str | None = Depends(get_user_id),
 ):
     """List all deployments for user."""
@@ -35,7 +34,7 @@ async def list_deployments(
         raise HTTPException(status_code=401, detail='Unauthorized')
 
     manager = get_deployment_manager()
-    deployments = manager.list_deployments(user_id)
+    deployments = await manager.list_deployments(user_id)
     return {'deployments': deployments}
 
 

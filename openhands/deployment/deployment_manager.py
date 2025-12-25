@@ -12,6 +12,7 @@ from docker.models.containers import Container
 from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.utils import find_available_tcp_port
+from openhands.storage.conversation.file_conversation_store import FileConversationStore
 from openhands.storage.data_models.deployment_metadata import (
     DeploymentMetadata,
     DeploymentStatus,
@@ -48,18 +49,20 @@ class DeploymentManager:
             return None
         try:
             with open(path, 'r') as f:
-                data = json.load(f)
-                return DeploymentMetadata.from_dict(data)
+                return json.load(f)
         except Exception as e:
             logger.error(f'Failed to load deployment metadata: {e}')
             return None
 
-    def _save_metadata(self, metadata: DeploymentMetadata, user_id: str) -> None:
+    def _save_metadata(self, metadata: DeploymentMetadata, user_id: str | None) -> None:
         """Save deployment metadata to file."""
-        path = self._get_metadata_path(metadata.conversation_id, user_id)
+        if user_id is not None:
+            metadata.user_id = user_id
+
+        path = self._get_metadata_path(metadata.conversation_id, metadata.user_id)
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, 'w') as f:
-            json.dump(metadata.to_dict(), f, indent=2)
+            f.write(metadata.model_dump_json(indent=2))
 
     def _get_container_name(self, conversation_id: str) -> str:
         """Generate container name for deployment."""
@@ -89,7 +92,7 @@ class DeploymentManager:
         if not metadata:
             metadata = DeploymentMetadata(conversation_id=conversation_id)
 
-        result = metadata.to_dict()
+        result = metadata.__dict__
         result['is_deployable'] = self._is_deployable(conversation_id, user_id)
 
         if container:
@@ -129,34 +132,23 @@ class DeploymentManager:
         self._save_metadata(metadata, user_id)
         return result
 
-    def list_deployments(self, user_id: str) -> list[dict]:
-        """List all deployments for user."""
-        deployments = []
-
-        # Check user-specific conversations path
-        user_conversations_path = (
-            Path(self._file_store_path) / 'users' / user_id / 'conversations'
+    async def list_deployments(self, user_id: str) -> list[dict]:
+        conv_store: FileConversationStore = await FileConversationStore.get_instance(
+            config=self.config, user_id=user_id
         )
-        if user_conversations_path.exists():
-            for conv_dir in user_conversations_path.iterdir():
-                if conv_dir.is_dir():
-                    conv_id = conv_dir.name
-                    status = self.get_deployment_status(conv_id, user_id)
-                    if status.get('is_deployable'):
-                        deployments.append(status)
 
-        # Also check legacy sessions path (for older conversations without user_id)
-        legacy_path = Path(self._file_store_path) / 'sessions'
-        if legacy_path.exists():
-            for session_dir in legacy_path.iterdir():
-                if session_dir.is_dir():
-                    conv_id = session_dir.name
-                    # Skip if already found in user path
-                    if any(d['conversation_id'] == conv_id for d in deployments):
-                        continue
-                    status = self.get_deployment_status(conv_id, user_id)
-                    if status.get('is_deployable'):
-                        deployments.append(status)
+        """List all deployments for user."""
+        deployments: list[DeploymentMetadata] = []
+
+        for id in conv_store.ids():
+            deploy_data: DeploymentMetadata | None = self._load_metadata(id, user_id)
+
+            if deploy_data is None:
+                conv_data = await conv_store.get_metadata(id)
+                deploy_data = DeploymentMetadata.from_conversation_data(conv_data)
+                self._save_metadata(deploy_data, user_id)
+
+            deployments.append(deploy_data)
 
         return deployments
 

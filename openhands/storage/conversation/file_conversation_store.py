@@ -61,6 +61,10 @@ class FileConversationStore(ConversationStore):
         except FileNotFoundError:
             return False
 
+    def ids(self) -> list[str]:
+        result:list[str] = self.file_store.list(self._get_conversations_dir())
+        return list(map(lambda path: Path(path).name, result))
+
     async def search(
         self,
         page_id: str | None = None,
