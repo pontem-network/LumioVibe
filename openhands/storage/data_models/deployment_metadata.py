@@ -27,14 +27,14 @@ class DeploymentMetadata(BaseModel):
     deployer_address: str | None = None
     app_port: int | None = None
     app_url: str | None = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     started_at: datetime | None = None
     stopped_at: datetime | None = None
+    last_deploy_at: datetime | None = None
+    deploy_count: int = 0
     total_runtime_seconds: float = 0.0
     total_cost: float = 0.0
     error_message: str | None = None
-    last_deploy_at: datetime | None = None
-    deploy_count: int = 0
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @deprecated('use __dict__ instead of to_dict')
     def to_dict(self) -> dict:
