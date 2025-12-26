@@ -11,7 +11,7 @@ interface DesktopLayoutProps {
 export function DesktopLayout({ isRightPanelShown }: DesktopLayoutProps) {
   const { leftWidth, rightWidth, isDragging, containerRef, handleMouseDown } =
     useResizablePanels({
-      defaultLeftWidth: 50,
+      defaultLeftWidth: 30,
       minLeftWidth: 30,
       maxLeftWidth: 80,
       storageKey: "desktop-layout-panel-width",
