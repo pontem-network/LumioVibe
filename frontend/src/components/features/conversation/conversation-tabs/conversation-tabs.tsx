@@ -34,7 +34,7 @@ export function ConversationTabs() {
   const [persistedSelectedTab, setPersistedSelectedTab] =
     useLocalStorage<ConversationTab | null>(
       "conversation-selected-tab",
-      "editor",
+      "served",
     );
 
   const [persistedIsRightPanelShown, setPersistedIsRightPanelShown] =
@@ -42,7 +42,7 @@ export function ConversationTabs() {
 
   const [persistedUnpinnedTabs] = useLocalStorage<string[]>(
     "conversation-unpinned-tabs",
-    [],
+    ["browser", "vscode"],
   );
 
   const shouldUsePlanningAgent = USE_PLANNING_AGENT();
