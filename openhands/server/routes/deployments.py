@@ -41,7 +41,6 @@ async def list_deployments(
 @router.get('/{conversation_id}')
 async def get_deployment(
     conversation_id: str,
-    request: Request,
     user_id: str | None = Depends(get_user_id),
 ):
     """Get deployment status and stats."""
@@ -53,10 +52,9 @@ async def get_deployment(
     return status
 
 
-@router.post('/{conversation_id}/start')
+@router.get('/{conversation_id}/start')
 async def start_deployment(
     conversation_id: str,
-    request: Request,
     user_id: str | None = Depends(get_user_id),
 ):
     """Start deployment for conversation."""
@@ -75,10 +73,9 @@ async def start_deployment(
     return result
 
 
-@router.post('/{conversation_id}/stop')
+@router.get('/{conversation_id}/stop')
 async def stop_deployment(
     conversation_id: str,
-    request: Request,
     user_id: str | None = Depends(get_user_id),
 ):
     """Stop deployment for conversation."""

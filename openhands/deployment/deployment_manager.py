@@ -18,7 +18,7 @@ from openhands.storage.data_models.deployment_metadata import (
 )
 from openhands.storage.locations import get_conversation_workspace_dir
 
-DEPLOY_PORT_RANGE = (60000, 64999)
+DEPLOY_PORT_RANGE = (50000, 54999)
 
 
 class DeploymentManager:
@@ -168,28 +168,35 @@ class DeploymentManager:
 
     async def start_deployment(self, conversation_id: str, user_id: str) -> dict:
         """Start deployment container for conversation."""
-        metadata = self._load_metadata(conversation_id, user_id) or DeploymentMetadata(
-            conversation_id=conversation_id
-        )
 
-        if not self._is_deployable(conversation_id, user_id):
+        metadata: DeploymentMetadata | None = self._load_metadata(
+            conversation_id, user_id
+        )
+        if metadata is None:
+            return {
+                'success': False,
+                'error': 'No deployment metadata found',
+            }
+        metadata: DeploymentMetadata = metadata
+
+        front_path: str | None = metadata.frontend_path()
+        if front_path is None:
             return {
                 'success': False,
                 'error': 'No deployable frontend found in workspace',
             }
+        workspace_dir: Path = self._get_abs_path(front_path).parent
 
-        existing = self._get_container(conversation_id)
-        if existing:
-            existing.reload()
-            if existing.attrs.get('State', {}).get('Running'):
+        container = self._get_container(conversation_id)
+        if container:
+            container.reload()
+            if container.attrs.get('State', {}).get('Running'):
                 return {
                     'success': False,
                     'error': 'Deployment already running',
                 }
-            existing.remove(force=True)
+            container.remove(force=True)
 
-        workspace_rel = get_conversation_workspace_dir(conversation_id, user_id)
-        workspace_dir = str(self._get_abs_path(workspace_rel))
         container_name = self._get_container_name(conversation_id)
 
         app_port = find_available_tcp_port(*DEPLOY_PORT_RANGE)
@@ -208,32 +215,31 @@ class DeploymentManager:
             )
 
             startup_script = """#!/bin/bash
-set -e
-cd /workspace/frontend
+set -e;
+ls -l /workspace/;
+cd /workspace/frontend;
 if [ ! -d "node_modules" ]; then
     pnpm install
-fi
-pnpm dev --host --port $APP_PORT
+fi;
+./start.sh;
 """
 
-            restart_policy_name = (
-                'unless-stopped' if self.deployment_config.auto_restart else 'no'
-            )
             run_kwargs: dict[str, Any] = {
                 'command': ['bash', '-c', startup_script],
                 'name': container_name,
                 'detach': True,
                 'environment': {
-                    'APP_PORT': str(app_port),
+                    'APP_PORT_1': str(app_port),
+                    'APP_BASE_URL_1': f'http://localhost:{app_port}',
                 },
                 'ports': {f'{app_port}/tcp': app_port},
                 'volumes': {
                     workspace_dir: {'bind': '/workspace', 'mode': 'rw'},
                 },
-                'restart_policy': {
-                    'Name': restart_policy_name,
-                    'MaximumRetryCount': self.deployment_config.max_restart_attempts,
-                },
+                # 'restart_policy': {
+                #     'Name': restart_policy_name,
+                #     'MaximumRetryCount': self.deployment_config.max_restart_attempts,
+                # },
                 'labels': {
                     'openhands.deployment': 'true',
                     'openhands.conversation_id': conversation_id,

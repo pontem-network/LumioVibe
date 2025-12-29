@@ -62,7 +62,7 @@ export async function getDeployment(
 export async function startDeployment(
   conversationId: string,
 ): Promise<StartDeploymentResult> {
-  const response = await openHands.post<StartDeploymentResult>(
+  const response = await openHands.get<StartDeploymentResult>(
     `/api/deployments/${conversationId}/start`,
   );
   return response.data;
@@ -71,7 +71,7 @@ export async function startDeployment(
 export async function stopDeployment(
   conversationId: string,
 ): Promise<{ success: boolean; error?: string }> {
-  const response = await openHands.post<{ success: boolean; error?: string }>(
+  const response = await openHands.get<{ success: boolean; error?: string }>(
     `/api/deployments/${conversationId}/stop`,
   );
   return response.data;

@@ -76,7 +76,6 @@ class DeploymentMetadata(BaseModel):
 
         return deployment
 
-
     def init_project_name(self, root_path: Path)->bool:
         relative_conv_dir = get_conversation_workspace_dir(self.conversation_id, self.user_id)
 
@@ -101,6 +100,18 @@ class DeploymentMetadata(BaseModel):
 
         return os.path.exists(start_path)
 
+
+    def project_path(self)->str | None:
+        if self.project_dir is None:
+            return None
+        conversation_path=get_conversation_workspace_dir(self.conversation_id, self.user_id)
+        return  f"{conversation_path}/{self.project_dir}"
+
+    def frontend_path(self)->str | None:
+        project_path = self.project_path()
+        if project_path is None:
+            return None
+        return f"{project_path}/frontend/"
 
 
 
