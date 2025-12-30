@@ -289,7 +289,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(terminalCloseDisposable);
 
-  // Command: Start New Conversation
+  // Command: Start New Project
   const startConversationDisposable = vscode.commands.registerCommand(
     "openhands.startConversation",
     () => {

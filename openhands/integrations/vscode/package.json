@@ -23,7 +23,7 @@
     "commands": [
       {
         "command": "openhands.startConversation",
-        "title": "Start New Conversation",
+        "title": "Start New Project",
         "category": "OpenHands"
       },
       {

@@ -240,7 +240,7 @@
     "uk": "LumioVibe додає цей новий контекст до вашого репозиторію. Ми повідомимо вас, коли запит на витягування буде готовий."
   },
   "MICROAGENT$VIEW_CONVERSATION": {
-    "en": "View Conversation",
+    "en": "View Project",
     "ja": "会話を表示",
     "zh-CN": "查看对话",
     "zh-TW": "查看對話",
@@ -250,7 +250,7 @@
     "pt": "Ver conversa",
     "es": "Ver conversación",
     "ar": "عرض المحادثة",
-    "fr": "Voir la conversation",
+    "fr": "Voir la project",
     "tr": "Konuşmayı Görüntüle",
     "de": "Konversation anzeigen",
     "uk": "Переглянути розмову"
@@ -2160,7 +2160,7 @@
     "uk": "Налаштування"
   },
   "CONVERSATION$START_NEW": {
-    "en": "Start new conversation",
+    "en": "Start new project",
     "ja": "新規会話を開始",
     "zh-CN": "开始新对话",
     "zh-TW": "開始新對話",
@@ -2170,7 +2170,7 @@
     "pt": "Iniciar nova conversa",
     "es": "Iniciar nueva conversación",
     "ar": "بدء محادثة جديدة",
-    "fr": "Démarrer une nouvelle conversation",
+    "fr": "Démarrer une nouvelle project",
     "tr": "Yeni sohbet başlat",
     "de": "Neue Unterhaltung starten",
     "uk": "Почати нову розмову"
@@ -2624,7 +2624,7 @@
     "uk": "Максимальний бюджет на завдання"
   },
   "SETTINGS$MAX_BUDGET_PER_CONVERSATION": {
-    "en": "Maximum Budget Per Conversation",
+    "en": "Maximum Budget Per Project",
     "ja": "会話ごとの最大予算",
     "zh-CN": "每次对话的最大预算",
     "zh-TW": "每次對話的最大預算",
@@ -2635,7 +2635,7 @@
     "pt": "Orçamento máximo por conversa",
     "es": "Presupuesto máximo por conversación",
     "ar": "الميزانية القصوى لكل محادثة",
-    "fr": "Budget maximum par conversation",
+    "fr": "Budget maximum par projcet",
     "tr": "Konuşma Başına Maksimum Bütçe",
     "uk": "Максимальний бюджет на розмову"
   },
@@ -5504,12 +5504,12 @@
     "ja": ".jsonをアップロード"
   },
   "LANDING$RECENT_CONVERSATION": {
-    "en": "jump back to your most recent conversation",
+    "en": "jump back to your most recent project",
     "ja": "最新の会話に戻る",
     "zh-CN": "返回到最近的对话",
     "zh-TW": "返回到最近的對話",
     "ko-KR": "가장 최근 대화로 돌아가기",
-    "fr": "revenez à votre conversation la plus récente",
+    "fr": "revenez à votre project la plus récente",
     "es": "vuelve a tu conversación más reciente",
     "de": "kehre zu deiner letzten Konversation zurück",
     "it": "torna alla tua conversazione più recente",
@@ -5568,7 +5568,7 @@
     "uk": "Підтвердити призупинення"
   },
   "CONVERSATION$PAUSE_WARNING": {
-    "en": "Are you sure you want to pause this conversation?",
+    "en": "Are you sure you want to pause this project?",
     "ja": "この会話を一時停止してもよろしいですか？",
     "zh-CN": "您确定要暂停此对话吗？",
     "zh-TW": "您確定要暫停此對話嗎？",
@@ -5578,13 +5578,13 @@
     "pt": "Tem certeza de que deseja pausar esta conversa?",
     "es": "¿Está seguro de que desea pausar esta conversación?",
     "ar": "هل أنت متأكد أنك تريد إيقاف هذه المحادثة مؤقتًا؟",
-    "fr": "Êtes-vous sûr de vouloir mettre cette conversation en pause ?",
+    "fr": "Êtes-vous sûr de vouloir mettre cette project en pause ?",
     "tr": "Bu konuşmayı duraklatmak istediğinizden emin misiniz?",
     "de": "Sind Sie sicher, dass Sie dieses Gespräch pausieren möchten?",
     "uk": "Ви впевнені, що хочете призупинити цю розмову?"
   },
   "CONVERSATION$CONFIRM_CLOSE_CONVERSATION": {
-    "en": "Confirm Close Conversation",
+    "en": "Confirm Close project",
     "ja": "会話終了の確認",
     "zh-CN": "确认关闭对话",
     "zh-TW": "確認關閉對話",
@@ -5594,13 +5594,13 @@
     "pt": "Confirmar encerrar conversa",
     "es": "Confirmar cerrar conversación",
     "ar": "تأكيد إغلاق المحادثة",
-    "fr": "Confirmer la fermeture de la conversation",
+    "fr": "Confirmer la fermeture de la project",
     "tr": "Konuşmayı Kapatmayı Onayla",
     "de": "Gespräch schließen bestätigen",
     "uk": "Підтвердити закриття розмови"
   },
   "CONVERSATION$CLOSE_CONVERSATION_WARNING": {
-    "en": "Are you sure you want to close this conversation and stop the runtime?",
+    "en": "Are you sure you want to close this project and stop the runtime?",
     "ja": "この会話を終了してランタイムを停止してもよろしいですか？",
     "zh-CN": "您确定要关闭此对话并停止运行时吗？",
     "zh-TW": "您確定要關閉此對話並停止執行時嗎？",
@@ -5610,13 +5610,13 @@
     "pt": "Tem certeza de que deseja encerrar esta conversa e parar o runtime?",
     "es": "¿Está seguro de que desea cerrar esta conversación y detener el runtime?",
     "ar": "هل أنت متأكد أنك تريد إغلاق هذه المحادثة وإيقاف وقت التشغيل؟",
-    "fr": "Êtes-vous sûr de vouloir fermer cette conversation et arrêter le runtime ?",
+    "fr": "Êtes-vous sûr de vouloir fermer cette project et arrêter le runtime ?",
     "tr": "Bu konuşmayı kapatmak ve çalışma zamanını durdurmak istediğinizden emin misiniz?",
     "de": "Sind Sie sicher, dass Sie dieses Gespräch schließen und die Laufzeit stoppen möchten?",
     "uk": "Ви впевнені, що хочете закрити цю розмову та зупинити час виконання?"
   },
   "CONVERSATION$STOP_WARNING": {
-    "en": "Are you sure you want to pause this conversation?",
+    "en": "Are you sure you want to pause this project?",
     "ja": "この会話を停止してもよろしいですか？",
     "zh-CN": "您确定要停止此对话吗？",
     "zh-TW": "您確定要停止此對話嗎？",
@@ -5626,13 +5626,13 @@
     "pt": "Tem certeza de que deseja parar esta conversa?",
     "es": "¿Está seguro de que desea detener esta conversación?",
     "ar": "هل أنت متأكد أنك تريد إيقاف هذه المحادثة؟",
-    "fr": "Êtes-vous sûr de vouloir arrêter cette conversation ?",
+    "fr": "Êtes-vous sûr de vouloir arrêter cette project ?",
     "tr": "Bu konuşmayı durdurmak istediğinizden emin misiniz?",
     "de": "Sind Sie sicher, dass Sie dieses Gespräch stoppen möchten?",
     "uk": "Ви впевнені, що хочете зупинити цю розмову?"
   },
   "CONVERSATION$METRICS_INFO": {
-    "en": "Conversation Metrics",
+    "en": "Project Metrics",
     "ja": "会話メトリクス",
     "zh-CN": "对话指标",
     "zh-TW": "對話指標",
@@ -5642,7 +5642,7 @@
     "pt": "Métricas de conversação",
     "es": "Métricas de conversación",
     "ar": "مقاييس المحادثة",
-    "fr": "Métriques de conversation",
+    "fr": "Métriques de project",
     "tr": "Konuşma Metrikleri",
     "de": "Gesprächsmetriken",
     "uk": "Метрики розмов"
@@ -5696,7 +5696,7 @@
     "uk": "і скористайтеся посиланням VS Code, щоб завантажити свій код"
   },
   "CONVERSATION$EXIT_WARNING": {
-    "en": "Exit Conversation",
+    "en": "Exit Project",
     "ja": "会話を終了",
     "zh-CN": "退出对话",
     "zh-TW": "退出對話",
@@ -5706,13 +5706,13 @@
     "pt": "Sair da conversa",
     "es": "Salir de la conversación",
     "ar": "الخروج من المحادثة",
-    "fr": "Quitter la conversation",
+    "fr": "Quitter la project",
     "tr": "Konuşmadan Çık",
     "de": "Gespräch verlassen",
     "uk": "Вийти з розмови"
   },
   "CONVERSATION$TITLE_UPDATED": {
-    "en": "Conversation title updated successfully",
+    "en": "Project title updated successfully",
     "ja": "会話のタイトルが正常に更新されました",
     "zh-CN": "对话标题更新成功",
     "zh-TW": "對話標題更新成功",
@@ -5723,7 +5723,7 @@
     "pt": "Título da conversa atualizado com sucesso",
     "es": "Título de la conversación actualizado exitosamente",
     "ar": "تم تحديث عنوان المحادثة بنجاح",
-    "fr": "Titre de la conversation mis à jour avec succès",
+    "fr": "Titre de la project mis à jour avec succès",
     "tr": "Konuşma başlığı başarıyla güncellendi",
     "uk": "Назву розмови успішно оновлено"
   },
@@ -6144,7 +6144,7 @@
     "uk": "Повідомлення від {{sender}}"
   },
   "CHAT_INTERFACE$CHAT_CONVERSATION": {
-    "en": "Chat Conversation",
+    "en": "Chat Project",
     "zh-CN": "聊天对话",
     "de": "Chat-Konversation",
     "ko-KR": "채팅 대화",
@@ -6154,7 +6154,7 @@
     "pt": "Conversa de chat",
     "es": "Conversación de chat",
     "ar": "محادثة تلقيم",
-    "fr": "Conversation de chat",
+    "fr": "Project de chat",
     "tr": "Sohbet Konuşması",
     "ja": "チャット会話",
     "uk": "Розмова в чаті"
@@ -6512,7 +6512,7 @@
     "uk": "Налаштування збережено"
   },
   "SETTINGS$SAVED_WARNING": {
-    "en": "Settings saved. For old conversations, you will need to stop and restart the conversation to see the changes.",
+    "en": "Settings saved. For old projects, you will need to stop and restart the project to see the changes.",
     "ja": "設定が保存されました。古い会話では、変更を確認するために会話を停止して再開する必要があります。",
     "zh-CN": "设置已保存。对于旧对话，您需要停止并重新开始对话才能看到更改。",
     "zh-TW": "設置已保存。對於舊對話，您需要停止並重新開始對話才能看到更改。",
@@ -6522,7 +6522,7 @@
     "pt": "Configurações salvas. Para conversas antigas, você precisará parar e reiniciar a conversa para ver as alterações.",
     "es": "Configuración guardada. Para conversaciones antiguas, necesitarás detener y reiniciar la conversación para ver los cambios.",
     "ar": "تم حفظ الإعدادات. بالنسبة للمحادثات القديمة، ستحتاج إلى إيقاف وإعادة تشغيل المحادثة لرؤية التغييرات.",
-    "fr": "Paramètres enregistrés. Pour les anciennes conversations, vous devrez arrêter et redémarrer la conversation pour voir les changements.",
+    "fr": "Paramètres enregistrés. Pour les anciennes projects, vous devrez arrêter et redémarrer la project pour voir les changements.",
     "tr": "Ayarlar kaydedildi. Eski konuşmalar için değişiklikleri görmek üzere konuşmayı durdurup yeniden başlatmanız gerekecek.",
     "de": "Einstellungen gespeichert. Für alte Gespräche müssen Sie das Gespräch stoppen und neu starten, um die Änderungen zu sehen.",
     "uk": "Налаштування збережено. Для старих розмов вам потрібно буде зупинити та перезапустити розмову, щоб побачити зміни."
@@ -7056,7 +7056,7 @@
     "uk": "Приватний"
   },
   "SIDEBAR$CONVERSATIONS": {
-    "en": "Conversations",
+    "en": "Projects",
     "ja": "会話",
     "zh-CN": "对话",
     "zh-TW": "對話",
@@ -7067,7 +7067,7 @@
     "pt": "Conversas",
     "es": "Conversaciones",
     "ar": "المحادثات",
-    "fr": "Conversations",
+    "fr": "Projects",
     "tr": "Konuşmalar",
     "uk": "Розмови"
   },
@@ -7840,7 +7840,7 @@
     "uk": "Час дії вичерпано."
   },
   "AGENT_ERROR$TOO_MANY_CONVERSATIONS": {
-    "en": "Too many conversations at once.",
+    "en": "Too many projects at once.",
     "uk": "Занадто багато розмов одночасно.",
     "ja": "一度に多すぎる会話があります。",
     "zh-CN": "同时进行的对话过多。",
@@ -7849,7 +7849,7 @@
     "no": "For mange samtaler på en gang.",
     "ar": "الكثير من المحادثات في وقت واحد.",
     "de": "Zu viele Gespräche auf einmal.",
-    "fr": "Trop de conversations à la fois.",
+    "fr": "Trop de projects à la fois.",
     "it": "Troppe conversazioni contemporaneamente.",
     "pt": "Muitas conversas ao mesmo tempo.",
     "es": "Demasiadas conversaciones a la vez.",
@@ -8576,12 +8576,12 @@
     "uk": "Розширені параметри"
   },
   "CONVERSATION$NO_CONVERSATIONS": {
-    "en": "No conversations found",
+    "en": "No projects found",
     "ja": "会話が見つかりません",
     "zh-CN": "未找到对话",
     "zh-TW": "未找到對話",
     "ko-KR": "대화를 찾을 수 없습니다",
-    "fr": "Aucune conversation trouvée",
+    "fr": "Aucune project trouvée",
     "es": "No se encontraron conversaciones",
     "de": "Keine Gespräche gefunden",
     "it": "Nessuna conversazione trovata",
@@ -8704,7 +8704,7 @@
     "uk": "Позначити це рішення як некорисне"
   },
   "BUTTON$EXPORT_CONVERSATION": {
-    "en": "Export conversation",
+    "en": "Export project",
     "zh-CN": "导出对话",
     "zh-TW": "導出對話",
     "de": "Konversation exportieren",
@@ -8714,7 +8714,7 @@
     "pt": "Exportar conversa",
     "es": "Exportar conversación",
     "ar": "تصدير المحادثة",
-    "fr": "Exporter la conversation",
+    "fr": "Exporter la project",
     "tr": "Konuşmayı dışa aktar",
     "ja": "会話をエクスポート",
     "uk": "Експорт розмови"
@@ -9200,7 +9200,7 @@
     "uk": "Немає даних про показники"
   },
   "CONVERSATION$DOWNLOAD_ERROR": {
-    "en": "ConversationId unknown, cannot download trajectory",
+    "en": "ProjectId unknown, cannot download trajectory",
     "ja": "会話IDが不明です。軌跡をダウンロードできません",
     "zh-CN": "会话ID未知，无法下载轨迹",
     "zh-TW": "對話ID未知，無法下載軌跡",
@@ -9211,7 +9211,7 @@
     "pt": "ID de conversa desconhecido, não é possível baixar a trajetória",
     "es": "ID de conversación desconocido, no se puede descargar la trayectoria",
     "ar": "معرف المحادثة غير معروف، لا يمكن تنزيل المسار",
-    "fr": "ID de conversation inconnu, impossible de télécharger la trajectoire",
+    "fr": "ID de project inconnu, impossible de télécharger la trajectoire",
     "tr": "Konuşma kimliği bilinmiyor, yörünge indirilemiyor",
     "uk": "Ідентифікатор розмови невідомий, неможливо завантажити траєкторію"
   },
@@ -9584,7 +9584,7 @@
     "uk": "Приєднатися до списку очікування"
   },
   "CONVERSATION$DELETE_WARNING": {
-    "en": "Are you sure you want to delete this conversation? This action cannot be undone.",
+    "en": "Are you sure you want to delete this project? This action cannot be undone.",
     "ja": "この会話を削除してもよろしいですか？この操作は元に戻せません。",
     "zh-CN": "您确定要删除此对话吗？此操作无法撤消。",
     "zh-TW": "您確定要刪除此對話嗎？此操作無法撤消。",
@@ -9594,7 +9594,7 @@
     "pt": "Tem certeza de que deseja excluir esta conversa? Esta ação não pode ser desfeita.",
     "es": "¿Está seguro de que desea eliminar esta conversación? Esta acción no se puede deshacer.",
     "ar": "هل أنت متأكد أنك تريد حذف هذه المحادثة؟ لا يمكن التراجع عن هذا الإجراء.",
-    "fr": "Êtes-vous sûr de vouloir supprimer cette conversation ? Cette action ne peut pas être annulée.",
+    "fr": "Êtes-vous sûr de vouloir supprimer cette project ? Cette action ne peut pas être annulée.",
     "tr": "Bu konuşmayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
     "de": "Sind Sie sicher, dass Sie dieses Gespräch löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
     "uk": "Ви впевнені, що хочете видалити цю розмову? Цю дію не можна скасувати."
@@ -10224,7 +10224,7 @@
     "uk": "Показати доступних мікроагентів"
   },
   "CONVERSATION$NO_MICROAGENTS": {
-    "en": "No available microagents found for this conversation.",
+    "en": "No available microagents found for this project.",
     "ja": "この会話用の利用可能なマイクロエージェントが見つかりませんでした。",
     "zh-CN": "未找到此对话的可用微代理。",
     "zh-TW": "未找到此對話的可用微代理。",
@@ -10232,7 +10232,7 @@
     "no": "Ingen tilgjengelige mikroagenter funnet for denne samtalen.",
     "ar": "لم يتم العثور على وكلاء مصغرين متاحة لهذه المحادثة.",
     "de": "Keine verfügbaren Mikroagenten für dieses Gespräch gefunden.",
-    "fr": "Aucun micro-agent disponible trouvé pour cette conversation.",
+    "fr": "Aucun micro-agent disponible trouvé pour cette project.",
     "it": "Nessun microagente disponibile trovato per questa conversazione.",
     "pt": "Nenhum microagente disponível encontrado para esta conversa.",
     "es": "No se encontraron microagentes disponibles para esta conversación.",
@@ -10272,7 +10272,7 @@
     "uk": "Доступні мікроагенти"
   },
   "MICROAGENTS_MODAL$WARNING": {
-    "en": "If you update the microagents, you will need to stop the conversation and then click on the refresh button to see the changes.",
+    "en": "If you update the microagents, you will need to stop the project and then click on the refresh button to see the changes.",
     "ja": "マイクロエージェントを更新する場合、会話を停止してから更新ボタンをクリックして変更を確認する必要があります。",
     "zh-CN": "如果您更新微代理，您需要停止对话，然后点击刷新按钮以查看更改。",
     "zh-TW": "如果您更新微代理，您需要停止對話，然後點擊重新整理按鈕以查看更改。",
@@ -10280,7 +10280,7 @@
     "no": "Hvis du oppdaterer mikroagentene, må du stoppe samtalen og deretter klikke på oppdater-knappen for å se endringene.",
     "ar": "إذا قمت بتحديث الوكلاء المصغرين، فستحتاج إلى إيقاف المحادثة ثم النقر على زر التحديث لرؤية التغييرات.",
     "de": "Wenn Sie die Mikroagenten aktualisieren, müssen Sie das Gespräch beenden und dann auf die Aktualisieren-Schaltfläche klicken, um die Änderungen zu sehen.",
-    "fr": "Si vous mettez à jour les micro-agents, vous devrez arrêter la conversation puis cliquer sur le bouton actualiser pour voir les changements.",
+    "fr": "Si vous mettez à jour les micro-agents, vous devrez arrêter la project puis cliquer sur le bouton actualiser pour voir les changements.",
     "it": "Se aggiorni i microagenti, dovrai fermare la conversazione e poi cliccare sul pulsante aggiorna per vedere le modifiche.",
     "pt": "Se você atualizar os microagentes, precisará parar a conversa e depois clicar no botão atualizar para ver as alterações.",
     "es": "Si actualiza los microagentes, necesitará detener la conversación y luego hacer clic en el botón actualizar para ver los cambios.",
@@ -10384,7 +10384,7 @@
     "uk": "Не вдалося отримати мікроагентів. Будь ласка, спробуйте пізніше."
   },
   "TIPS$SETUP_SCRIPT": {
-    "en": "You can add .openhands/setup.sh to your repository to automatically run a setup script every time you start an LumioVibe conversation.",
+    "en": "You can add .openhands/setup.sh to your repository to automatically run a setup script every time you start an LumioVibe project.",
     "ja": "LumioVibeの会話を開始するたびに自動的にセットアップスクリプトを実行するために、.openhands/setup.shをリポジトリに追加できます。",
     "zh-CN": "您可以将.openhands/setup.sh添加到您的仓库中，以便在每次启动LumioVibe对话时自动运行设置脚本。",
     "zh-TW": "您可以將.openhands/setup.sh添加到您的倉庫中，以便在每次啟動LumioVibe對話時自動運行設置腳本。",
@@ -10394,13 +10394,13 @@
     "pt": "Você pode adicionar .openhands/setup.sh ao seu repositório para executar automaticamente um script de configuração toda vez que iniciar uma conversa LumioVibe.",
     "es": "Puede agregar .openhands/setup.sh a su repositorio para ejecutar automáticamente un script de configuración cada vez que inicie una conversación de LumioVibe.",
     "ar": "يمكنك إضافة .openhands/setup.sh إلى مستودعك لتشغيل نص إعداد تلقائيًا في كل مرة تبدأ فيها محادثة LumioVibe.",
-    "fr": "Vous pouvez ajouter .openhands/setup.sh à votre dépôt pour exécuter automatiquement un script de configuration chaque fois que vous démarrez une conversation LumioVibe.",
+    "fr": "Vous pouvez ajouter .openhands/setup.sh à votre dépôt pour exécuter automatiquement un script de configuration chaque fois que vous démarrez une project LumioVibe.",
     "tr": "LumioVibe konuşması başlattığınız her seferinde otomatik olarak bir kurulum betiği çalıştırmak için deponuza .openhands/setup.sh ekleyebilirsiniz.",
     "de": "Sie können .openhands/setup.sh zu Ihrem Repository hinzufügen, um jedes Mal, wenn Sie ein LumioVibe-Gespräch starten, automatisch ein Setup-Skript auszuführen.",
     "uk": "Ви можете додати .openhands/setup.sh до свого репозиторію, щоб автоматично запускати скрипт налаштування щоразу, коли ви починаєте розмову LumioVibe."
   },
   "TIPS$VSCODE_INSTANCE": {
-    "en": "Every LumioVibe conversation comes with a VS Code instance, where you can interact with the development environment.",
+    "en": "Every LumioVibe project comes with a VS Code instance, where you can interact with the development environment.",
     "ja": "すべてのLumioVibe会話には、開発環境と対話できるVS Codeインスタンスが付属しています。",
     "zh-CN": "每个LumioVibe对话都配有VS Code实例，您可以在其中与开发环境交互。",
     "zh-TW": "每個LumioVibe對話都配有VS Code實例，您可以在其中與開發環境交互。",
@@ -10410,7 +10410,7 @@
     "pt": "Cada conversa LumioVibe vem com uma instância do VS Code, onde você pode interagir com o ambiente de desenvolvimento.",
     "es": "Cada conversación de LumioVibe viene con una instancia de VS Code, donde puede interactuar con el entorno de desarrollo.",
     "ar": "تأتي كل محادثة LumioVibe مع نسخة من VS Code، حيث يمكنك التفاعل مع بيئة التطوير.",
-    "fr": "Chaque conversation LumioVibe est accompagnée d'une instance VS Code, où vous pouvez interagir avec l'environnement de développement.",
+    "fr": "Chaque project LumioVibe est accompagnée d'une instance VS Code, où vous pouvez interagir avec l'environnement de développement.",
     "tr": "Her LumioVibe konuşması, geliştirme ortamıyla etkileşimde bulunabileceğiniz bir VS Code örneği ile birlikte gelir.",
     "de": "Jedes LumioVibe-Gespräch wird mit einer VS Code-Instanz geliefert, in der Sie mit der Entwicklungsumgebung interagieren können.",
     "uk": "Кожна розмова LumioVibe постачається з екземпляром VS Code, де ви можете взаємодіяти із середовищем розробки."
@@ -10512,7 +10512,7 @@
     "uk": "Підпишіться на блог LumioVibe, щоб дізнаватися про нові функції та останні релізи."
   },
   "TIPS$API_USAGE": {
-    "en": "LumioVibe has an API! Create LumioVibe conversations with simple cURL command.",
+    "en": "LumioVibe has an API! Create LumioVibe projects with simple cURL command.",
     "ja": "LumioVibeにはAPIがあります！簡単なcURLコマンドでLumioVibe会話を作成できます。",
     "zh-CN": "LumioVibe有API！使用简单的cURL命令创建LumioVibe对话。",
     "zh-TW": "LumioVibe有API！使用簡單的cURL命令創建LumioVibe對話。",
@@ -10522,7 +10522,7 @@
     "pt": "LumioVibe tem uma API! Crie conversas LumioVibe com um simples comando cURL.",
     "es": "¡LumioVibe tiene una API! Cree conversaciones de LumioVibe con un simple comando cURL.",
     "ar": "LumioVibe لديه واجهة برمجة تطبيقات! قم بإنشاء محادثات LumioVibe باستخدام أمر cURL بسيط.",
-    "fr": "LumioVibe a une API ! Créez des conversations LumioVibe avec une simple commande cURL.",
+    "fr": "LumioVibe a une API ! Créez des projects LumioVibe avec une simple commande cURL.",
     "tr": "LumioVibe'in bir API'si var! Basit bir cURL komutuyla LumioVibe konuşmaları oluşturun.",
     "de": "LumioVibe hat eine API! Erstellen Sie LumioVibe-Gespräche mit einem einfachen cURL-Befehl.",
     "uk": "LumioVibe має API! Створюйте розмови LumioVibe за допомогою простої команди cURL."
@@ -11312,7 +11312,7 @@
     "uk": "Не запитувати підтвердження"
   },
   "SETTINGS$MAXIMUM_BUDGET_USD": {
-    "en": "Maximum budget per conversation in USD",
+    "en": "Maximum budget per project in USD",
     "ja": "会話あたりの最大予算（USD）",
     "zh-CN": "每次对话的最大预算（美元）",
     "zh-TW": "每次對話的最大預算（美元）",
@@ -11322,7 +11322,7 @@
     "pt": "Orçamento máximo por conversa em USD",
     "es": "Presupuesto máximo por conversación en USD",
     "ar": "الحد الأقصى للميزانية لكل محادثة بالدولار الأمريكي",
-    "fr": "Budget maximum par conversation en USD",
+    "fr": "Budget maximum par project en USD",
     "tr": "Konuşma başına maksimum bütçe (USD)",
     "de": "Maximales Budget pro Gespräch in USD",
     "uk": "Максимальний бюджет на розмову в доларах США"
@@ -11792,7 +11792,7 @@
     "uk": "Готові додати мікроагента?"
   },
   "MICROAGENT_MANAGEMENT$OPENHANDS_CAN_LEARN_ABOUT_REPOSITORIES": {
-    "en": "LumioVibe can automatically learn about your repositories and store its findings as markdown in a microagent. The microagent will help LumioVibe run faster and more accurately in any future conversations.",
+    "en": "LumioVibe can automatically learn about your repositories and store its findings as markdown in a microagent. The microagent will help LumioVibe run faster and more accurately in any future projects.",
     "ja": "LumioVibeはあなたのリポジトリについて自動的に学習し、その結果をマイクロエージェント内のMarkdownとして保存できます。マイクロエージェントは今後の会話でLumioVibeがより速く、より正確に動作するのに役立ちます。",
     "zh-CN": "LumioVibe 可以自动学习您的仓库，并将其发现以 markdown 形式存储在微代理中。微代理将帮助 LumioVibe 在未来的对话中运行得更快、更准确。",
     "zh-TW": "LumioVibe 可以自動學習您的儲存庫，並將其發現以 markdown 形式儲存在微代理中。微代理將幫助 LumioVibe 在未來的對話中運行得更快、更準確。",
@@ -11802,7 +11802,7 @@
     "pt": "O LumioVibe pode aprender automaticamente sobre seus repositórios e armazenar suas descobertas como markdown em um microagente. O microagente ajudará o LumioVibe a funcionar mais rápido e com mais precisão em conversas futuras.",
     "es": "LumioVibe puede aprender automáticamente sobre tus repositorios y almacenar sus hallazgos como markdown en un microagente. El microagente ayudará a que LumioVibe funcione más rápido y con mayor precisión en futuras conversaciones.",
     "ar": "يمكن لـ LumioVibe التعرف تلقائيًا على مستودعاتك وتخزين النتائج كـ markdown في وكيل صغير. سيساعد الوكيل الصغير LumioVibe على العمل بشكل أسرع وأكثر دقة في أي محادثات مستقبلية.",
-    "fr": "LumioVibe peut automatiquement apprendre à connaître vos dépôts et stocker ses découvertes en markdown dans un microagent. Le microagent aidera LumioVibe à fonctionner plus rapidement et plus précisément lors de futures conversations.",
+    "fr": "LumioVibe peut automatiquement apprendre à connaître vos dépôts et stocker ses découvertes en markdown dans un microagent. Le microagent aidera LumioVibe à fonctionner plus rapidement et plus précisément lors de futures projects.",
     "tr": "LumioVibe, depolarınızı otomatik olarak öğrenebilir ve bulgularını bir mikro ajan içinde markdown olarak saklayabilir. Mikro ajan, LumioVibe'in gelecekteki konuşmalarda daha hızlı ve daha doğru çalışmasına yardımcı olur.",
     "de": "LumioVibe kann automatisch Informationen über Ihre Repositories sammeln und die Ergebnisse als Markdown in einem Microagent speichern. Der Microagent hilft LumioVibe, in zukünftigen Gesprächen schneller und genauer zu arbeiten.",
     "uk": "LumioVibe може автоматично вивчати ваші репозиторії та зберігати свої висновки у вигляді markdown у мікроагенті. Мікроагент допоможе LumioVibe працювати швидше та точніше у майбутніх розмовах."
@@ -12304,7 +12304,7 @@
     "uk": "Система зіткнулася з помилкою. Будь ласка, спробуйте пізніше."
   },
   "MICROAGENT_MANAGEMENT$CONVERSATION_STOPPED": {
-    "en": "The conversation has been stopped.",
+    "en": "The project has been stopped.",
     "ja": "会話が停止されました。",
     "zh-CN": "对话已被停止。",
     "zh-TW": "對話已被停止。",
@@ -12314,7 +12314,7 @@
     "pt": "A conversa foi interrompida.",
     "es": "La conversación ha sido detenida.",
     "ar": "تم إيقاف المحادثة.",
-    "fr": "La conversation a été arrêtée.",
+    "fr": "La project a été arrêtée.",
     "tr": "Konuşma durduruldu.",
     "de": "Das Gespräch wurde gestoppt.",
     "uk": "Розмову зупинено."
@@ -12336,7 +12336,7 @@
     "uk": "Вивчити цей репозиторій?"
   },
   "MICROAGENT_MANAGEMENT$LEARN_THIS_REPO_MODAL_DESCRIPTION": {
-    "en": "Do you want LumioVibe to launch a new conversation to help you understand this repository?",
+    "en": "Do you want LumioVibe to launch a new project to help you understand this repository?",
     "ja": "LumioVibeがこのリポジトリを理解するための新しい会話を開始しますか？",
     "zh-CN": "您想让LumioVibe启动一个新对话来帮助您了解此存储库吗？",
     "zh-TW": "您想讓LumioVibe啟動一個新對話來幫助您了解此存儲庫嗎？",
@@ -12346,7 +12346,7 @@
     "pt": "Você quer que o LumioVibe inicie uma nova conversa para ajudá-lo a entender este repositório?",
     "es": "¿Quieres que LumioVibe inicie una nueva conversación para ayudarte a entender este repositorio?",
     "ar": "هل تريد أن يبدأ LumioVibe محادثة جديدة لمساعدتك على فهم هذا المستودع؟",
-    "fr": "Voulez-vous qu'LumioVibe lance une nouvelle conversation pour vous aider à comprendre ce dépôt ?",
+    "fr": "Voulez-vous qu'LumioVibe lance une nouvelle project pour vous aider à comprendre ce dépôt ?",
     "tr": "LumioVibe'in bu depoyu anlamanıza yardımcı olacak yeni bir konuşma başlatmasını ister misiniz?",
     "de": "Möchten Sie, dass LumioVibe eine neue Unterhaltung startet, um Ihnen dieses Repository zu erklären?",
     "uk": "Бажаєте, щоб LumioVibe розпочав нову розмову, щоб допомогти вам зрозуміти цей репозиторій?"
@@ -13504,7 +13504,7 @@
     "uk": "Невідома помилка, спробуйте ще раз"
   },
   "MICROAGENT$CONVERSATION_STARTING": {
-    "en": "Starting conversation...",
+    "en": "Starting project...",
     "ja": "会話を開始しています...",
     "zh-CN": "正在开始对话...",
     "zh-TW": "正在開始對話...",
@@ -13514,7 +13514,7 @@
     "pt": "Iniciando conversa...",
     "es": "Iniciando conversación...",
     "ar": "بدء المحادثة...",
-    "fr": "Démarrage de la conversation...",
+    "fr": "Démarrage de la project...",
     "tr": "Konuşma başlatılıyor...",
     "de": "Gespräch wird gestartet...",
     "uk": "Розпочинається розмова..."
@@ -13824,7 +13824,7 @@
     "uk": "Очікує завдання."
   },
   "BUTTON$DELETE_CONVERSATION": {
-    "en": "Delete Conversation",
+    "en": "Delete Project",
     "uk": "Видалити розмову",
     "ja": "会話を削除",
     "zh-CN": "删除对话",
@@ -13833,7 +13833,7 @@
     "no": "Slett samtale",
     "ar": "حذف المحادثة",
     "de": "Konversation löschen",
-    "fr": "Supprimer la conversation",
+    "fr": "Supprimer la project",
     "it": "Elimina conversazione",
     "pt": "Excluir conversa",
     "es": "Eliminar conversación",
@@ -13952,7 +13952,7 @@
     "uk": "Натисніть тут"
   },
   "COMMON$CLOSE_CONVERSATION_STOP_RUNTIME": {
-    "en": "Close Conversation (Stop Runtime)",
+    "en": "Close project (Stop Runtime)",
     "ja": "会話を閉じる（ランタイム停止）",
     "zh-CN": "关闭对话（停止运行时）",
     "zh-TW": "關閉對話（停止執行時）",
@@ -13962,7 +13962,7 @@
     "pt": "Fechar conversa (Parar execução)",
     "es": "Cerrar conversación (Detener ejecución)",
     "ar": "إغلاق المحادثة (إيقاف وقت التشغيل)",
-    "fr": "Fermer la conversation (Arrêter l'exécution)",
+    "fr": "Fermer la project (Arrêter l'exécution)",
     "tr": "Konuşmayı Kapat (Çalışma Zamanını Durdur)",
     "de": "Gespräch schließen (Laufzeit beenden)",
     "uk": "Закрити розмову (зупинити виконання)"
@@ -14016,7 +14016,7 @@
     "uk": "Створити PR"
   },
   "COMMON$DELETE_CONVERSATION": {
-    "en": "Delete Conversation",
+    "en": "Delete Project",
     "ja": "会話を削除",
     "zh-CN": "删除对话",
     "zh-TW": "刪除對話",
@@ -14026,7 +14026,7 @@
     "pt": "Excluir conversa",
     "es": "Eliminar conversación",
     "ar": "حذف المحادثة",
-    "fr": "Supprimer la conversation",
+    "fr": "Supprimer la project",
     "tr": "Konuşmayı Sil",
     "de": "Gespräch löschen",
     "uk": "Видалити розмову"
@@ -14192,7 +14192,7 @@
     "uk": "Протокол контексту моделі (MCP)"
   },
   "COMMON$NEW_CONVERSATION": {
-    "en": "New Conversation",
+    "en": "New Project",
     "ja": "新しい会話",
     "zh-CN": "新对话",
     "zh-TW": "新對話",
@@ -14202,7 +14202,7 @@
     "pt": "Nova conversa",
     "es": "Nueva conversación",
     "ar": "محادثة جديدة",
-    "fr": "Nouvelle conversation",
+    "fr": "Nouvelle project",
     "tr": "Yeni Konuşma",
     "de": "Neues Gespräch",
     "uk": "Нова розмова"
@@ -14320,7 +14320,7 @@
     "uk": "Пуш"
   },
   "COMMON$RECENT_CONVERSATIONS": {
-    "en": "Recent Conversations",
+    "en": "Recent projects",
     "ja": "最近の会話",
     "zh-CN": "最近的对话",
     "zh-TW": "最近的對話",
@@ -14330,7 +14330,7 @@
     "pt": "Conversas recentes",
     "es": "Conversaciones recientes",
     "ar": "المحادثات الأخيرة",
-    "fr": "Conversations récentes",
+    "fr": "Projects récentes",
     "tr": "Son Konuşmalar",
     "de": "Kürzliche Gespräche",
     "uk": "Останні розмови"
@@ -14464,7 +14464,7 @@
     "uk": "Запустити сервер"
   },
   "COMMON$START_CONVERSATION": {
-    "en": "Start Conversation",
+    "en": "Start Project",
     "ja": "会話を開始",
     "zh-CN": "开始对话",
     "zh-TW": "開始對話",
@@ -14474,7 +14474,7 @@
     "pt": "Iniciar conversa",
     "es": "Iniciar conversación",
     "ar": "بدء المحادثة",
-    "fr": "Démarrer la conversation",
+    "fr": "Démarrer la project",
     "tr": "Sohbeti başlat",
     "de": "Unterhaltung starten",
     "uk": "Почати розмову"
@@ -14624,7 +14624,7 @@
     "uk": "Вперше тут? Не знаєте, з чого почати?"
   },
   "HOME$NEW_PROJECT_DESCRIPTION": {
-    "en": "Start a new conversation that is not connected to an existing repository.",
+    "en": "Create a new project that is not connected to the existing repository.",
     "ja": "既存のリポジトリに接続されていない新しい会話を開始します。",
     "zh-CN": "开始一个未连接到现有仓库的新对话。",
     "zh-TW": "開始一個未連接到現有存儲庫的新對話。",
@@ -14634,13 +14634,13 @@
     "pt": "Inicie uma nova conversa que não está conectada a um repositório existente.",
     "es": "Inicia una nueva conversación que no está conectada a un repositorio existente.",
     "ar": "ابدأ محادثة جديدة غير مرتبطة بمستودع موجود.",
-    "fr": "Démarrez une nouvelle conversation qui n'est pas connectée à un dépôt existant.",
+    "fr": "Démarrez une nouvelle project qui n'est pas connectée à un dépôt existant.",
     "tr": "Mevcut bir depoya bağlı olmayan yeni bir konuşma başlatın.",
     "de": "Beginnen Sie ein neues Gespräch, das nicht mit einem bestehenden Repository verbunden ist.",
     "uk": "Почніть нову розмову, яка не пов'язана з існуючим репозиторієм."
   },
   "HOME$NO_RECENT_CONVERSATIONS": {
-    "en": "No recent conversations",
+    "en": "No recent projects",
     "ja": "最近の会話はありません",
     "zh-CN": "没有最近的对话",
     "zh-TW": "沒有最近的對話",
@@ -14650,7 +14650,7 @@
     "pt": "Nenhuma conversa recente",
     "es": "No hay conversaciones recientes",
     "ar": "لا توجد محادثات حديثة",
-    "fr": "Aucune conversation récente",
+    "fr": "Aucune project récente",
     "tr": "Son konuşma yok",
     "de": "Keine aktuellen Unterhaltungen",
     "uk": "Немає недавніх розмов"
@@ -14864,7 +14864,7 @@
     "uk": "Найновіше"
   },
   "HOME$NO_REPOSITORY_FOUND": {
-    "en": "No repository found to launch conversation",
+    "en": "No repository found to launch project",
     "ja": "会話を開始するためのリポジトリが見つかりません",
     "zh-CN": "未找到用于启动会话的存储库",
     "zh-TW": "未找到用於啟動對話的存儲庫",
@@ -14874,13 +14874,13 @@
     "pt": "Nenhum repositório encontrado para iniciar a conversa",
     "es": "No se encontró ningún repositorio para iniciar la conversación",
     "ar": "لم يتم العثور على مستودع لبدء المحادثة",
-    "fr": "Aucun dépôt trouvé pour lancer la conversation",
+    "fr": "Aucun dépôt trouvé pour lancer la project",
     "tr": "Konuşma başlatmak için depo bulunamadı",
     "de": "Kein Repository gefunden, um das Gespräch zu starten",
     "uk": "Не знайдено репозиторій для запуску розмови"
   },
   "CONVERSATION$VERSION_V1_NEW": {
-    "en": "Conversation API Version 1 (New)",
+    "en": "Project API Version 1 (New)",
     "ja": "会話API バージョン1（新規）",
     "zh-CN": "对话API版本1（新）",
     "zh-TW": "對話API版本1（新）",
@@ -14890,13 +14890,13 @@
     "pt": "API de conversa versão 1 (Nova)",
     "es": "API de conversación versión 1 (Nueva)",
     "ar": "واجهة برمجة التطبيقات للمحادثة الإصدار 1 (جديد)",
-    "fr": "API de conversation version 1 (Nouvelle)",
+    "fr": "API de project version 1 (Nouvelle)",
     "tr": "Konuşma API'si Sürüm 1 (Yeni)",
     "de": "Konversations-API Version 1 (Neu)",
     "uk": "API розмови версія 1 (Нова)"
   },
   "CONVERSATION$VERSION_V0_LEGACY": {
-    "en": "Conversation API Version 0 (Legacy)",
+    "en": "Project API Version 0 (Legacy)",
     "ja": "会話API バージョン0（レガシー）",
     "zh-CN": "对话API版本0（旧版）",
     "zh-TW": "對話API版本0（舊版）",
@@ -14906,13 +14906,13 @@
     "pt": "API de conversa versão 0 (Legado)",
     "es": "API de conversación versión 0 (Heredada)",
     "ar": "واجهة برمجة التطبيقات للمحادثة الإصدار 0 (قديم)",
-    "fr": "API de conversation version 0 (Ancienne)",
+    "fr": "API de project version 0 (Ancienne)",
     "tr": "Konuşma API'si Sürüm 0 (Eski)",
     "de": "Konversations-API Version 0 (Legacy)",
     "uk": "API розмови версія 0 (Застаріла)"
   },
   "CONVERSATION$ERROR_STARTING_CONVERSATION": {
-    "en": "Error starting conversation",
+    "en": "Error starting project",
     "ja": "会話の開始エラー",
     "zh-CN": "启动对话时出错",
     "zh-TW": "啟動對話時出錯",
@@ -14922,7 +14922,7 @@
     "pt": "Erro ao iniciar conversa",
     "es": "Error al iniciar la conversación",
     "ar": "خطأ في بدء المحادثة",
-    "fr": "Erreur lors du démarrage de la conversation",
+    "fr": "Erreur lors du démarrage de la project",
     "tr": "Konuşma başlatılırken hata",
     "de": "Fehler beim Starten der Konversation",
     "uk": "Помилка запуску розмови"
@@ -14944,7 +14944,7 @@
     "uk": "Готово"
   },
   "CONVERSATION$STARTING_CONVERSATION": {
-    "en": "Starting conversation...",
+    "en": "Starting project...",
     "ja": "会話を開始しています...",
     "zh-CN": "正在启动对话...",
     "zh-TW": "正在啟動對話...",
@@ -14954,13 +14954,13 @@
     "pt": "Iniciando conversa...",
     "es": "Iniciando conversación...",
     "ar": "بدء المحادثة...",
-    "fr": "Démarrage de la conversation...",
+    "fr": "Démarrage de la project...",
     "tr": "Konuşma başlatılıyor...",
     "de": "Konversation wird gestartet...",
     "uk": "Запуск розмови..."
   },
   "CONVERSATION$FAILED_TO_START_FROM_TASK": {
-    "en": "Failed to start the conversation from task.",
+    "en": "Failed to start the project from task.",
     "ja": "タスクから会話を開始できませんでした。",
     "zh-CN": "无法从任务启动对话。",
     "zh-TW": "無法從任務啟動對話。",
@@ -14970,13 +14970,13 @@
     "pt": "Falha ao iniciar a conversa da tarefa.",
     "es": "No se pudo iniciar la conversación desde la tarea.",
     "ar": "فشل بدء المحادثة من المهمة.",
-    "fr": "Échec du démarrage de la conversation depuis la tâche.",
+    "fr": "Échec du démarrage de la project depuis la tâche.",
     "tr": "Görevden konuşma başlatılamadı.",
     "de": "Konversation konnte nicht aus Aufgabe gestartet werden.",
     "uk": "Не вдалося запустити розмову із завдання."
   },
   "CONVERSATION$NOT_EXIST_OR_NO_PERMISSION": {
-    "en": "This conversation does not exist, or you do not have permission to access it.",
+    "en": "This project does not exist, or you do not have permission to access it.",
     "ja": "この会話は存在しないか、アクセスする権限がありません。",
     "zh-CN": "此对话不存在，或您没有访问权限。",
     "zh-TW": "此對話不存在，或您沒有訪問權限。",
@@ -14986,13 +14986,13 @@
     "pt": "Esta conversa não existe ou você não tem permissão para acessá-la.",
     "es": "Esta conversación no existe o no tienes permiso para acceder a ella.",
     "ar": "هذه المحادثة غير موجودة أو ليس لديك إذن للوصول إليها.",
-    "fr": "Cette conversation n'existe pas ou vous n'avez pas la permission d'y accéder.",
+    "fr": "Cette project n'existe pas ou vous n'avez pas la permission d'y accéder.",
     "tr": "Bu konuşma mevcut değil veya erişim izniniz yok.",
     "de": "Diese Konversation existiert nicht oder Sie haben keine Berechtigung darauf zuzugreifen.",
     "uk": "Ця розмова не існує або у вас немає дозволу на доступ до неї."
   },
   "CONVERSATION$FAILED_TO_START_WITH_ERROR": {
-    "en": "Failed to start conversation: {{error}}",
+    "en": "Failed to start project: {{error}}",
     "ja": "会話の開始に失敗しました: {{error}}",
     "zh-CN": "启动对话失败：{{error}}",
     "zh-TW": "啟動對話失敗：{{error}}",
@@ -15002,13 +15002,13 @@
     "pt": "Falha ao iniciar conversa: {{error}}",
     "es": "No se pudo iniciar la conversación: {{error}}",
     "ar": "فشل بدء المحادثة: {{error}}",
-    "fr": "Échec du démarrage de la conversation : {{error}}",
+    "fr": "Échec du démarrage de la project : {{error}}",
     "tr": "Konuşma başlatılamadı: {{error}}",
     "de": "Konversation konnte nicht gestartet werden: {{error}}",
     "uk": "Не вдалося запустити розмову: {{error}}"
   },
   "TOAST$STOPPING_CONVERSATION": {
-    "en": "Stopping conversation...",
+    "en": "Stopping project...",
     "ja": "会話を停止しています...",
     "zh-CN": "正在停止对话...",
     "zh-TW": "正在停止對話...",
@@ -15018,13 +15018,13 @@
     "pt": "Parando conversa...",
     "es": "Deteniendo conversación...",
     "ar": "إيقاف المحادثة...",
-    "fr": "Arrêt de la conversation...",
+    "fr": "Arrêt de la project...",
     "tr": "Konuşma durduruluyor...",
     "de": "Konversation wird gestoppt...",
     "uk": "Зупинка розмови..."
   },
   "TOAST$FAILED_TO_STOP_CONVERSATION": {
-    "en": "Failed to stop conversation",
+    "en": "Failed to stop project",
     "ja": "会話の停止に失敗しました",
     "zh-CN": "停止对话失败",
     "zh-TW": "停止對話失敗",
@@ -15034,13 +15034,13 @@
     "pt": "Falha ao parar conversa",
     "es": "No se pudo detener la conversación",
     "ar": "فشل إيقاف المحادثة",
-    "fr": "Échec de l'arrêt de la conversation",
+    "fr": "Échec de l'arrêt de la project",
     "tr": "Konuşma durdurulamadı",
     "de": "Konversation konnte nicht gestoppt werden",
     "uk": "Не вдалося зупинити розмову"
   },
   "TOAST$CONVERSATION_STOPPED": {
-    "en": "Conversation stopped",
+    "en": "Project stopped",
     "ja": "会話が停止されました",
     "zh-CN": "对话已停止",
     "zh-TW": "對話已停止",
@@ -15050,7 +15050,7 @@
     "pt": "Conversa parada",
     "es": "Conversación detenida",
     "ar": "توقفت المحادثة",
-    "fr": "Conversation arrêtée",
+    "fr": "Project arrêtée",
     "tr": "Konuşma durduruldu",
     "de": "Konversation gestoppt",
     "uk": "Розмову зупинено"
