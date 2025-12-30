@@ -52,7 +52,7 @@ async def get_deployment(
     return status
 
 
-@router.get('/{conversation_id}/start')
+@router.post('/{conversation_id}/start')
 async def start_deployment(
     conversation_id: str,
     user_id: str | None = Depends(get_user_id),
@@ -73,7 +73,7 @@ async def start_deployment(
     return result
 
 
-@router.get('/{conversation_id}/stop')
+@router.post('/{conversation_id}/stop')
 async def stop_deployment(
     conversation_id: str,
     user_id: str | None = Depends(get_user_id),
