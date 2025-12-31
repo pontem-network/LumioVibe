@@ -1,12 +1,13 @@
 import asyncio
 import time
-import docker
-import socketio
-
-from docker.models.containers import Container
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable, Iterable
+
+import docker
+import socketio
+from docker.models.containers import Container
+
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
@@ -48,7 +49,7 @@ from .conversation_manager import ConversationManager
 
 _CLEANUP_INTERVAL = 15
 UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
-DELETE_CONTAINER_TIME_LIMIT = 60*60*24 # in seconds
+DELETE_CONTAINER_TIME_LIMIT = 60 * 60 * 24  # in seconds
 
 
 @dataclass
@@ -281,21 +282,34 @@ class StandaloneConversationManager(ConversationManager):
                     connections.pop(connection_id)
         return connections
 
-    async def delete_unused_containers(self):
+    async def delete_unused_containers(self, user_id: str | None = None):
         containers: list[Container] = self.docker_client.containers.list(all=True)
-        containers = filter(lambda container: container.name.startswith('openhands-runtime-') and container.status == 'exited', containers)
-        old_containers: list[Container] = filter(lambda container: (datetime.now(timezone.utc) - datetime.fromisoformat(container.attrs['State']['FinishedAt'])).total_seconds() > DELETE_CONTAINER_TIME_LIMIT, containers)
-
+        filtered_containers = [
+            c
+            for c in containers
+            if c.name is not None
+            and c.name.startswith('openhands-runtime-')
+            and c.status == 'exited'
+        ]
+        old_containers = [
+            c
+            for c in filtered_containers
+            if (
+                datetime.now(timezone.utc)
+                - datetime.fromisoformat(c.attrs['State']['FinishedAt'])
+            ).total_seconds()
+            > DELETE_CONTAINER_TIME_LIMIT
+        ]
 
         for idx, container in enumerate(old_containers):
-            if idx>=3:
+            if idx >= 3:
                 break
 
-            logger.info("remove container: %s", container.name)
+            logger.info('remove container: %s', container.name)
             try:
                 container.remove(force=False)
             except Exception as e:
-                logger.error("error removing container: %s", e)
+                logger.error('error removing container: %s', e)
 
     async def maybe_start_agent_loop(
         self,

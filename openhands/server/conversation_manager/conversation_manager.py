@@ -93,9 +93,8 @@ class ConversationManager(ABC):
     ) -> dict[str, str]:
         """Get all connections, optionally filtered by user ID and session IDs."""
 
-
     @abstractmethod
-    async def delete_unused_containers(user_id: str | None):
+    async def delete_unused_containers(self, user_id: str | None) -> None:
         """Delete unused container."""
 
     @abstractmethod

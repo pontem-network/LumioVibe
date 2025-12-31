@@ -132,7 +132,7 @@ export function DeploymentCard({
               "px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2",
               isRunning
                 ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                : "bg-green-500/20 text-green-400 hover:bg-green-500/30",
+                : "bg-purple-500/20 text-purple-400 hover:bg-purple-500/30",
               isLoading && "opacity-50 cursor-not-allowed",
             )}
           >
@@ -166,7 +166,7 @@ export function DeploymentCard({
         <div className="mt-3 pt-3 border-t border-gray-700">
           <div className="flex justify-between text-sm">
             <span className="text-gray-400">Rate:</span>
-            <span className="text-yellow-400">{hourlyRate} LUM/hour</span>
+            <span className="text-gray-300">{hourlyRate} LUM/day</span>
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router";
 import { OpenHandsLogoButton } from "#/components/shared/buttons/openhands-logo-button";
-import { NewProjectButton } from "#/components/shared/buttons/new-project-button";
+import { NewAppButton } from "#/components/shared/buttons/new-app-button";
 import { ConversationPanelButton } from "#/components/shared/buttons/conversation-panel-button";
 import { DeploymentsButton } from "#/components/shared/buttons/deployments-button";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
@@ -77,7 +77,7 @@ export function Sidebar() {
               <OpenHandsLogoButton />
             </div>
             <div>
-              <NewProjectButton disabled={settings?.EMAIL_VERIFIED === false} />
+              <NewAppButton disabled={settings?.EMAIL_VERIFIED === false} />
             </div>
 
             <ConversationPanelButton

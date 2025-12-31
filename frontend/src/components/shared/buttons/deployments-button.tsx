@@ -19,8 +19,8 @@ export function DeploymentsButton({
   return (
     <TooltipButton
       testId="toggle-deployments-panel"
-      tooltip="My Apps"
-      ariaLabel="My Apps"
+      tooltip="Hosting"
+      ariaLabel="Hosting"
       onClick={onClick}
       disabled={disabled}
     >

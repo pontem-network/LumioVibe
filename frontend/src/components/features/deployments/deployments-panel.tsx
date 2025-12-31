@@ -196,7 +196,7 @@ export function DeploymentsPanel({ onClose }: DeploymentsPanelProps) {
           {confirmStart && (
             <ConfirmModal
               title="Start App"
-              message={`Starting this app will cost ${hourlyRate} LUM per hour. Are you sure you want to continue?`}
+              message={`Starting this app will cost ${hourlyRate} LUM per day. Are you sure you want to continue?`}
               confirmText="Start"
               onConfirm={handleConfirmStart}
               onCancel={() => setConfirmStart(null)}
@@ -226,7 +226,7 @@ export function DeploymentsPanel({ onClose }: DeploymentsPanelProps) {
       className="w-full md:w-[400px] h-full border border-[#2a2a2a] bg-[#0a0a0a]/95 backdrop-blur-sm rounded-lg overflow-y-auto absolute custom-scrollbar-always"
     >
       <div className="p-4 border-b border-gray-700">
-        <h2 className="text-lg font-semibold text-white">My Apps</h2>
+        <h2 className="text-lg font-semibold text-white">Hosting</h2>
         <p className="text-sm text-gray-400 mt-1">
           Deploy and manage your applications
         </p>
@@ -275,7 +275,7 @@ export function DeploymentsPanel({ onClose }: DeploymentsPanelProps) {
       {confirmStart && (
         <ConfirmModal
           title="Start App"
-          message={`Starting this app will cost ${hourlyRate} LUM per hour. Are you sure you want to continue?`}
+          message={`Starting this app will cost ${hourlyRate} LUM per day. Are you sure you want to continue?`}
           confirmText="Start"
           onConfirm={handleConfirmStart}
           onCancel={() => setConfirmStart(null)}

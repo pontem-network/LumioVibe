@@ -5,25 +5,25 @@ import { TooltipButton } from "./tooltip-button";
 import PlusIcon from "#/icons/u-plus.svg?react";
 import { useAuthWallet } from "#/hooks/use-auth";
 
-interface NewProjectButtonProps {
+interface NewAppButtonProps {
   disabled?: boolean;
 }
 
-export function NewProjectButton({ disabled = false }: NewProjectButtonProps) {
+export function NewAppButton({ disabled = false }: NewAppButtonProps) {
   const { pathname } = useLocation();
 
   const { t } = useTranslation();
 
   if (!useAuthWallet().connected) return null;
 
-  const startNewProject = t(I18nKey.CONVERSATION$START_NEW);
+  const startNewApp = t(I18nKey.CONVERSATION$START_NEW);
 
   return (
     <TooltipButton
-      tooltip={startNewProject}
-      ariaLabel={startNewProject}
+      tooltip={startNewApp}
+      ariaLabel={startNewApp}
       navLinkTo="/"
-      testId="new-project-button"
+      testId="new-app-button"
       disabled={disabled}
     >
       <PlusIcon

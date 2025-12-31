@@ -461,6 +461,10 @@ class DockerNestedConversationManager(ConversationManager):
         """
         raise ValueError('unsupported_operation')
 
+    async def delete_unused_containers(self, user_id: str | None = None) -> None:
+        """Delete unused containers. Not implemented for nested containers."""
+        pass
+
     async def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
         conversation_store_class = self._conversation_store_class
         if not conversation_store_class:

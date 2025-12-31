@@ -58,6 +58,9 @@ class DeploymentManager:
         if user_id is not None:
             metadata.user_id = user_id
 
+        if metadata.conversation_id is None or metadata.user_id is None:
+            raise ValueError('conversation_id and user_id must be set')
+
         path = self._get_metadata_path(metadata.conversation_id, metadata.user_id)
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, 'w') as f:
@@ -131,7 +134,7 @@ class DeploymentManager:
         self._save_metadata(metadata, user_id)
         return result
 
-    async def list_deployments(self, user_id: str) -> list[dict]:
+    async def list_deployments(self, user_id: str) -> list[DeploymentMetadata]:
         conv_store: FileConversationStore = await FileConversationStore.get_instance(
             config=self.config, user_id=user_id
         )
@@ -148,18 +151,18 @@ class DeploymentManager:
             if loaded_from_file is None:
                 conv_data = await conv_store.get_metadata(id)
                 deploy_data = DeploymentMetadata.from_conversation_data(
-                    data=conv_data, root_path=self._file_store_path
+                    data=conv_data, root_path=Path(self._file_store_path)
                 )
 
                 self._save_metadata(deploy_data, user_id)
             else:
                 deploy_data = loaded_from_file
                 if deploy_data.init_project_name_if_not_init_with_save(
-                    self._file_store_path
+                    Path(self._file_store_path)
                 ):
                     self._save_metadata(deploy_data, user_id)
 
-            if not deploy_data.can_it_run(self._file_store_path):
+            if not deploy_data.can_it_run(Path(self._file_store_path)):
                 continue
 
             deployments.append(deploy_data)
@@ -177,7 +180,6 @@ class DeploymentManager:
                 'success': False,
                 'error': 'No deployment metadata found',
             }
-        metadata: DeploymentMetadata = metadata
 
         front_path: str | None = metadata.frontend_path()
         if front_path is None:

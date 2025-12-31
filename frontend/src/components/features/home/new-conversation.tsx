@@ -31,7 +31,7 @@ export function NewConversation() {
         </span>
       </div>
       <p className="leading-[22px] text-sm font-normal text-white mb-4">
-        {t(I18nKey.HOME$NEW_PROJECT_DESCRIPTION)}
+        {t(I18nKey.HOME$NEW_APP_DESCRIPTION)}
       </p>
       <div className="flex-grow" />
       <BrandButton

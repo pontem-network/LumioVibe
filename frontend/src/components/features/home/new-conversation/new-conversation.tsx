@@ -14,9 +14,7 @@ export function NewConversation() {
       <CardTitle icon={<PlusIcon width={17} height={14} />}>
         {t(I18nKey.COMMON$START_FROM_SCRATCH)}
       </CardTitle>
-      <Typography.Text>
-        {t(I18nKey.HOME$NEW_PROJECT_DESCRIPTION)}
-      </Typography.Text>
+      <Typography.Text>{t(I18nKey.HOME$NEW_APP_DESCRIPTION)}</Typography.Text>
       <CreateConversationButton />
     </Card>
   );

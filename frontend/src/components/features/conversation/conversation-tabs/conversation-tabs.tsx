@@ -42,7 +42,7 @@ export function ConversationTabs() {
 
   const [persistedUnpinnedTabs] = useLocalStorage<string[]>(
     "conversation-unpinned-tabs",
-    ["browser", "vscode"],
+    ["editor", "vscode", "terminal", "browser"],
   );
 
   const shouldUsePlanningAgent = USE_PLANNING_AGENT();

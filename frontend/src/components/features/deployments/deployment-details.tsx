@@ -147,8 +147,8 @@ export function DeploymentDetails({
 
           <div className="flex items-center justify-between">
             <span className="text-gray-400">Rate</span>
-            <span className="text-yellow-400">
-              {deployment.hourly_rate} LUM/hour
+            <span className="text-gray-300">
+              {deployment.hourly_rate} LUM/day
             </span>
           </div>
         </div>
@@ -186,7 +186,7 @@ export function DeploymentDetails({
               disabled={isLoading}
               className={cn(
                 "flex-1 py-2 rounded-md font-medium transition-colors flex items-center justify-center gap-2",
-                "bg-green-500/20 text-green-400 hover:bg-green-500/30",
+                "bg-purple-500/20 text-purple-400 hover:bg-purple-500/30",
                 isLoading && "opacity-50 cursor-not-allowed",
               )}
             >
