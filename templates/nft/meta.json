@@ -1,0 +1,9 @@
+{
+  "id": "nft",
+  "name": "NFT Collection",
+  "description": "Create an NFT collection with minting, ownership tracking, and transfers",
+  "category": "nft",
+  "difficulty": "intermediate",
+  "features": ["mint NFT", "ownership", "metadata", "transfer", "collection info"],
+  "default": false
+}
