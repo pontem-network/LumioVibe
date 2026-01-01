@@ -1,0 +1,9 @@
+{
+  "id": "counter",
+  "name": "Counter",
+  "description": "Simple counter dApp with increment functionality. Perfect for learning Move and Lumio basics.",
+  "category": "starter",
+  "difficulty": "beginner",
+  "features": ["counter", "view functions", "entry functions"],
+  "default": true
+}

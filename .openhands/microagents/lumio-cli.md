@@ -1,7 +1,7 @@
 ---
 name: lumio-cli
 type: repo
-version: 2.0.0
+version: 3.0.0
 agent: CodeActAgent
 ---
 
@@ -9,49 +9,49 @@ agent: CodeActAgent
 
 Lumio CLI is a fork of Aptos CLI for Lumio Network.
 
-## CRITICAL: Account Setup
+## CRITICAL: Auto-Setup
 
 <IMPORTANT>
 ⚠️⚠️⚠️ READ THIS CAREFULLY ⚠️⚠️⚠️
 
-Lumio CLI is pre-installed and will be auto-configured on first use!
-- Config location: /workspace/.lumio/config.yaml (created automatically)
-- Works from /workspace directory!
+The counter template **auto-deploys** when conversation starts!
+- Project location: `/workspace/app`
+- Config location: `/workspace/.lumio/config.yaml`
+- Contract already deployed
+- Frontend already running
 
-❌ DO NOT run `lumio init` manually - scaffold-fast.sh handles it with `--private-key` flag!
-❌ DO NOT manually edit or create config files!
+❌ DO NOT run `lumio init` manually - template handles it!
+❌ DO NOT manually create new projects!
 
-✅ scaffold-fast.sh will automatically:
-- Generate random key and run `lumio init --assume-yes --network testnet --private-key <key>`
-- Configure testnet (API: https://api.testnet.lumio.io/v1)
-- Fund account from faucet
+✅ Check existing project:
+```bash
+ls /workspace/app
+cat /workspace/app/frontend/.env
+```
 
-✅ ALWAYS use this to start a new project:
-   bash /openhands/templates/scaffold-fast.sh PROJECT_NAME
-   (This handles initialization, account creation and funding automatically)
+✅ Redeploy after changes:
+```bash
+bash /openhands/templates/counter/redeploy.sh /workspace/app
+```
 </IMPORTANT>
 
-## Deployment Workflow (CORRECT)
-
-⚠️ **ALWAYS START WITH scaffold-fast.sh** - it sets up everything!
+## Workflow
 
 ```bash
-# STEP 0: Create project (THIS IS MANDATORY!)
-bash /openhands/templates/scaffold-fast.sh PROJECT_NAME
-cd /workspace/PROJECT_NAME
+# Project is already at /workspace/app
 
-# The above command already:
-# - Created account
-# - Funded it from faucet
-# - Set up Move.toml with correct address
-# - Compiled a working example
+# Modify contract
+cd /workspace/app/contract
+# Edit sources/counter.move
 
-# STEP 1: Modify and compile your contract
-cd contract
+# Compile
 lumio move compile --package-dir .
 
-# STEP 2: Deploy contract
-lumio move publish --package-dir . --assume-yes
+# Test
+lumio move test --package-dir .
+
+# Redeploy (updates frontend automatically!)
+bash /openhands/templates/counter/redeploy.sh /workspace/app
 ```
 
 ## Common Commands
@@ -60,16 +60,17 @@ lumio move publish --package-dir . --assume-yes
 
 ```bash
 # Compile Move package
-lumio move compile --package-dir contract/
+cd /workspace/app/contract
+lumio move compile --package-dir .
 
 # Run tests
-lumio move test --package-dir contract/
+lumio move test --package-dir .
 ```
 
 ### Account Management
 
 ```bash
-# Fund from faucet (testnet only) - creates account if needed
+# Fund from faucet (testnet only)
 lumio account fund-with-faucet --amount 100000000
 
 # Check balance
@@ -82,33 +83,28 @@ lumio account list | grep "Account Address"
 ### Deployment
 
 ```bash
-# Publish to testnet
-lumio move publish --package-dir contract/ --assume-yes
-
-# The output will contain:
-# {
-#   "Result": {
-#     "transaction_hash": "0x...",
-#     "gas_used": ...,
-#     "vm_status": "Executed successfully"
-#   }
-# }
+# Manual deploy (prefer redeploy.sh instead!)
+cd /workspace/app/contract
+lumio move deploy --package-dir . --assume-yes
 
 # Contract address = deployer's address (from lumio account list)
 ```
 
-## Getting Contract Address
-
-After deployment:
+## Redeploy Scripts
 
 ```bash
-# Get your account address (this is also the contract address)
-lumio account list
+# Redeploy with current account (compatible changes)
+bash /openhands/templates/counter/redeploy.sh /workspace/app
 
-# Output will show:
-# Account Address: 0xYOUR_ADDRESS
-# This is your contract address!
+# Redeploy with NEW account (ABI incompatible changes)
+bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
 ```
+
+The script automatically:
+1. Compiles contract
+2. Deploys to Lumio testnet
+3. Updates `.env` with new contract address
+4. Restarts frontend
 
 ## Troubleshooting
 
@@ -116,16 +112,29 @@ lumio account list
 
 | Error | Solution |
 |-------|----------|
-| `Unable to find config` | Run `bash /openhands/templates/scaffold-fast.sh PROJECT_NAME` |
+| `Unable to find config` | Check `/workspace/.lumio/config.yaml` exists |
 | `Account does not exist` | Run `lumio account fund-with-faucet --amount 100000000` |
 | `Insufficient balance` | Run `lumio account fund-with-faucet --amount 100000000` |
-| `Module already published` | Use redeploy script or rename module |
+| `Module already published` | Use redeploy script |
 | `Compilation failed` | Fix Move code errors shown in output |
-| `BACKWARD_INCOMPATIBLE` | Create new account (see below) |
+| `BACKWARD_INCOMPATIBLE` | Use `redeploy.sh --new-account` |
 
-### Detailed Solutions
+### ABI Incompatible / Need New Account
 
-#### Faucet Not Working
+```bash
+# Use the redeploy script with --new-account flag
+bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
+```
+
+This automatically:
+- Creates new Lumio account
+- Funds from faucet
+- Updates Move.toml
+- Updates frontend .env
+- Deploys contract
+- Restarts frontend
+
+### Faucet Not Working
 
 ```bash
 # Try with retries
@@ -139,30 +148,7 @@ done
 lumio account list
 ```
 
-If faucet is down → wait 5-10 min, or create fresh project with scaffold-fast.sh
-
-#### ABI Incompatible / Need New Account
-
-```bash
-# Delete old config
-rm -rf /workspace/.lumio
-
-# Generate new key and init
-PRIVATE_KEY=$(openssl rand -hex 32)
-lumio init --assume-yes --network testnet --private-key $PRIVATE_KEY
-lumio account fund-with-faucet --amount 100000000
-
-# Get new address
-NEW_ADDR=$(lumio account list | grep "Account Address" | awk '{print $NF}')
-
-# Update Move.toml
-sed -i "s/deployer_address = .*/deployer_address = \"$NEW_ADDR\"/" contract/Move.toml
-
-# Update frontend
-sed -i "s/CONTRACT_ADDRESS = .*/CONTRACT_ADDRESS = '$NEW_ADDR';/" frontend/src/hooks/useContract.ts
-```
-
-#### Wrong Command Syntax
+### Wrong Command Syntax
 
 ```bash
 # ❌ WRONG commands (do NOT use):
@@ -171,48 +157,42 @@ lumio account create         # Not a real command
 lumio account generate       # Not a real command
 
 # ✅ CORRECT commands:
-lumio init --assume-yes --network testnet --private-key <KEY>
 lumio account fund-with-faucet --amount 100000000
 lumio account list
 lumio move compile --package-dir .
 lumio move test --package-dir .
-lumio move publish --package-dir . --assume-yes
+lumio move deploy --package-dir . --assume-yes
 ```
 
 ## Important Notes
 
-1. **Config location:** `/workspace/.lumio/config.yaml` (created by scaffold-fast.sh)
-2. **Don't run:** `lumio init` manually (scaffold-fast.sh handles it)
-3. **Account creation:** Automatic during scaffold-fast.sh
-4. **Contract address:** Same as deployer's account address
+1. **Project location:** `/workspace/app` (auto-created)
+2. **Config location:** `/workspace/.lumio/config.yaml`
+3. **Contract address:** Same as deployer's account address
+4. **Frontend .env:** Contains `VITE_CONTRACT_ADDRESS`
 
 ## Example Session
 
 ```bash
-# Navigate to contract
-cd /workspace/my_project/contract
+# Check deployed address
+cat /workspace/app/frontend/.env
+# VITE_CONTRACT_ADDRESS=0x...
+
+# Modify contract
+cd /workspace/app/contract
+# Edit sources/counter.move
 
 # Compile
 lumio move compile --package-dir .
-# ✅ Success - bytecode generated
+# ✅ Success
 
-# Fund account (creates if doesn't exist)
-lumio account fund-with-faucet --amount 100000000
-# ✅ Account funded
+# Test
+lumio move test --package-dir .
+# ✅ All tests pass
 
-# Get address
-lumio account list
-# Account Address: 0x5509970d628fdff67236db5e2...
-
-# Deploy
-lumio move publish --package-dir . --assume-yes
-# ✅ Module published
-
-# Contract is now at: 0x5509970d628fdff67236db5e2...
+# Redeploy
+bash /openhands/templates/counter/redeploy.sh /workspace/app
+# ✅ Contract redeployed
+# ✅ Frontend updated with new address
+# ✅ Frontend restarted
 ```
-
-## Config File Location
-
-**Location:** `/workspace/.lumio/config.yaml`
-
-Created automatically by scaffold-fast.sh on first use. Works from /workspace directory.

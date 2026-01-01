@@ -1,13 +1,3 @@
-#!/bin/bash
-# Generate Pontem types
-# Usage: source this file, then call generate_types
-
-generate_types() {
-    local OUTPUT_DIR="$1"
-    local DEPLOYER_ADDRESS="$2"
-    local PRIVATE_KEY="$3"
-
-    cat > "$OUTPUT_DIR/frontend/src/types/pontem.ts" <<EOF
 export interface PontemProvider {
   version: string;
   connect(): Promise<{ address: string; publicKey: string } | string>;
@@ -47,8 +37,9 @@ export const LUMIO_CHAIN_ID = 2;
 export const LUMIO_RPC = 'https://api.testnet.lumio.io/v1';
 
 export const IS_TEST_MODE = import.meta.env.VITE_WALLET_MODE === 'test';
-export const TEST_PRIVATE_KEY = '$PRIVATE_KEY';
-export const TEST_ADDRESS = '$DEPLOYER_ADDRESS';
+export const TEST_PRIVATE_KEY = import.meta.env.VITE_PRIVATE_KEY || '';
+export const TEST_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '';
+export const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '';
 
 declare global {
   interface Window { pontem?: PontemProvider; }
@@ -56,5 +47,3 @@ declare global {
 }
 
 export {};
-EOF
-}

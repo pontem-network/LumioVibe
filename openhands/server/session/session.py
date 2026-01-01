@@ -256,12 +256,14 @@ class WebSession:
         selected_branch = None
         custom_secrets = None
         conversation_instructions = None
+        template_id = None
         if isinstance(settings, ConversationInitData):
             git_provider_tokens = settings.git_provider_tokens
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
             custom_secrets = settings.custom_secrets
             conversation_instructions = settings.conversation_instructions
+            template_id = settings.template_id
 
         try:
             await self.agent_session.start(
@@ -279,6 +281,7 @@ class WebSession:
                 initial_message=initial_message,
                 conversation_instructions=conversation_instructions,
                 replay_json=replay_json,
+                template_id=template_id,
             )
         except MicroagentValidationError as e:
             self.logger.exception(f'Error creating agent_session: {e}')

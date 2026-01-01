@@ -12,16 +12,43 @@ Use $APP_PORT_1 for dev server binding. Use $APP_BASE_URL_1 when showing URL to 
 {% endif %}
 
 <LUMIO_VIBE_RUNTIME>
-⚠️ LUMIO/MOVE PROJECT WORKFLOW ⚠️
+⚠️ LUMIO/MOVE PROJECT - AUTO-DEPLOYED! ⚠️
 
-## STEP 1: Scaffold + Start Frontend (IMMEDIATE!)
+## PROJECT IS READY!
+
+The counter template auto-deploys to `/workspace/app` when conversation starts:
+- Contract already compiled and deployed
+- Frontend already running at $APP_BASE_URL_1
+- `.env` file created with VITE_CONTRACT_ADDRESS
+
+**Check status:**
 ```bash
-bash /openhands/templates/scaffold-fast.sh PROJECT_NAME
+ls /workspace/app
+cat /workspace/app/frontend/.env
 ```
-This auto-creates everything AND starts frontend!
 
-## STEP 2: Fill spec.md (BEFORE any code!)
-Open `/workspace/PROJECT_NAME/spec.md` and fill ALL TODOs:
+---
+
+## DESIGN: Create STUNNING dApps!
+
+Build visually impressive, professional Web3 UIs:
+
+**Pre-built CSS classes (use them!):**
+- `.glass-card` - Glassmorphism containers
+- `.btn-primary` - Gradient buttons with hover effects
+- `.stat-value` - Large glowing numbers
+- `.status-badge.success/warning/info` - Status indicators
+- `.animate-float`, `.animate-glow` - Animations
+- `.info-row/.info-label/.info-value` - Key-value displays
+
+**Make each dApp unique!** Vary colors, layouts, icons, animations.
+
+---
+
+## WORKFLOW
+
+### Phase 1: Fill spec.md (BEFORE any code!)
+Create `/workspace/app/spec.md` with:
 - Data Model (structs)
 - Entry Functions (table)
 - View Functions (table)
@@ -29,52 +56,73 @@ Open `/workspace/PROJECT_NAME/spec.md` and fill ALL TODOs:
 
 ⛔ NO CODE UNTIL SPEC IS COMPLETE!
 
-## STEP 3: Update Documentation.tsx
-Convert spec.md to user-facing docs page.
-
-## STEP 4: Implement Contract
+### Phase 2: Implement Contract
 ```bash
-cd /workspace/PROJECT_NAME/contract
+cd /workspace/app/contract
+# Edit sources/counter.move
 lumio move compile --package-dir .
 ```
-⛔ DO NOT DEPLOY YET!
 
-## STEP 4.5: Contract Tests (MANDATORY!)
-- Write tests for ALL entry functions from spec.md
-- Write tests for ALL edge cases from spec.md
+### Phase 3: Contract Tests (MANDATORY!)
 ```bash
+cd /workspace/app/contract
 lumio move test --package-dir .
 ```
 ⛔ NO DEPLOY UNTIL ALL TESTS PASS!
 
-## STEP 5: Deploy Contract
+### Phase 4: Redeploy Contract
 ```bash
-lumio move publish --package-dir . --assume-yes
+# Same account (compatible changes)
+bash /openhands/templates/counter/redeploy.sh /workspace/app
+
+# New account (incompatible ABI changes)
+bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
 ```
+Script auto-updates `.env` and restarts frontend!
 
-## STEP 6: Customize Frontend
-- Update MODULE_NAME in useContract.ts
-- Update Home.tsx with contract UI
+### Phase 5: Customize Frontend (BUILD-CHECK-RESTART!)
+```bash
+# 1. Make changes to frontend files
+# 2. Build to verify no errors:
+cd /workspace/app/frontend && pnpm build
+# 3a. If FAILS → fix errors, repeat step 2
+# 3b. If SUCCEEDS → restart:
+bash /openhands/templates/counter/start.sh /workspace/app --background
+```
+⛔ NEVER skip the build step!
 
-## STEP 7: Browser Testing (FROM SPEC.MD!)
+### Phase 6: Browser Testing
 - Test ALL User Flows from spec.md
-- Test ALL Edge Cases from spec.md
 - Verify data updates after TX
 
-## On Change Request
-First determine: SPEC change or Frontend-only?
-- SPEC change → Update spec → contract → tests → deploy → frontend → browser test
-- Frontend-only → Update frontend → browser test
+---
 
-## Restart Frontend (if needed)
+## KEY SCRIPTS
+
 ```bash
-bash /openhands/templates/start-frontend.sh PROJECT_DIR --test
+# Redeploy contract
+bash /openhands/templates/counter/redeploy.sh /workspace/app
+
+# Redeploy with new account (for ABI changes)
+bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
+
+# Restart frontend
+bash /openhands/templates/counter/start.sh /workspace/app --background
+
+# Start in test mode
+bash /openhands/templates/counter/start.sh /workspace/app --test --background
 ```
 
 ---
 
-❌ NEVER: `lumio init` manually
-✅ Config: /workspace/.lumio/config.yaml
+## KEY FILES
+
+| File | Purpose |
+|------|---------|
+| `/workspace/app/contract/sources/counter.move` | Main contract |
+| `/workspace/app/frontend/.env` | VITE_CONTRACT_ADDRESS, VITE_PRIVATE_KEY |
+| `/workspace/app/frontend/src/hooks/useContract.ts` | Contract functions |
+| `/workspace/app/frontend/src/pages/Home.tsx` | Main UI |
 
 ---
 
@@ -96,8 +144,6 @@ ALL data MUST come from blockchain!
 ❌ FORBIDDEN:
 ```typescript
 setBalance(1000000000);  // hardcoded
-// Mock data for now...
-console.log(`Action`);   // no contract call
 ```
 
 ✅ CORRECT:
@@ -109,245 +155,38 @@ const result = await callEntry('stake', [amount]);
 if (result) await refreshData();
 ```
 
-**FOUR FILES MUST BE CUSTOMIZED (not template defaults!):**
-- `contract/sources/contract.move` - RENAME module from `counter` to YOUR module name!
-- `useContract.ts` - MODULE_NAME must match your contract module!
-- `Documentation.tsx` - YOUR contract functions (not counter!)
-- `Home.tsx` - YOUR contract UI
-
 **If data doesn't change after TX = MOCK DATA = FIX IT!**
 
 ---
 
-⛔ **CONTRACT TESTS = MANDATORY BEFORE DEPLOY!** ⛔
+⛔ **URL Usage - TWO DIFFERENT CONTEXTS:** ⛔
 
-**Write tests covering spec.md:**
-- Test for EACH entry function
-- Test for EACH edge case
-- Test error conditions
+1. **To show URL to USER:** use `$APP_BASE_URL_1`
+2. **For browser() tool:** use `http://localhost:$APP_PORT_1`
 
-```bash
-cd contract && lumio move test --package-dir .
-```
-
-**Pre-deploy checkpoint:**
-```
-Tests: X/X passed
-Entry functions tested: X/X
-Edge cases tested: X/X
-⛔ NO DEPLOY UNTIL 100% PASS!
-```
-
----
-
-⛔ **DECIMALS: USE UTILITIES!** ⛔
-
-```typescript
-// ❌ WRONG - double conversion:
-const stake = (a) => callEntry('stake', [(a*1e8).toString()]); // hook converts
-await stake(parseFloat(input) * 1e8);  // handler ALSO converts!
-
-// ✅ CORRECT - convert in ONE place only!
-```
-
----
-
-⛔ **PORT MANAGEMENT - CRITICAL!** ⛔
-
-**ALWAYS use ./start.sh with & (background!):**
-```bash
-cd frontend && ./start.sh &          # Production on $APP_PORT_1
-cd frontend && ./start.sh --test &   # Test Mode on $APP_PORT_1
-```
-
-The script automatically:
-1. Validates $APP_PORT_1 and $APP_BASE_URL_1 are set
-2. Kills process on $APP_PORT_1
-3. Verifies port is free
-4. Uses --strictPort (won't pick random port)
-5. Passes VITE_BASE_URL to frontend (accessible via import.meta.env.VITE_BASE_URL)
-
-**⚠️ URL Usage - TWO DIFFERENT CONTEXTS:**
-
-1. **To show URL to USER (in messages):** use `$APP_BASE_URL_1`
-   - This is the external URL the user can open in their browser
-   - Example: "Your app is running at $APP_BASE_URL_1"
-
-2. **For browser() tool actions (goto):** use `http://localhost:$APP_PORT_1`
-   - The browser tool runs INSIDE the container
-   - It can only access localhost, NOT external URLs
-   - Example: `goto("http://localhost:$APP_PORT_1")`
-
-❌ NEVER for browser(): `goto("$APP_BASE_URL_1")` or `goto("https://...")`
+❌ NEVER for browser(): `goto("$APP_BASE_URL_1")`
 ✅ ALWAYS for browser(): `goto("http://localhost:$APP_PORT_1")`
 
-❌ NEVER: `pnpm dev`, `pnpm start:prod`, `pnpm start:test`, `export APP_PORT_1=...`
-✅ ALWAYS: `cd frontend && ./start.sh &` (with &!)
-
 ---
 
-⛔ **QA VERIFICATION (Phase 4.3) - MANDATORY!** ⛔
+⛔ **ABI INCOMPATIBILITY** ⛔
 
-**Run verification script BEFORE browser testing:**
+If publish fails with "BACKWARD_INCOMPATIBLE_MODULE_UPDATE":
 ```bash
-bash /openhands/templates/verify-integration.sh PROJECT_DIR
+bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
 ```
-
-**Manual QA Checklist:**
-- [ ] "Connect Wallet" button visible
-- [ ] CONTRACT_ADDRESS matches deployed address
-- [ ] MODULE_NAME matches contract module (NOT 'counter'!)
-- [ ] ALL entry/view functions have wrappers
-- [ ] Using toChainUnits/toHumanUnits (no manual 1e8!)
-- [ ] Numbers display as "1.5" not "150000000"
-- [ ] No "undefined" or "[object Object]" in UI
-
-**⛔ DO NOT proceed until verification script PASSES!**
-
----
-
-⛔ **DATA REFRESH VERIFICATION (Phase 4.4) - MOST CRITICAL!** ⛔
-
-**THE #1 BUG: UI values don't update after transactions!**
-
-**Step 1: Run data refresh script:**
-```bash
-bash /openhands/templates/verify-data-refresh.sh PROJECT_DIR
-```
-
-**Step 2: MANDATORY Before/After Test:**
-1. Call view function via curl → record BEFORE value
-2. Execute entry function via CLI
-3. Call same view function → record AFTER value
-4. **VALUES MUST BE DIFFERENT!**
-
-**Step 3: Browser Data Refresh Test:**
-1. Start Test Mode: `cd frontend && ./start.sh --test`
-2. Note value in UI
-3. Execute action (click button)
-4. **VALUE IN UI MUST CHANGE!**
-
-**⛔ If values DON'T change = MOCK DATA BUG = FIX FIRST!**
-
-Common fixes:
-- refreshData() must call actual view functions
-- Action handlers must call refreshData() after TX
-- Remove hardcoded useState values
-
----
-
-⛔ **BROWSER TESTING = FROM SPEC.MD!** ⛔
-
-**Generate tests from spec.md, not random tests!**
-
-**Test tasks must cover:**
-1. ALL User Flows from spec.md
-2. ALL Edge Cases from spec.md
-3. ALL Entry Functions (TX + data refresh)
-
-**TEST EXECUTION LOOP:**
-```
-═══════════════════════════════════════
-📋 TEST: [Flow/Case from spec.md]
-═══════════════════════════════════════
-Action: [What you did]
-Expected: [From spec.md]
-Actual: [What happened]
-Evidence: [TX hash / values before→after]
-Result: ✅ PASS / ❌ FAIL
-═══════════════════════════════════════
-```
-
-**⛔ Test ALL items from spec.md!**
-
----
-
-⛔ **BLOCKING CHECKPOINTS** ⛔
-
-At each phase, OUTPUT checkpoint:
-```
-═══════════════════════════════════════
-⛔ CHECKPOINT: [Phase Name]
-═══════════════════════════════════════
-[Required output]
-═══════════════════════════════════════
-✅ CHECKPOINT PASSED
-═══════════════════════════════════════
-```
-
-**If you can't output checkpoint = you skipped something = GO BACK!**
-
----
-
-⛔ **CONTRACT CHANGES & ABI INCOMPATIBILITY** ⛔
-
-When modifying contract code and redeploying:
-
-**If publish fails with "BACKWARD_INCOMPATIBLE_MODULE_UPDATE":**
-```
-Error: BACKWARD_INCOMPATIBLE_MODULE_UPDATE - cannot upgrade module
-```
-
-This means ABI changed incompatibly. You MUST create new account:
-
-```bash
-bash /openhands/templates/redeploy-contract.sh PROJECT_DIR
-```
-
-This script will:
-1. Create new Lumio account
-2. Fund it from faucet
-3. Update Move.toml with new address
-4. Update frontend (useContract.ts, types/index.ts)
-5. Compile and deploy contract
-
-**After redeploy:**
-1. Restart frontend servers (kill old, start new)
-2. Initialize contract if needed
-3. Run FULL regression test
-4. Start Production Mode
 
 ---
 
 **Before finish() CHECKLIST:**
 
-**Contract:**
-- [ ] Module renamed from 'counter' to YOUR module
-- [ ] Contract tests cover ALL entry functions from spec.md
-- [ ] Contract tests cover ALL edge cases from spec.md
-- [ ] `lumio move test` = 100% PASS
-
-**Frontend:**
-- [ ] MODULE_NAME matches contract (NOT 'counter'!)
-- [ ] Documentation.tsx describes YOUR functions
-- [ ] Home.tsx uses YOUR contract UI
-- [ ] No mock data - all from blockchain
-
-**Browser Testing (from spec.md!):**
-- [ ] ALL User Flows from spec.md tested
-- [ ] ALL Edge Cases from spec.md tested
-- [ ] Data refresh verified after each TX
-- [ ] Browser Test Report shows PASS
-
-**Final:**
-- [ ] Production Mode running on $APP_PORT_1
-- [ ] Contract initialized (if needed)
-
----
-
-⛔ **FINAL CHECKPOINT** ⛔
-
-```
-═══════════════════════════════════════
-FINAL COMPLETION CHECKPOINT
-═══════════════════════════════════════
-Contract Tests: X/X PASS
-User Flows (spec.md): X/X tested
-Edge Cases (spec.md): X/X tested
-Data Refresh: Verified ✓
-Production Mode: Running on $APP_PORT_1
-═══════════════════════════════════════
-```
+- [ ] spec.md filled
+- [ ] Contract tests pass (lumio move test)
+- [ ] MODULE_NAME matches contract
+- [ ] No mock data
+- [ ] ALL User Flows tested
+- [ ] Data refresh verified
+- [ ] Frontend running
 
 **Vite HMR:** Don't restart server, just edit files!
 </LUMIO_VIBE_RUNTIME>
