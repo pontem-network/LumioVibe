@@ -1,112 +1,129 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router";
 import { I18nKey } from "#/i18n/declaration";
-import { RecentConversationsSkeleton } from "./recent-conversations-skeleton";
-import { RecentConversation } from "./recent-conversation";
 import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversations";
-import { useInfiniteScroll } from "#/hooks/use-infinite-scroll";
-import { cn } from "#/utils/utils";
+import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
+import { AppCard } from "./app-card";
+import PlusIcon from "#/icons/u-plus.svg?react";
+
+function RecentConversationsSkeleton() {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex flex-col rounded-xl border border-[#2a2a2a] bg-[#0a0a0a]/95 overflow-hidden"
+        >
+          <div className="h-20 bg-white/5 animate-pulse" />
+          <div className="p-4 space-y-2">
+            <div className="h-4 w-24 bg-white/10 rounded animate-pulse" />
+            <div className="h-3 w-16 bg-white/5 rounded animate-pulse" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function RecentConversations() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
+  const { mutate: createConversation, isPending } = useCreateConversation();
 
   const {
     data: conversationsList,
     isFetching,
-    isFetchingNextPage,
     error,
-    hasNextPage,
-    fetchNextPage,
   } = usePaginatedConversations(10);
-
-  // Set up infinite scroll
-  const scrollContainerRef = useInfiniteScroll({
-    hasNextPage: !!hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-    threshold: 200, // Load more when 200px from bottom
-  });
 
   const conversations =
     conversationsList?.pages.flatMap((page) => page.results) ?? [];
 
-  // Get the conversations to display based on expansion state
-  const displayLimit = isExpanded ? 10 : 3;
+  const displayLimit = isExpanded ? 12 : 4;
   const displayedConversations = conversations.slice(0, displayLimit);
 
   const hasConversations = conversations && conversations.length > 0;
-
-  // Check if there are more conversations to show
   const hasMoreConversations =
     conversations && conversations.length > displayLimit;
-
-  // Check if this is the initial load (no data yet)
   const isInitialLoading = isFetching && !conversationsList;
 
   const handleToggleExpansion = () => {
     setIsExpanded(!isExpanded);
   };
 
+  const handleNewApp = () => {
+    createConversation(
+      {},
+      {
+        onSuccess: (data) => {
+          navigate(`/conversations/${data.conversation_id}`);
+        },
+      },
+    );
+  };
+
+  if (!hasConversations && !isInitialLoading) {
+    return null;
+  }
+
   return (
     <section
       data-testid="recent-conversations"
-      className="flex flex-1 min-w-0 flex-col"
+      className="flex flex-col gap-3 w-full"
     >
-      <div
-        className={cn(
-          "flex items-center gap-2",
-          !hasConversations && "mb-[14px]",
-        )}
-      >
-        <h3 className="text-xs leading-4 text-white font-bold py-[14px] pl-4">
-          {t(I18nKey.COMMON$RECENT_CONVERSATIONS)}
-        </h3>
+      <div className="flex items-center justify-between">
+        {/* eslint-disable-next-line i18next/no-literal-string */}
+        <h2 className="text-xs leading-4 text-white font-bold">My Apps</h2>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={handleNewApp}
+            disabled={isPending}
+            className="flex items-center gap-1.5 text-xs text-white/70 hover:text-white transition-colors disabled:opacity-50"
+          >
+            <PlusIcon width={12} height={12} />
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            <span>{isPending ? "Creating..." : "New App"}</span>
+          </button>
+          {hasConversations && (
+            <Link
+              to="/apps"
+              className="text-xs text-white/50 hover:text-white transition-colors"
+            >
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              <span>View All</span>
+            </Link>
+          )}
+        </div>
       </div>
 
       {error && (
-        <div className="flex flex-col items-center justify-center h-full pl-4">
-          <p className="text-danger">{error.message}</p>
+        <div className="flex items-center justify-center py-8">
+          <p className="text-danger text-sm">{error.message}</p>
         </div>
       )}
 
-      <div className="flex flex-col">
-        {isInitialLoading && (
-          <div className="pl-4">
-            <RecentConversationsSkeleton />
-          </div>
-        )}
-      </div>
+      {isInitialLoading && <RecentConversationsSkeleton />}
 
-      {!isInitialLoading && displayedConversations?.length === 0 && (
-        <span className="text-xs leading-4 text-white font-medium pl-4">
-          {t(I18nKey.HOME$NO_RECENT_CONVERSATIONS)}
-        </span>
+      {!isInitialLoading && hasConversations && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {displayedConversations.map((conversation) => (
+            <AppCard
+              key={conversation.conversation_id}
+              conversation={conversation}
+            />
+          ))}
+        </div>
       )}
 
-      {!isInitialLoading &&
-        displayedConversations &&
-        displayedConversations.length > 0 && (
-          <div className="flex flex-col">
-            <div className="transition-all duration-300 ease-in-out overflow-y-auto custom-scrollbar">
-              <div ref={scrollContainerRef} className="flex flex-col">
-                {displayedConversations.map((conversation) => (
-                  <RecentConversation
-                    key={conversation.conversation_id}
-                    conversation={conversation}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
       {!isInitialLoading && (hasMoreConversations || isExpanded) && (
-        <div className="flex justify-start mt-6 mb-8 ml-4">
+        <div className="flex justify-start">
           <button
             type="button"
             onClick={handleToggleExpansion}
-            className="text-xs leading-4 text-[#FAFAFA] font-normal cursor-pointer hover:underline"
+            className="text-xs text-white/50 hover:text-white transition-colors"
           >
             {isExpanded
               ? t(I18nKey.COMMON$VIEW_LESS)

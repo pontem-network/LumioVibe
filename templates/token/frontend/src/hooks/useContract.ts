@@ -36,8 +36,12 @@ export function useContract() {
   }, []);
 
   const callEntryTest = useCallback(async (fn: string, args: (string | number)[] = []) => {
+    if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS.length < 20) {
+      setError('Contract not deployed. Set VITE_CONTRACT_ADDRESS environment variable.');
+      return null;
+    }
     if (!testAccountRef.current) {
-      setError('Test account not initialized');
+      setError('Test account not initialized. Set VITE_PRIVATE_KEY environment variable.');
       return null;
     }
     setLoading(true);
@@ -88,6 +92,9 @@ export function useContract() {
   }, [callEntryTest, callEntryPontem]);
 
   const callView = useCallback(async <T>(fn: string, args: (string | number)[] = []): Promise<T | null> => {
+    if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS.length < 10) {
+      return null;
+    }
     try {
       const res = await fetch(`${LUMIO_RPC}/view`, {
         method: 'POST',
@@ -98,11 +105,13 @@ export function useContract() {
           arguments: args.map(a => String(a)),
         }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        // Don't set error for 400 - contract might not exist yet
+        return null;
+      }
       const data = await res.json();
       return data[0] as T;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'View failed');
+    } catch {
       return null;
     }
   }, []);
@@ -142,6 +151,9 @@ export function useContract() {
 
   const getTokenInfo = useCallback(
     async (tokenAddr: string): Promise<TokenInfo | null> => {
+      if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS.length < 10) {
+        return null;
+      }
       try {
         const res = await fetch(`${LUMIO_RPC}/view`, {
           method: 'POST',
@@ -177,6 +189,8 @@ export function useContract() {
     [callView]
   );
 
+  const isContractConfigured = Boolean(CONTRACT_ADDRESS && CONTRACT_ADDRESS.length >= 20);
+
   return {
     initialize,
     register,
@@ -195,5 +209,6 @@ export function useContract() {
     account,
     contractAddress: CONTRACT_ADDRESS,
     isTestMode: IS_TEST_MODE,
+    isContractConfigured,
   };
 }

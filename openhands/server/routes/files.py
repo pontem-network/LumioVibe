@@ -2,7 +2,7 @@ import os
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 from starlette.background import BackgroundTask
@@ -22,10 +22,15 @@ from openhands.server.dependencies import get_dependencies
 from openhands.server.file_config import FILES_TO_IGNORE
 from openhands.server.files import POSTUploadFilesModel
 from openhands.server.session.conversation import ServerConversation
+from openhands.server.shared import file_store
 from openhands.server.user_auth import get_user_id
 from openhands.server.utils import get_conversation, get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.locations import get_conversation_image_filename
 from openhands.utils.async_utils import call_sync_from_async
+
+# PNG magic bytes for validation
+PNG_MAGIC_BYTES = b'\x89PNG\r\n\x1a\n'
 
 app = APIRouter(
     prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
@@ -316,3 +321,180 @@ async def upload_files(
             'skipped_files': skipped_files,
         },
     )
+
+
+# Separate router for image endpoint (doesn't require active conversation/runtime)
+image_app = APIRouter(prefix='/api/conversations', dependencies=get_dependencies())
+
+
+@app.post(
+    '/save-image',
+    response_model=None,
+    responses={
+        200: {'description': 'Image saved successfully'},
+        404: {'description': 'Image not found in workspace'},
+        500: {'description': 'Error saving image'},
+    },
+)
+async def save_conversation_image(
+    conversation_id: str,
+    conversation: ServerConversation = Depends(get_conversation),
+    user_id: str = Depends(get_user_id),
+) -> JSONResponse:
+    """Save the image.png from runtime workspace to conversation storage.
+
+    This endpoint copies /workspace/image.png from the runtime to the
+    conversation's persistent storage for use as a preview image.
+
+    Security measures:
+    - Fixed source path (/workspace/image.png only)
+    - Fixed destination path (conversation storage)
+    - PNG validation before saving
+    - Requires active runtime and conversation ownership
+
+    Args:
+        conversation_id: The conversation ID (from URL path)
+        conversation: The active server conversation
+        user_id: The authenticated user ID
+
+    Returns:
+        Success message or error
+    """
+    if not conversation.runtime:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={'error': 'Runtime not available'},
+        )
+
+    runtime: Runtime = conversation.runtime
+    workspace_image_path = os.path.join(
+        runtime.config.workspace_mount_path_in_sandbox, 'image.png'
+    )
+
+    try:
+        # Read image from runtime workspace
+        read_action = FileReadAction(workspace_image_path)
+        observation = await call_sync_from_async(runtime.run_action, read_action)
+
+        if isinstance(observation, ErrorObservation):
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Image not found in workspace'},
+            )
+
+        if not isinstance(observation, FileReadObservation):
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={'error': 'Unexpected response from runtime'},
+            )
+
+        # Get the image content
+        content = observation.content
+
+        # Handle binary content (FileReadObservation may return base64 for binary files)
+        if hasattr(observation, 'base64_content') and observation.base64_content:
+            import base64
+
+            image_bytes = base64.b64decode(observation.base64_content)
+        else:
+            # Content might be raw bytes or string
+            image_bytes = (
+                content.encode('latin-1') if isinstance(content, str) else content
+            )
+
+        # Validate PNG magic bytes
+        if not image_bytes.startswith(PNG_MAGIC_BYTES):
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={'error': 'File is not a valid PNG image'},
+            )
+
+        # Save to conversation storage
+        image_path = get_conversation_image_filename(conversation_id, user_id)
+        file_store.write(image_path, image_bytes)
+
+        logger.info(f'Saved image for conversation {conversation_id}')
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Image saved successfully'},
+        )
+
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Runtime unavailable when saving image: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Runtime error: {e}'},
+        )
+    except Exception as e:
+        logger.error(f'Error saving image for conversation {conversation_id}: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': str(e)},
+        )
+
+
+@image_app.get(
+    '/{conversation_id}/image',
+    response_model=None,
+    responses={
+        200: {'description': 'Conversation preview image (PNG)'},
+        404: {'description': 'Image not found'},
+    },
+)
+async def get_conversation_image(
+    conversation_id: str,
+    user_id: str = Depends(get_user_id),
+) -> Response:
+    """Get the preview image for a conversation.
+
+    This endpoint serves the image.png file stored in the conversation's storage directory.
+    Security measures:
+    - Fixed filename (image.png only, no user input for path)
+    - Path constructed server-side using conversation_id and user_id
+    - PNG magic bytes validation to ensure file is actually an image
+    - Conversation ownership enforced through user_id dependency
+
+    Args:
+        conversation_id: The conversation ID (from URL path)
+        user_id: The authenticated user ID (from auth dependency)
+
+    Returns:
+        PNG image response or 404 if not found
+    """
+    # Construct the image path server-side - no user input for filename
+    image_path = get_conversation_image_filename(conversation_id, user_id)
+
+    try:
+        # Read image from file store
+        # FileStore.read() returns str, so we need to encode to bytes
+        image_data = file_store.read(image_path)
+        image_bytes = image_data.encode('latin-1')
+
+        # Validate PNG magic bytes to ensure it's actually an image
+        if not image_bytes.startswith(PNG_MAGIC_BYTES):
+            logger.warning(
+                f'Invalid image file for conversation {conversation_id}: not a PNG'
+            )
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Invalid image format'},
+            )
+
+        return Response(
+            content=image_bytes,
+            media_type='image/png',
+            headers={
+                'Cache-Control': 'public, max-age=300',  # Cache for 5 minutes
+            },
+        )
+    except FileNotFoundError:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={'error': 'Image not found'},
+        )
+    except Exception as e:
+        logger.error(f'Error reading image for conversation {conversation_id}: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={'error': 'Image not found'},
+        )

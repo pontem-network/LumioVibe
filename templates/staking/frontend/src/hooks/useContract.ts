@@ -207,6 +207,28 @@ export function useContract() {
     [callView]
   );
 
+  const getBalance = useCallback(
+    async (userAddress: string): Promise<number> => {
+      try {
+        const res = await fetch(`${LUMIO_RPC}/view`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            function: '0x1::coin::balance',
+            type_arguments: ['0x1::lumio_coin::LumioCoin'],
+            arguments: [userAddress],
+          }),
+        });
+        if (!res.ok) return 0;
+        const data = await res.json();
+        return parseInt(data[0]) || 0;
+      } catch {
+        return 0;
+      }
+    },
+    []
+  );
+
   return {
     initializePool,
     stake,
@@ -219,6 +241,7 @@ export function useContract() {
     getPendingRewards,
     poolExists,
     userStakeExists,
+    getBalance,
     callEntry,
     callView,
     loading,

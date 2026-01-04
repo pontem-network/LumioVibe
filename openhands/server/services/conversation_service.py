@@ -53,6 +53,16 @@ async def initialize_conversation(
 
         conversation_title = get_default_conversation_title(conversation_id)
 
+        # If template_id is provided, use template name as title
+        if template_id:
+            from openhands.server.services.template_manager import TemplateManager
+
+            template_manager = TemplateManager()
+            template = template_manager.get_template(template_id)
+            if template:
+                conversation_title = template.name
+                logger.info(f'Using template name as title: {conversation_title}')
+
         logger.info(f'Saving metadata for conversation {conversation_id}')
         conversation_metadata = ConversationMetadata(
             trigger=conversation_trigger,

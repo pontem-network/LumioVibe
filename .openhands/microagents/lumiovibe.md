@@ -401,6 +401,18 @@ Test all user flows from spec.md:
 3. Perform actions
 4. Verify data updates
 
+### Save App Preview Screenshot
+
+After testing is complete, save a screenshot for the app preview.
+Browser screenshots are automatically saved to `/workspace/.browser_screenshots/`.
+
+```bash
+# Copy the latest browser screenshot as the app preview
+cd /workspace && cp "$(ls -t .browser_screenshots/*.png | head -1)" image.png
+```
+
+The screenshot will be displayed as the app preview on the home page.
+
 ---
 
 ## Quick Reference

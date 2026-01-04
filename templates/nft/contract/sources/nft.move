@@ -15,6 +15,7 @@ module __PROJECT_NAME__::nft {
         description: String,
         total_minted: u64,
         max_supply: u64,
+        creator: address,
     }
 
     struct NFT has store, drop, copy {
@@ -23,9 +24,11 @@ module __PROJECT_NAME__::nft {
         description: String,
         uri: String,
         creator: address,
+        owner: address,
     }
 
-    struct NFTStore has key {
+    /// Global registry storing all NFTs - stored at collection creator's address
+    struct NFTRegistry has key {
         nfts: vector<NFT>,
     }
 
@@ -43,9 +46,10 @@ module __PROJECT_NAME__::nft {
             description: string::utf8(description),
             total_minted: 0,
             max_supply,
+            creator: addr,
         });
 
-        move_to(account, NFTStore {
+        move_to(account, NFTRegistry {
             nfts: vector::empty<NFT>(),
         });
     }
@@ -55,7 +59,7 @@ module __PROJECT_NAME__::nft {
         name: vector<u8>,
         description: vector<u8>,
         uri: vector<u8>
-    ) acquires NFTCollection, NFTStore {
+    ) acquires NFTCollection, NFTRegistry {
         let addr = signer::address_of(account);
         assert!(exists<NFTCollection>(addr), E_NOT_INITIALIZED);
 
@@ -68,40 +72,33 @@ module __PROJECT_NAME__::nft {
             description: string::utf8(description),
             uri: string::utf8(uri),
             creator: addr,
+            owner: addr,
         };
 
         collection.total_minted = collection.total_minted + 1;
 
-        let store = borrow_global_mut<NFTStore>(addr);
-        vector::push_back(&mut store.nfts, nft);
+        let registry = borrow_global_mut<NFTRegistry>(addr);
+        vector::push_back(&mut registry.nfts, nft);
     }
 
+    /// Transfer NFT to any address - no registration required
     public entry fun transfer_nft(
         from: &signer,
+        collection_addr: address,
         to: address,
         token_id: u64
-    ) acquires NFTStore {
+    ) acquires NFTRegistry {
         let from_addr = signer::address_of(from);
-        assert!(exists<NFTStore>(from_addr), E_NOT_INITIALIZED);
-        assert!(exists<NFTStore>(to), E_NOT_INITIALIZED);
+        assert!(exists<NFTRegistry>(collection_addr), E_NOT_INITIALIZED);
 
-        let from_store = borrow_global_mut<NFTStore>(from_addr);
-        let nft_index = find_nft_index(&from_store.nfts, token_id);
-        assert!(nft_index < vector::length(&from_store.nfts), E_NFT_NOT_FOUND);
+        let registry = borrow_global_mut<NFTRegistry>(collection_addr);
+        let nft_index = find_nft_index(&registry.nfts, token_id);
+        assert!(nft_index < vector::length(&registry.nfts), E_NFT_NOT_FOUND);
 
-        let nft = vector::remove(&mut from_store.nfts, nft_index);
+        let nft = vector::borrow_mut(&mut registry.nfts, nft_index);
+        assert!(nft.owner == from_addr, E_NOT_OWNER);
 
-        let to_store = borrow_global_mut<NFTStore>(to);
-        vector::push_back(&mut to_store.nfts, nft);
-    }
-
-    public entry fun register(account: &signer) {
-        let addr = signer::address_of(account);
-        if (!exists<NFTStore>(addr)) {
-            move_to(account, NFTStore {
-                nfts: vector::empty<NFT>(),
-            });
-        };
+        nft.owner = to;
     }
 
     fun find_nft_index(nfts: &vector<NFT>, token_id: u64): u64 {
@@ -125,11 +122,22 @@ module __PROJECT_NAME__::nft {
     }
 
     #[view]
-    public fun get_nft_count(addr: address): u64 acquires NFTStore {
-        if (!exists<NFTStore>(addr)) {
+    public fun get_nft_count(collection_addr: address, owner: address): u64 acquires NFTRegistry {
+        if (!exists<NFTRegistry>(collection_addr)) {
             return 0
         };
-        vector::length(&borrow_global<NFTStore>(addr).nfts)
+        let registry = borrow_global<NFTRegistry>(collection_addr);
+        let count = 0u64;
+        let len = vector::length(&registry.nfts);
+        let i = 0u64;
+        while (i < len) {
+            let nft = vector::borrow(&registry.nfts, i);
+            if (nft.owner == owner) {
+                count = count + 1;
+            };
+            i = i + 1;
+        };
+        count
     }
 
     #[view]
@@ -146,7 +154,48 @@ module __PROJECT_NAME__::nft {
     }
 
     #[view]
-    public fun has_store(addr: address): bool {
-        exists<NFTStore>(addr)
+    public fun get_nft_by_id(collection_addr: address, token_id: u64): (u64, String, String, String, address, address) acquires NFTRegistry {
+        assert!(exists<NFTRegistry>(collection_addr), E_NOT_INITIALIZED);
+        let registry = borrow_global<NFTRegistry>(collection_addr);
+        let index = find_nft_index(&registry.nfts, token_id);
+        assert!(index < vector::length(&registry.nfts), E_NFT_NOT_FOUND);
+        let nft = vector::borrow(&registry.nfts, index);
+        (nft.id, nft.name, nft.description, nft.uri, nft.creator, nft.owner)
+    }
+
+    #[view]
+    public fun get_nfts_by_owner(collection_addr: address, owner: address): vector<u64> acquires NFTRegistry {
+        let ids = vector::empty<u64>();
+        if (!exists<NFTRegistry>(collection_addr)) {
+            return ids
+        };
+        let registry = borrow_global<NFTRegistry>(collection_addr);
+        let len = vector::length(&registry.nfts);
+        let i = 0u64;
+        while (i < len) {
+            let nft = vector::borrow(&registry.nfts, i);
+            if (nft.owner == owner) {
+                vector::push_back(&mut ids, nft.id);
+            };
+            i = i + 1;
+        };
+        ids
+    }
+
+    #[view]
+    public fun get_all_nfts(collection_addr: address): vector<u64> acquires NFTRegistry {
+        let ids = vector::empty<u64>();
+        if (!exists<NFTRegistry>(collection_addr)) {
+            return ids
+        };
+        let registry = borrow_global<NFTRegistry>(collection_addr);
+        let len = vector::length(&registry.nfts);
+        let i = 0u64;
+        while (i < len) {
+            let nft = vector::borrow(&registry.nfts, i);
+            vector::push_back(&mut ids, nft.id);
+            i = i + 1;
+        };
+        ids
     }
 }

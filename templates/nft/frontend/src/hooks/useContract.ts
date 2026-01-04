@@ -18,6 +18,15 @@ export interface CollectionInfo {
   maxSupply: number;
 }
 
+export interface NFTInfo {
+  id: number;
+  name: string;
+  description: string;
+  uri: string;
+  creator: string;
+  owner: string;
+}
+
 export function useContract() {
   const { pontem, connected, account } = usePontem();
   const [loading, setLoading] = useState(false);
@@ -113,16 +122,16 @@ export function useContract() {
     [callEntry]
   );
 
-  const register = useCallback(() => callEntry('register'), [callEntry]);
-
   const mintNFT = useCallback(
     (name: string, description: string, uri: string) =>
       callEntry('mint_nft', [name, description, uri]),
     [callEntry]
   );
 
+  // Transfer now requires collection_addr as first arg
   const transferNFT = useCallback(
-    (to: string, tokenId: number) => callEntry('transfer_nft', [to, tokenId]),
+    (to: string, tokenId: number) =>
+      callEntry('transfer_nft', [CONTRACT_ADDRESS, to, tokenId]),
     [callEntry]
   );
 
@@ -153,9 +162,27 @@ export function useContract() {
     []
   );
 
+  // get_nft_count now takes collection_addr and owner
   const getNFTCount = useCallback(
-    (addr: string) => callView<number>('get_nft_count', [addr]),
-    [callView]
+    async (collectionAddr: string, owner: string): Promise<number | null> => {
+      try {
+        const res = await fetch(`${LUMIO_RPC}/view`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::get_nft_count`,
+            type_arguments: [],
+            arguments: [collectionAddr, owner],
+          }),
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return parseInt(data[0]);
+      } catch {
+        return null;
+      }
+    },
+    []
   );
 
   const getTotalMinted = useCallback(
@@ -168,21 +195,123 @@ export function useContract() {
     [callView]
   );
 
-  const hasStore = useCallback(
-    (addr: string) => callView<boolean>('has_store', [addr]),
-    [callView]
+  // Get NFT by ID - returns full info including owner
+  const getNFTById = useCallback(
+    async (collectionAddr: string, tokenId: number): Promise<NFTInfo | null> => {
+      try {
+        const res = await fetch(`${LUMIO_RPC}/view`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::get_nft_by_id`,
+            type_arguments: [],
+            arguments: [collectionAddr, String(tokenId)],
+          }),
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return {
+          id: parseInt(data[0]),
+          name: data[1],
+          description: data[2],
+          uri: data[3],
+          creator: data[4],
+          owner: data[5],
+        };
+      } catch {
+        return null;
+      }
+    },
+    []
+  );
+
+  // Get all NFT IDs owned by a specific address
+  const getNFTsByOwner = useCallback(
+    async (collectionAddr: string, owner: string): Promise<number[]> => {
+      try {
+        const res = await fetch(`${LUMIO_RPC}/view`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::get_nfts_by_owner`,
+            type_arguments: [],
+            arguments: [collectionAddr, owner],
+          }),
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return (data[0] as string[]).map(id => parseInt(id));
+      } catch {
+        return [];
+      }
+    },
+    []
+  );
+
+  // Get all NFT IDs in the collection
+  const getAllNFTIds = useCallback(
+    async (collectionAddr: string): Promise<number[]> => {
+      try {
+        const res = await fetch(`${LUMIO_RPC}/view`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::get_all_nfts`,
+            type_arguments: [],
+            arguments: [collectionAddr],
+          }),
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return (data[0] as string[]).map(id => parseInt(id));
+      } catch {
+        return [];
+      }
+    },
+    []
+  );
+
+  // Get all NFTs owned by a user with full info
+  const getMyNFTs = useCallback(
+    async (collectionAddr: string, owner: string): Promise<NFTInfo[]> => {
+      const ids = await getNFTsByOwner(collectionAddr, owner);
+      const nfts: NFTInfo[] = [];
+      for (const id of ids) {
+        const nft = await getNFTById(collectionAddr, id);
+        if (nft) nfts.push(nft);
+      }
+      return nfts;
+    },
+    [getNFTsByOwner, getNFTById]
+  );
+
+  // Get all NFTs in collection with full info
+  const getAllNFTs = useCallback(
+    async (collectionAddr: string): Promise<NFTInfo[]> => {
+      const ids = await getAllNFTIds(collectionAddr);
+      const nfts: NFTInfo[] = [];
+      for (const id of ids) {
+        const nft = await getNFTById(collectionAddr, id);
+        if (nft) nfts.push(nft);
+      }
+      return nfts;
+    },
+    [getAllNFTIds, getNFTById]
   );
 
   return {
     createCollection,
-    register,
     mintNFT,
     transferNFT,
     getCollectionInfo,
     getNFTCount,
     getTotalMinted,
     collectionExists,
-    hasStore,
+    getNFTById,
+    getNFTsByOwner,
+    getAllNFTIds,
+    getMyNFTs,
+    getAllNFTs,
     callEntry,
     callView,
     loading,
