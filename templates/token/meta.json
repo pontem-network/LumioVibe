@@ -1,0 +1,1 @@
+{"id":"token","name":"Fungible Token","description":"Create your own fungible token with mint, burn, and transfer functionality","category":"defi","difficulty":"beginner","features":["mint","burn","transfer","balance tracking","total supply"],"default":false}

@@ -38,6 +38,7 @@ async def initialize_conversation(
     selected_branch: str | None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     git_provider: ProviderType | None = None,
+    template_id: str | None = None,
 ) -> ConversationMetadata:
     if conversation_id is None:
         conversation_id = uuid.uuid4().hex
@@ -52,6 +53,16 @@ async def initialize_conversation(
 
         conversation_title = get_default_conversation_title(conversation_id)
 
+        # If template_id is provided, use template name as title
+        if template_id:
+            from openhands.server.services.template_manager import TemplateManager
+
+            template_manager = TemplateManager()
+            template = template_manager.get_template(template_id)
+            if template:
+                conversation_title = template.name
+                logger.info(f'Using template name as title: {conversation_title}')
+
         logger.info(f'Saving metadata for conversation {conversation_id}')
         conversation_metadata = ConversationMetadata(
             trigger=conversation_trigger,
@@ -61,6 +72,7 @@ async def initialize_conversation(
             selected_repository=selected_repository,
             selected_branch=selected_branch,
             git_provider=git_provider,
+            template_id=template_id,
         )
 
         await conversation_store.save_metadata(conversation_metadata)
@@ -131,6 +143,7 @@ async def start_conversation(
     session_init_args['selected_branch'] = conversation_metadata.selected_branch
     session_init_args['git_provider'] = conversation_metadata.git_provider
     session_init_args['conversation_instructions'] = conversation_instructions
+    session_init_args['template_id'] = conversation_metadata.template_id
     if mcp_config:
         session_init_args['mcp_config'] = mcp_config
 
@@ -177,7 +190,17 @@ async def create_new_conversation(
     git_provider: ProviderType | None = None,
     conversation_id: str | None = None,
     mcp_config: MCPConfig | None = None,
+    template_id: str | None = None,
 ) -> AgentLoopInfo:
+    if template_id is None:
+        from openhands.server.services.template_manager import TemplateManager
+
+        template_manager = TemplateManager()
+        default_template = template_manager.get_default_template()
+        if default_template:
+            template_id = default_template.id
+            logger.info(f'Using default template: {template_id}')
+
     conversation_metadata = await initialize_conversation(
         user_id,
         conversation_id,
@@ -185,6 +208,7 @@ async def create_new_conversation(
         selected_branch,
         conversation_trigger,
         git_provider,
+        template_id,
     )
 
     return await start_conversation(

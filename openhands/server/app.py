@@ -22,6 +22,7 @@ from openhands.server.routes.conversation import app as conversation_api_router
 from openhands.server.routes.deployments import router as deployments_router
 from openhands.server.routes.feedback import app as feedback_api_router
 from openhands.server.routes.files import app as files_api_router
+from openhands.server.routes.files import image_app as image_api_router
 from openhands.server.routes.git import app as git_api_router
 from openhands.server.routes.health import add_health_endpoints
 from openhands.server.routes.manage_conversations import (
@@ -32,6 +33,7 @@ from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.secrets import app as secrets_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.routes.settings import app as settings_router
+from openhands.server.routes.templates import router as templates_router
 from openhands.server.routes.token import (
     app as token_api_router,
 )
@@ -86,6 +88,7 @@ async def authentication_error_handler(request: Request, exc: AuthenticationErro
 
 app.include_router(public_api_router)
 app.include_router(files_api_router)
+app.include_router(image_api_router)
 app.include_router(security_api_router)
 app.include_router(feedback_api_router)
 app.include_router(conversation_api_router)
@@ -99,4 +102,5 @@ if server_config.enable_v1:
     app.include_router(v1_router.router)
 app.include_router(trajectory_router)
 app.include_router(deployments_router)
+app.include_router(templates_router)
 add_health_endpoints(app)

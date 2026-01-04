@@ -39,3 +39,5 @@ class ConversationMetadata:
     # V1 compatibility
     sandbox_id: str | None = None
     conversation_version: str | None = None
+    # Template for project initialization
+    template_id: str | None = None

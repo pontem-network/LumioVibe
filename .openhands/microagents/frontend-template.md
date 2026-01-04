@@ -1,11 +1,123 @@
 ---
 name: frontend-template
 type: repo
-version: 4.0.0
+version: 5.0.0
 agent: CodeActAgent
 ---
 
 # Frontend Template for Lumio dApps
+
+## Modern dApp Design Guidelines
+
+Create visually stunning, professional dApps with these design principles:
+
+### Visual Style Requirements
+
+1. **Glassmorphism Cards** - Use `.glass-card` class for main containers:
+   - Translucent backgrounds (`rgba(255,255,255,0.03)`)
+   - Backdrop blur (`blur(20px)`)
+   - Subtle borders (`rgba(255,255,255,0.08)`)
+   - Soft shadows and inner glow
+
+2. **Gradient Accents** - Use CSS variables for consistent branding:
+   - `--gradient-primary`: Main brand gradient (indigo → purple)
+   - `--gradient-accent`: Highlight gradient (cyan → teal)
+   - Apply to buttons, text, borders, icons
+
+3. **Animations & Micro-interactions**:
+   - `.animate-float` - Subtle floating effect for icons
+   - `.animate-glow` - Pulsing glow for important values
+   - Button hover: `transform: translateY(-2px)` + enhanced shadow
+   - Loading states with `.loading-spinner`
+
+4. **Typography**:
+   - Large, bold stat values (`.stat-value`)
+   - Gradient text for headings
+   - Monospace for addresses and hashes
+
+5. **Color Palette**:
+   - Dark background: `#0a0a1a`
+   - Accent colors: Indigo (#667eea), Purple (#764ba2), Cyan (#4facfe)
+   - Status: Success (emerald), Warning (amber), Error (red), Info (sky)
+
+### Layout Patterns
+
+```typescript
+// Hero section with floating icon
+<div className="animate-float mb-8">
+  <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-500/30">
+    <Icon className="w-12 h-12 text-white" />
+  </div>
+</div>
+
+// Stat cards grid
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <StatCard label="Total Staked" value={staked} icon={<ChartIcon />} />
+</div>
+
+// Glass container for main content
+<div className="glass-card p-8">
+  <h2 className="text-2xl font-bold mb-4">Section Title</h2>
+  {/* content */}
+</div>
+```
+
+### Component Library (from index.css)
+
+Pre-defined classes available:
+- `.glass-card` - Glassmorphism container
+- `.btn-primary` - Gradient button with hover effects
+- `.btn-secondary` - Ghost button
+- `.stat-value` - Large gradient number display
+- `.status-badge`, `.status-badge.success/warning/info` - Status indicators
+- `.info-row`, `.info-label`, `.info-value` - Key-value displays
+- `.error-toast` - Animated error notification
+- `.gradient-border` - Animated gradient border on hover
+- `.nav-link`, `.nav-link.active` - Navigation links
+
+### Design Variety
+
+DO NOT make all dApps look identical! Vary:
+- Color schemes (change CSS variables per project)
+- Icon styles (Heroicons, Lucide, custom SVG)
+- Layout arrangements (cards vs tables vs lists)
+- Animation speeds and effects
+- Background patterns (grid, noise, gradients)
+
+---
+
+## ⛔ CRITICAL: Build-Check-Restart Development Cycle
+
+<IMPORTANT>
+⚠️ ALWAYS verify frontend builds before considering it complete!
+
+**Development Cycle:**
+```bash
+# 1. Make changes to frontend files
+
+# 2. Build to check for errors
+cd /workspace/app/frontend && pnpm build
+
+# 3a. If build FAILS - fix errors and repeat step 2
+# Look for: TypeScript errors, missing imports, type mismatches
+
+# 3b. If build SUCCEEDS - restart dev server
+bash /openhands/templates/counter/start.sh /workspace/app --background
+
+# 4. Browser test the changes
+# Use http://localhost:$APP_PORT_1 for browser() tool
+```
+
+**Common Build Errors:**
+- `Cannot find module` → Check import paths
+- `Type 'X' is not assignable to type 'Y'` → Fix type annotations
+- `Property does not exist` → Check interface definitions
+- `is defined but never used` → Remove or use the variable
+
+**NEVER skip the build step!**
+</IMPORTANT>
+
+---
 
 ## ⛔ CRITICAL: NO MOCK DATA - EVER!
 
@@ -54,8 +166,11 @@ Docs: https://docs.pontemwallet.xyz/guide/api.html
 
 ## Project Structure
 
+The template auto-deploys to `/workspace/app/frontend/`:
+
 ```
-frontend/
+/workspace/app/frontend/
+├── .env                    # VITE_CONTRACT_ADDRESS, VITE_PRIVATE_KEY
 ├── package.json
 ├── vite.config.ts
 ├── tailwind.config.js
@@ -66,35 +181,36 @@ frontend/
     ├── App.tsx
     ├── index.css
     ├── types/
-    │   └── pontem.ts          # Complete Pontem types
+    │   └── pontem.ts          # Complete Pontem types + config
     ├── hooks/
     │   ├── usePontem.ts       # Wallet connection hook
     │   └── useContract.ts     # Contract interaction hook
     └── pages/
-        ├── Home.tsx
-        └── Documentation.tsx
+        └── Home.tsx
 ```
 
-## Step 1: Copy from Templates
+## Auto-Setup
 
+The template is **already deployed** when conversation starts:
+- Contract address in `.env` file
+- Frontend already running at `$APP_BASE_URL_1`
+
+**Check current config:**
 ```bash
-cp -r /openhands/templates/frontend/* ./frontend/
-cd frontend
+cat /workspace/app/frontend/.env
 ```
 
-## Step 2: Update Placeholders
-
-Replace in all files:
-- `{{PROJECT_NAME}}` → your project name
-- `{{CONTRACT_ADDRESS}}` → deployed contract address
-- `{{MODULE_NAME}}` → your Move module name
-
-## Step 3: Install & Run
+## Scripts
 
 ```bash
-pnpm install
-./start.sh          # Production mode
-./start.sh --test   # Test mode (no wallet needed)
+# Restart frontend
+bash /openhands/templates/counter/start.sh /workspace/app --background
+
+# Start in test mode (no wallet needed)
+bash /openhands/templates/counter/start.sh /workspace/app --test --background
+
+# Redeploy contract (updates .env automatically)
+bash /openhands/templates/counter/redeploy.sh /workspace/app
 ```
 
 <IMPORTANT>

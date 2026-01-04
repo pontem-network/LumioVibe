@@ -103,6 +103,7 @@ class AgentSession:
         initial_message: MessageAction | None = None,
         conversation_instructions: str | None = None,
         replay_json: str | None = None,
+        template_id: str | None = None,
     ) -> None:
         """Starts the Agent session
         Parameters:
@@ -140,6 +141,7 @@ class AgentSession:
                 custom_secrets=custom_secrets,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
+                template_id=template_id,
             )
 
             repo_directory = None
@@ -302,6 +304,7 @@ class AgentSession:
         custom_secrets: CUSTOM_SECRETS_TYPE | None = None,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
+        template_id: str | None = None,
     ) -> bool:
         """Creates a runtime instance
 
@@ -378,6 +381,9 @@ class AgentSession:
         )
         await call_sync_from_async(self.runtime.maybe_run_setup_script)
         await call_sync_from_async(self.runtime.maybe_setup_git_hooks)
+
+        if template_id:
+            await self._initialize_template(template_id, config)
 
         self.logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
@@ -512,3 +518,87 @@ class AgentSession:
 
     def is_closed(self) -> bool:
         return self._closed
+
+    async def _initialize_template(
+        self, template_id: str, config: OpenHandsConfig
+    ) -> None:
+        """Initialize a template by running init.sh and start.sh scripts.
+
+        Parameters:
+        - template_id: The ID of the template to initialize
+        - config: The OpenHands configuration
+        """
+        if not self.runtime:
+            self.logger.warning('Cannot initialize template: runtime not available')
+            return
+
+        from openhands.server.services.template_manager import TemplateManager
+
+        template_manager = TemplateManager()
+        template_path = template_manager.get_template_path(template_id)
+
+        if not template_path:
+            self.logger.warning(f'Template not found: {template_id}')
+            return
+
+        self.logger.info(f'Initializing template: {template_id}')
+
+        if self._status_callback:
+            self._status_callback(
+                'info',
+                RuntimeStatus.INITIALIZING_TEMPLATE,
+                f'Initializing template: {template_id}',
+            )
+
+        project_name = 'app'
+        project_dir = f'{config.workspace_mount_path_in_sandbox}/{project_name}'
+
+        init_script = template_path / 'init.sh'
+        if init_script.exists():
+            self.logger.info(f'Running template init.sh for {template_id}')
+
+            from openhands.events.action import CmdRunAction
+
+            init_action = CmdRunAction(
+                command=f'bash /openhands/templates/{template_id}/init.sh "{project_name}" "{project_dir}"',
+                blocking=True,
+                hidden=True,
+            )
+            init_action.set_hard_timeout(600)
+
+            obs = await call_sync_from_async(self.runtime.run_action, init_action)
+            if hasattr(obs, 'exit_code') and obs.exit_code != 0:
+                self.logger.error(f'Template init.sh failed: {obs}')
+                if self._status_callback:
+                    self._status_callback(
+                        'error',
+                        RuntimeStatus.ERROR_TEMPLATE_INIT,
+                        f'Template initialization failed: {template_id}',
+                    )
+                return
+            self.logger.info(f'Template init.sh completed for {template_id}')
+
+        start_script = template_path / 'start.sh'
+        if start_script.exists():
+            self.logger.info(
+                f'Starting template frontend in background for {template_id}'
+            )
+
+            from openhands.events.action import CmdRunAction
+
+            start_action = CmdRunAction(
+                command=f'nohup bash /openhands/templates/{template_id}/start.sh "{project_dir}" --background > /tmp/template-start.log 2>&1 &',
+                hidden=True,
+            )
+
+            await call_sync_from_async(self.runtime.run_action, start_action)
+            self.logger.info(
+                f'Template start.sh launched in background for {template_id}'
+            )
+
+        if self._status_callback:
+            self._status_callback(
+                'info',
+                RuntimeStatus.TEMPLATE_INITIALIZED,
+                f'Template initialized: {template_id}',
+            )

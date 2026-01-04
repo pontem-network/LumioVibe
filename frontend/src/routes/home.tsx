@@ -1,15 +1,16 @@
-import React from "react";
 import { PrefetchPageLinks } from "react-router";
 import { HomeHeader } from "#/components/features/home/home-header/home-header";
-import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
-import { GitRepository } from "#/types/git";
-import { NewConversation } from "#/components/features/home/new-conversation/new-conversation";
 import { RecentConversations } from "#/components/features/home/recent-conversations/recent-conversations";
+import { TemplateGrid } from "#/components/features/home/templates";
+import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversations";
 
 <PrefetchPageLinks page="/conversations/:conversationId" />;
 
 function HomeScreen() {
-  const [selectedRepo] = React.useState<GitRepository | null>(null);
+  const { data: conversationsList } = usePaginatedConversations(10);
+  const conversations =
+    conversationsList?.pages.flatMap((page) => page.results) ?? [];
+  const hasApps = conversations.length > 0;
 
   return (
     <div
@@ -21,21 +22,21 @@ function HomeScreen() {
       <div className="pt-[25px] flex justify-center">
         <div
           id="new_conversation_section"
-          className="flex flex-col gap-5 px-6 sm:max-w-full sm:min-w-full md:flex-row lg:px-0 lg:max-w-[703px] lg:min-w-[703px]"
+          className="flex flex-col gap-6 px-6 w-full lg:px-0 lg:max-w-[1000px]"
           data-testid="home-screen-new-conversation-section"
         >
-          {/* <RepoConnector onRepoSelection={(repo) => setSelectedRepo(repo)} /> */}
-          <NewConversation />
-        </div>
-      </div>
-
-      <div className="pt-4 flex sm:justify-start md:justify-center">
-        <div
-          className="flex flex-col gap-5 px-6 md:flex-row min-w-full md:max-w-full lg:px-0 lg:max-w-[703px] lg:min-w-[703px]"
-          data-testid="home-screen-recent-conversations-section"
-        >
-          <RecentConversations />
-          <TaskSuggestions filterFor={selectedRepo} />
+          {hasApps ? (
+            <>
+              {/* User has apps - show apps first, then templates */}
+              <RecentConversations />
+              <TemplateGrid compact />
+            </>
+          ) : (
+            <>
+              {/* New user - show templates with New App button */}
+              <TemplateGrid showNewAppButton />
+            </>
+          )}
         </div>
       </div>
     </div>

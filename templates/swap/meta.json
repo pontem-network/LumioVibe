@@ -1,0 +1,9 @@
+{
+  "id": "swap",
+  "name": "DEX Swap",
+  "description": "Full-featured DEX interface with token swapping, liquidity pools, portfolio tracking and analytics",
+  "category": "defi",
+  "difficulty": "advanced",
+  "features": ["token swap", "liquidity pools", "portfolio tracking", "analytics", "price charts"],
+  "default": false
+}

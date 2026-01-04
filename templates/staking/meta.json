@@ -1,0 +1,15 @@
+{
+  "id": "staking",
+  "name": "Staking Pool",
+  "description": "Stake tokens to earn rewards over time. Learn DeFi mechanics with Move.",
+  "category": "defi",
+  "difficulty": "intermediate",
+  "features": [
+    "stake",
+    "unstake",
+    "claim rewards",
+    "APY calculation",
+    "pool stats"
+  ],
+  "default": false
+}

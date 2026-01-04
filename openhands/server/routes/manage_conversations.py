@@ -203,6 +203,7 @@ class InitSessionRequest(BaseModel):
     create_microagent: CreateMicroagent | None = None
     conversation_instructions: str | None = None
     mcp_config: MCPConfig | None = None
+    template_id: str | None = None
     # Only nested runtimes require the ability to specify a conversation id, and it could be a security risk
     if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
         conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
@@ -282,6 +283,7 @@ async def new_conversation(
             git_provider=git_provider,
             conversation_id=conversation_id,
             mcp_config=data.mcp_config,
+            template_id=data.template_id,
         )
 
         return ConversationResponse(

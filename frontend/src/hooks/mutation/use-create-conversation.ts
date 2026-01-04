@@ -19,6 +19,7 @@ interface CreateConversationVariables {
   createMicroagent?: CreateMicroagent;
   parentConversationId?: string;
   agentType?: "default" | "plan";
+  templateId?: string;
 }
 
 // Response type that combines both V1 and legacy responses
@@ -48,6 +49,7 @@ export const useCreateConversation = () => {
         createMicroagent,
         parentConversationId,
         agentType,
+        templateId,
       } = variables;
 
       const useV1 = USE_V1_CONVERSATION_API() && !createMicroagent;
@@ -86,6 +88,7 @@ export const useCreateConversation = () => {
         repository?.branch,
         conversationInstructions,
         createMicroagent,
+        templateId,
       );
 
       return {
