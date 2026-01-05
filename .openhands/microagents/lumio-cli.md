@@ -1,66 +1,77 @@
 ---
 name: lumio-cli
 type: repo
-version: 3.0.0
+version: 5.0.0
 agent: CodeActAgent
 ---
 
-# Lumio CLI Reference
+# Lumio CLI & LumioVibe CLI Reference
 
-Lumio CLI is a fork of Aptos CLI for Lumio Network.
+## Two CLIs Available
 
-## CRITICAL: Auto-Setup
+1. **`lumio`** - Low-level Lumio/Aptos CLI for Move compilation and deployment
+2. **`lu`** - High-level LumioVibe CLI for project management
+
+## CRITICAL: Background Auto-Setup
 
 <IMPORTANT>
-⚠️⚠️⚠️ READ THIS CAREFULLY ⚠️⚠️⚠️
+The counter template **auto-deploys in BACKGROUND** when conversation starts!
 
-The counter template **auto-deploys** when conversation starts!
-- Project location: `/workspace/app`
-- Config location: `/workspace/.lumio/config.yaml`
-- Contract already deployed
-- Frontend already running
-
-❌ DO NOT run `lumio init` manually - template handles it!
-❌ DO NOT manually create new projects!
-
-✅ Check existing project:
+**FIRST: Check if init is complete:**
 ```bash
-ls /workspace/app
-cat /workspace/app/frontend/.env
+lu init-status
 ```
 
-✅ Redeploy after changes:
+Possible statuses:
+- `step:X/6:action` - Still initializing (wait ~60-90 sec)
+- `complete` - Ready to use!
+- `error:...` - Check `/tmp/lumiovibe-init.log`
+
+**Wait for completion if needed:**
 ```bash
-bash /openhands/templates/counter/redeploy.sh /workspace/app
+sleep 10 && lu init-status
+```
+
+**Once complete:**
+- Project location: `/workspace/app`
+- Config location: `/workspace/.lumio/config.yaml`
+- Contract deployed
+- Frontend running
+
+Use `lu` commands:
+```bash
+lu status                    # Check project status
+lu redeploy                  # Redeploy contract
+lu redeploy --new-account    # Redeploy with new account
 ```
 </IMPORTANT>
 
-## Workflow
+## `lu` Commands (Preferred)
 
 ```bash
-# Project is already at /workspace/app
+# Project management
+lu init counter my_app       # Create project from template
+lu list                      # List available templates
 
-# Modify contract
-cd /workspace/app/contract
-# Edit sources/counter.move
+# Frontend
+lu start                     # Start frontend in background
+lu stop                      # Stop frontend
+lu status                    # Check status + recent logs
+lu logs -f                   # Follow logs in real-time
 
-# Compile
-lumio move compile --package-dir .
-
-# Test
-lumio move test --package-dir .
-
-# Redeploy (updates frontend automatically!)
-bash /openhands/templates/counter/redeploy.sh /workspace/app
+# Contract
+lu redeploy                  # Redeploy (same account)
+lu redeploy --new-account    # Redeploy (new account for ABI changes)
 ```
 
-## Common Commands
+## `lumio` Commands (Low-Level)
 
-### Compilation
+### Compilation & Testing
 
 ```bash
-# Compile Move package
 cd /workspace/app/contract
+
+# Compile Move package
 lumio move compile --package-dir .
 
 # Run tests
@@ -83,28 +94,34 @@ lumio account list | grep "Account Address"
 ### Deployment
 
 ```bash
-# Manual deploy (prefer redeploy.sh instead!)
+# Manual deploy (prefer `lu redeploy` instead!)
 cd /workspace/app/contract
 lumio move deploy --package-dir . --assume-yes
 
-# Contract address = deployer's address (from lumio account list)
+# Contract address = deployer's address
 ```
 
-## Redeploy Scripts
+## Workflow
 
 ```bash
-# Redeploy with current account (compatible changes)
-bash /openhands/templates/counter/redeploy.sh /workspace/app
+# Project is already at /workspace/app
 
-# Redeploy with NEW account (ABI incompatible changes)
-bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
+# Check status
+lu status
+
+# Modify contract
+cd /workspace/app/contract
+# Edit sources/counter.move
+
+# Compile
+lumio move compile --package-dir .
+
+# Test
+lumio move test --package-dir .
+
+# Redeploy (updates frontend automatically!)
+lu redeploy
 ```
-
-The script automatically:
-1. Compiles contract
-2. Deploys to Lumio testnet
-3. Updates `.env` with new contract address
-4. Restarts frontend
 
 ## Troubleshooting
 
@@ -115,15 +132,14 @@ The script automatically:
 | `Unable to find config` | Check `/workspace/.lumio/config.yaml` exists |
 | `Account does not exist` | Run `lumio account fund-with-faucet --amount 100000000` |
 | `Insufficient balance` | Run `lumio account fund-with-faucet --amount 100000000` |
-| `Module already published` | Use redeploy script |
+| `Module already published` | Use `lu redeploy` |
 | `Compilation failed` | Fix Move code errors shown in output |
-| `BACKWARD_INCOMPATIBLE` | Use `redeploy.sh --new-account` |
+| `BACKWARD_INCOMPATIBLE` | Use `lu redeploy --new-account` |
 
 ### ABI Incompatible / Need New Account
 
 ```bash
-# Use the redeploy script with --new-account flag
-bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
+lu redeploy --new-account
 ```
 
 This automatically:
@@ -133,6 +149,20 @@ This automatically:
 - Updates frontend .env
 - Deploys contract
 - Restarts frontend
+
+### Frontend Issues
+
+```bash
+# Check status and logs
+lu status
+lu logs
+
+# Restart frontend
+lu start
+
+# Stop frontend
+lu stop
+```
 
 ### Faucet Not Working
 
@@ -174,6 +204,9 @@ lumio move deploy --package-dir . --assume-yes
 ## Example Session
 
 ```bash
+# Check project status
+lu status
+
 # Check deployed address
 cat /workspace/app/frontend/.env
 # VITE_CONTRACT_ADDRESS=0x...
@@ -191,8 +224,11 @@ lumio move test --package-dir .
 # ✅ All tests pass
 
 # Redeploy
-bash /openhands/templates/counter/redeploy.sh /workspace/app
+lu redeploy
 # ✅ Contract redeployed
 # ✅ Frontend updated with new address
 # ✅ Frontend restarted
+
+# Check logs
+lu logs -f
 ```

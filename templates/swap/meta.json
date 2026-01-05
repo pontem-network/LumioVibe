@@ -5,5 +5,9 @@
   "category": "defi",
   "difficulty": "advanced",
   "features": ["token swap", "liquidity pools", "portfolio tracking", "analytics", "price charts"],
-  "default": false
+  "default": false,
+  "env": {
+    "VITE_NETWORK": "testnet",
+    "VITE_API_URL": "https://api.testnet.lumio.io/v1"
+  }
 }

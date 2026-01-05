@@ -380,6 +380,67 @@ class ActionExecutor:
             assert obs.exit_code == 0
         logger.debug('Bash init commands completed')
 
+        # LumioVibe: Auto-start frontend if project exists
+        await self._maybe_start_lumiovibe_frontend()
+
+    async def _maybe_start_lumiovibe_frontend(self):
+        """LumioVibe: Auto-init new project or auto-start existing frontend."""
+        app_port = os.environ.get('APP_PORT_1')
+        if not app_port:
+            return
+
+        workspace = Path(self._initial_cwd)
+        frontend_dir = None
+
+        # Check /workspace/app/frontend (standard location)
+        candidate = workspace / 'app' / 'frontend'
+        if candidate.exists() and (candidate / 'package.json').exists():
+            frontend_dir = candidate
+
+        # If not found, search for any project with frontend/package.json
+        if not frontend_dir:
+            for item in workspace.iterdir():
+                if item.is_dir() and not item.name.startswith('.'):
+                    candidate = item / 'frontend'
+                    if candidate.exists() and (candidate / 'package.json').exists():
+                        frontend_dir = candidate
+                        break
+
+        # If no project found, auto-init counter template in background
+        if not frontend_dir:
+            logger.info('LumioVibe: No project found, starting background init...')
+            action = CmdRunAction(command='lu init counter --background')
+            action.set_hard_timeout(10)  # Quick return for background init
+            try:
+                obs = await self.run(action)
+                if isinstance(obs, CmdOutputObservation):
+                    logger.info(f'LumioVibe: Background init started, check with: lu init-status')
+                else:
+                    logger.warning(f'LumioVibe: Init returned unexpected: {obs}')
+            except Exception as e:
+                logger.warning(f'LumioVibe: Error starting auto-init: {e}')
+            return
+
+        # Check if node_modules exists (dependencies installed)
+        if not (frontend_dir / 'node_modules').exists():
+            logger.info('LumioVibe: Frontend found but node_modules missing, skipping auto-start')
+            return
+
+        project_dir = frontend_dir.parent
+        logger.info(f'LumioVibe: Auto-starting frontend at {project_dir}...')
+
+        # Use lu CLI to start frontend
+        action = CmdRunAction(command=f'lu start {project_dir}')
+        action.set_hard_timeout(30)
+        try:
+            obs = await self.run(action)
+            if isinstance(obs, CmdOutputObservation):
+                logger.info(f'LumioVibe: Frontend started on port {app_port}')
+            else:
+                logger.warning(f'LumioVibe: Failed to start frontend: {obs}')
+        except Exception as e:
+            logger.warning(f'LumioVibe: Error starting frontend: {e}')
+
     async def run_action(self, action) -> Observation:
         async with self.lock:
             action_type = action.action

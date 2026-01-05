@@ -107,11 +107,11 @@ lumio move compile --package-dir .
 # Test (MANDATORY before deploy!)
 lumio move test --package-dir .
 
-# Deploy
-bash /openhands/templates/counter/redeploy.sh /workspace/app
+# Deploy (same account)
+lu redeploy
 
 # Deploy with new account (for ABI changes)
-bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
+lu redeploy --new-account
 ```
 
 ## Working with Native Coin (LumioCoin)

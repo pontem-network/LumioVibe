@@ -1,13 +1,14 @@
 ---
 name: lumio-deploy
 type: knowledge
-version: 1.0.0
+version: 2.0.0
 agent: CodeActAgent
 triggers:
 - deploy
 - redeploy
 - publish
 - lumio cli
+- lu redeploy
 ---
 
 # Lumio Contract Deployment
@@ -21,7 +22,7 @@ The counter template auto-deploys on conversation start:
 
 Check current state:
 ```bash
-ls /workspace/app
+lu status
 cat /workspace/app/frontend/.env
 ```
 
@@ -47,15 +48,15 @@ lumio move test --package-dir .
 
 **Standard deploy (same account):**
 ```bash
-bash /openhands/templates/counter/redeploy.sh /workspace/app
+lu redeploy
 ```
 
 **New account (for ABI incompatible changes):**
 ```bash
-bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
+lu redeploy --new-account
 ```
 
-The script automatically:
+The `lu redeploy` command automatically:
 1. Compiles contract
 2. Deploys to Lumio testnet
 3. Updates `.env` with new contract address
@@ -70,7 +71,7 @@ lumio account fund-with-faucet --amount 100000000
 # Check account
 lumio account list
 
-# Manual deploy (prefer redeploy.sh!)
+# Manual deploy (prefer lu redeploy!)
 cd /workspace/app/contract
 lumio move deploy --package-dir . --assume-yes
 ```
@@ -79,11 +80,11 @@ lumio move deploy --package-dir . --assume-yes
 
 | Error | Solution |
 |-------|----------|
-| `BACKWARD_INCOMPATIBLE_MODULE_UPDATE` | Use `--new-account` flag |
+| `BACKWARD_INCOMPATIBLE_MODULE_UPDATE` | Use `lu redeploy --new-account` |
 | `Account does not exist` | Run `lumio account fund-with-faucet` |
 | `Insufficient balance` | Run `lumio account fund-with-faucet` |
 | `Compilation failed` | Fix Move code errors |
-| Frontend shows old address | Check `.env` was updated, restart frontend |
+| Frontend shows old address | Run `lu start` to restart frontend |
 
 ## After Deployment
 

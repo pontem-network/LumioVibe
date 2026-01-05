@@ -1,7 +1,7 @@
 ---
 name: lumiovibe
 type: repo
-version: 9.0.0
+version: 11.0.0
 agent: CodeActAgent
 ---
 
@@ -20,13 +20,40 @@ Create dApps that look like premium Web3 products:
 
 **DO NOT make generic boring UIs!** Every dApp should feel unique and polished.
 
-## Project Auto-Setup
+## Project Auto-Setup (BACKGROUND)
 
-**When a new conversation starts, the counter template is automatically deployed to `/workspace/app`.**
+<IMPORTANT>
+**The counter template initializes in BACKGROUND when conversation starts!**
+
+This means:
+- Init runs asynchronously (takes ~60-90 seconds)
+- You MUST check init status before working with the project
+- Do NOT assume the project is ready immediately
+
+**FIRST THING TO DO - Check init status:**
+```bash
+lu init-status
+```
+
+Possible statuses:
+- `step:X/6:action` - Init in progress (wait and check again)
+- `complete` - Ready to use!
+- `error:...` - Something failed (check logs)
+
+**If init is still running, wait and check again:**
+```bash
+sleep 10 && lu init-status
+```
+
+**Once complete, verify frontend is running:**
+```bash
+lu status
+```
+</IMPORTANT>
 
 The template includes:
-- Move contract (already deployed!)
-- React frontend (already running!)
+- Move contract (deployed after init completes)
+- React frontend (running after init completes)
 - `.env` file with contract address and private key
 
 **Frontend URL for user:** `$APP_BASE_URL_1`
@@ -34,14 +61,40 @@ The template includes:
 
 ---
 
-## ⛔ CRITICAL RULES
+## LumioVibe CLI (`lu`)
 
-### Rule 1: Project is Already Running
-The template auto-deploys on conversation start. Check status:
+Use the `lu` command for all project management:
+
 ```bash
-ls /workspace/app
-cat /workspace/app/frontend/.env
+# Check background init progress (FIRST THING TO DO!)
+lu init-status                   # Check if init is complete
+
+# Create new project from template
+lu init counter my_app           # counter, token, nft, staking, swap
+lu init counter -b               # Run in background
+lu list                          # List available templates
+
+# Frontend management
+lu start                         # Start frontend in background
+lu stop                          # Stop frontend
+lu status                        # Check status and recent logs
+lu logs -f                       # Follow logs in real-time
+
+# Contract management
+lu redeploy                      # Redeploy contract (same account)
+lu redeploy --new-account        # Redeploy with new account (ABI changes)
 ```
+
+---
+
+## CRITICAL RULES
+
+### Rule 1: Check Init Status First!
+The template auto-deploys in BACKGROUND. Always check first:
+```bash
+lu init-status
+```
+If not complete, wait and check again. Only proceed when status is `complete`.
 
 ### Rule 2: spec.md BEFORE Code Changes
 You MUST fill spec.md with complete requirements BEFORE modifying contract code.
@@ -49,16 +102,16 @@ You MUST fill spec.md with complete requirements BEFORE modifying contract code.
 ### Rule 3: No Mock Data
 ALL data must come from blockchain via view functions. NEVER hardcode values.
 
-### Rule 4: Use Template Scripts
+### Rule 4: Use `lu` Commands
 ```bash
 # Redeploy contract (same account)
-bash /openhands/templates/counter/redeploy.sh /workspace/app
+lu redeploy
 
 # Redeploy with NEW account (for incompatible changes)
-bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
+lu redeploy --new-account
 
 # Restart frontend
-bash /openhands/templates/counter/start.sh /workspace/app --background
+lu start
 ```
 
 ---
@@ -67,8 +120,15 @@ bash /openhands/templates/counter/start.sh /workspace/app --background
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ AUTO: Template deployed to /workspace/app                         │
-│ → Contract compiled and deployed                                  │
+│ Phase 0: WAIT FOR BACKGROUND INIT (FIRST!)                       │
+│ → Run: lu init-status                                            │
+│ → Wait until status is "complete"                                │
+│ → Then: lu status (verify frontend running)                      │
+└──────────────────────────────────────────────────────────────────┘
+                          ↓
+┌──────────────────────────────────────────────────────────────────┐
+│ AUTO (background): Template deployed to /workspace/app           │
+│ → Contract compiled and deployed                                 │
 │ → Frontend running at $APP_BASE_URL_1                            │
 │ → .env file created with VITE_CONTRACT_ADDRESS                   │
 └──────────────────────────────────────────────────────────────────┘
@@ -96,7 +156,7 @@ bash /openhands/templates/counter/start.sh /workspace/app --background
                           ↓
 ┌──────────────────────────────────────────────────────────────────┐
 │ Phase 4: REDEPLOY CONTRACT                                        │
-│ → bash /openhands/templates/counter/redeploy.sh /workspace/app   │
+│ → lu redeploy                                                    │
 │ → Frontend auto-restarts with new contract address               │
 └──────────────────────────────────────────────────────────────────┘
                           ↓
@@ -142,7 +202,7 @@ bash /openhands/templates/counter/start.sh /workspace/app --background
 
 ## Phase 1: Fill spec.md
 
-**⛔ DO NOT MODIFY CONTRACT UNTIL SPEC IS COMPLETE!**
+**DO NOT MODIFY CONTRACT UNTIL SPEC IS COMPLETE!**
 
 Create `/workspace/app/spec.md` with ALL sections:
 
@@ -259,7 +319,7 @@ cd /workspace/app/contract
 lumio move test --package-dir .
 ```
 
-**⛔ DO NOT DEPLOY UNTIL ALL TESTS PASS!**
+**DO NOT DEPLOY UNTIL ALL TESTS PASS!**
 
 ---
 
@@ -269,10 +329,10 @@ After contract changes, redeploy:
 
 ```bash
 # Same account (for compatible changes)
-bash /openhands/templates/counter/redeploy.sh /workspace/app
+lu redeploy
 
 # New account (for incompatible ABI changes)
-bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
+lu redeploy --new-account
 ```
 
 The script automatically:
@@ -285,7 +345,7 @@ The script automatically:
 
 ## Phase 5: Customize Frontend
 
-### ⛔ Build-Check-Restart Development Cycle
+### Build-Check-Restart Development Cycle
 
 <IMPORTANT>
 ALWAYS verify frontend builds after changes!
@@ -298,7 +358,7 @@ cd /workspace/app/frontend && pnpm build
 
 # 3a. If build FAILS → fix errors, repeat step 2
 # 3b. If build SUCCEEDS → restart dev server
-bash /openhands/templates/counter/start.sh /workspace/app --background
+lu start
 
 # 4. Browser test the changes
 ```
@@ -388,10 +448,10 @@ const handleAction = async () => {
 Use localhost for browser() tool:
 
 ```python
-# ✅ CORRECT
+# CORRECT
 goto("http://localhost:$APP_PORT_1")
 
-# ❌ WRONG - external URL won't work
+# WRONG - external URL won't work
 goto("$APP_BASE_URL_1")
 ```
 
@@ -417,20 +477,22 @@ The screenshot will be displayed as the app preview on the home page.
 
 ## Quick Reference
 
-### Scripts
+### `lu` Commands
 
 ```bash
-# Redeploy contract (same account)
-bash /openhands/templates/counter/redeploy.sh /workspace/app
+# Project management
+lu init counter my_app           # Create from template
+lu list                          # List templates
 
-# Redeploy with new account
-bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
+# Frontend
+lu start                         # Start frontend
+lu stop                          # Stop frontend
+lu status                        # Check status + logs
+lu logs -f                       # Follow logs
 
-# Restart frontend
-bash /openhands/templates/counter/start.sh /workspace/app --background
-
-# Start frontend in test mode (for browser testing)
-bash /openhands/templates/counter/start.sh /workspace/app --test --background
+# Contract
+lu redeploy                      # Redeploy (same account)
+lu redeploy --new-account        # Redeploy (new account)
 ```
 
 ### Lumio CLI Commands
@@ -442,7 +504,7 @@ cd /workspace/app/contract && lumio move compile --package-dir .
 # Test contract
 cd /workspace/app/contract && lumio move test --package-dir .
 
-# Manual deploy (prefer redeploy.sh instead)
+# Manual deploy (prefer lu redeploy instead)
 cd /workspace/app/contract && lumio move deploy --package-dir . --assume-yes
 
 # Check account balance
@@ -477,7 +539,7 @@ The frontend reads from `.env`:
 
 Contract ABI changed incompatibly. Use new account:
 ```bash
-bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
+lu redeploy --new-account
 ```
 
 ### Frontend Shows Old Contract Address
@@ -489,7 +551,7 @@ cat /workspace/app/frontend/.env
 
 Restart frontend:
 ```bash
-bash /openhands/templates/counter/start.sh /workspace/app --background
+lu start
 ```
 
 ### Data Not Updating After Transaction
@@ -524,7 +586,7 @@ lumio account fund-with-faucet --amount 100000000
 2. Modify contract
 3. Write/update tests
 4. Run tests until pass
-5. Redeploy: `bash /openhands/templates/counter/redeploy.sh /workspace/app`
+5. Redeploy: `lu redeploy`
 6. Update frontend
 7. Browser test
 
@@ -539,13 +601,13 @@ lumio account fund-with-faucet --amount 100000000
 
 If everything is broken:
 ```bash
-# Check logs
-cat /tmp/template-start.log
-cat /tmp/frontend-*.log
+# Check status and logs
+lu status
+lu logs
 
 # Restart frontend
-bash /openhands/templates/counter/start.sh /workspace/app --background
+lu start
 
 # Or redeploy everything with new account
-bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
+lu redeploy --new-account
 ```

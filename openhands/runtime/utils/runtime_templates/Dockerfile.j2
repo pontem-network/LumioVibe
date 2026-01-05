@@ -390,8 +390,12 @@ RUN chown -R openhands:openhands /openhands/microagents
 
 # Copy project templates to /openhands/templates (not visible in /workspace)
 COPY --chown=openhands:openhands ./code/templates /openhands/templates
-RUN chmod +x /openhands/templates/*.sh 2>/dev/null || true && \
-    chmod +x /openhands/templates/*/*.sh 2>/dev/null || true
+
+# ================================================================
+# Install LumioVibe CLI (lu) - universal project management tool
+# ================================================================
+COPY --chown=openhands:openhands ./code/openhands/bin/lu /openhands/bin/lu
+RUN chmod +x /openhands/bin/lu
 
 # ================================================================
 # Lumio CLI initialization happens at runtime via lumiovibe-prepare.sh

@@ -1,0 +1,716 @@
+#!/usr/bin/env python3
+"""
+LumioVibe CLI (lu) - Universal tool for Lumio dApp development
+
+Commands:
+    lu init <template> [project_name]  - Create project from template
+    lu start [project_dir]             - Start frontend in background
+    lu stop                            - Stop frontend
+    lu status                          - Check frontend status and logs
+    lu redeploy [project_dir]          - Redeploy contract
+    lu logs [-f]                       - Show frontend logs
+
+Examples:
+    lu init counter my_dapp
+    lu start /workspace/app
+    lu status
+    lu logs -f
+    lu redeploy /workspace/app --new-account
+"""
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+from pathlib import Path
+from typing import Optional
+
+# Colors for terminal output
+RED = '\033[0;31m'
+GREEN = '\033[0;32m'
+YELLOW = '\033[1;33m'
+BLUE = '\033[0;34m'
+CYAN = '\033[0;36m'
+NC = '\033[0m'  # No Color
+BOLD = '\033[1m'
+
+# Init status file for background init
+INIT_STATUS_FILE = Path('/tmp/lumiovibe-init-status')
+INIT_LOG_FILE = Path('/tmp/lumiovibe-init.log')
+
+
+def log_info(msg: str):
+    print(f'{GREEN}[INFO]{NC} {msg}')
+
+
+def log_warn(msg: str):
+    print(f'{YELLOW}[WARN]{NC} {msg}')
+
+
+def log_error(msg: str):
+    print(f'{RED}[ERROR]{NC} {msg}')
+
+
+def log_step(step: int, total: int, msg: str):
+    print(f'{CYAN}[{step}/{total}]{NC} {msg}')
+
+
+def run_cmd(
+    cmd: str, cwd: Optional[str] = None, capture: bool = True
+) -> tuple[int, str]:
+    """Run shell command and return exit code and output."""
+    try:
+        result = subprocess.run(
+            cmd,
+            shell=True,
+            cwd=cwd,
+            capture_output=capture,
+            text=True,
+        )
+        output = result.stdout + result.stderr if capture else ''
+        return result.returncode, output
+    except Exception as e:
+        return 1, str(e)
+
+
+class LumioCLI:
+    """LumioVibe CLI for managing Lumio dApps."""
+
+    TEMPLATES_DIR = Path('/openhands/templates')
+    WORKSPACE = Path(os.environ.get('WORKSPACE', '/workspace'))
+    LUMIO_BIN = os.environ.get('LUMIO_BIN', 'lumio')
+    PID_FILE = Path('/tmp/lumiovibe-frontend.pid')
+    LOG_FILE = Path('/tmp/lumiovibe-frontend.log')
+    PROJECT_FILE = Path('/tmp/lumiovibe-current-project')
+
+    def __init__(self):
+        self.app_port = os.environ.get('APP_PORT_1', '50000')
+        self.app_base_url = os.environ.get(
+            'APP_BASE_URL_1', f'http://localhost:{self.app_port}'
+        )
+
+    # =========================================================================
+    # INIT - Create project from template
+    # =========================================================================
+    def init(
+        self,
+        template: str,
+        project_name: Optional[str] = None,
+        project_dir: Optional[str] = None,
+        background: bool = False,
+    ):
+        """Initialize a new project from template."""
+        # Background mode: fork and run in background
+        if background:
+            return self._init_background(template, project_name, project_dir)
+
+        return self._init_foreground(template, project_name, project_dir)
+
+    def _init_background(
+        self,
+        template: str,
+        project_name: Optional[str] = None,
+        project_dir: Optional[str] = None,
+    ) -> int:
+        """Run init in background."""
+        import subprocess
+
+        # Build command
+        cmd = f'lu init {template}'
+        if project_name:
+            cmd += f' {project_name}'
+        if project_dir:
+            cmd += f' --dir {project_dir}'
+
+        # Mark as starting
+        INIT_STATUS_FILE.write_text('starting')
+
+        # Run in background with nohup
+        full_cmd = f'nohup {cmd} > {INIT_LOG_FILE} 2>&1 &'
+        subprocess.Popen(full_cmd, shell=True)
+
+        log_info(f'Initializing {template} in background...')
+        log_info(f'Check progress: lu init-status')
+        log_info(f'View logs: tail -f {INIT_LOG_FILE}')
+        return 0
+
+    def _init_foreground(
+        self,
+        template: str,
+        project_name: Optional[str] = None,
+        project_dir: Optional[str] = None,
+    ):
+        """Initialize project in foreground."""
+        template_path = self.TEMPLATES_DIR / template
+
+        if not template_path.exists():
+            log_error(f"Template '{template}' not found")
+            log_info(f'Available templates: {", ".join(self.list_templates())}')
+            INIT_STATUS_FILE.write_text('error: template not found')
+            return 1
+
+        # Update status
+        INIT_STATUS_FILE.write_text('running')
+
+        # Load template metadata
+        meta = self._load_meta(template_path)
+        default_name = f'my_{template}'
+        project_name = project_name or default_name
+
+        if project_dir:
+            project_path = Path(project_dir)
+        else:
+            project_path = self.WORKSPACE / 'app'
+
+        print(f'\n{BOLD}{"=" * 50}{NC}')
+        print(f'{BOLD}  LumioVibe: {meta.get("name", template)}{NC}')
+        print(f'{BOLD}{"=" * 50}{NC}\n')
+
+        total_steps = 6
+
+        # Step 1: Setup Lumio account
+        INIT_STATUS_FILE.write_text('step:1/6:account')
+        log_step(1, total_steps, 'Setting up Lumio account...')
+        deployer_address, private_key = self._setup_account()
+        if not deployer_address:
+            log_error('Failed to setup Lumio account')
+            INIT_STATUS_FILE.write_text('error: failed to setup account')
+            return 1
+        log_info(f'Deployer: {deployer_address}')
+
+        # Step 2: Fund account
+        INIT_STATUS_FILE.write_text('step:2/6:faucet')
+        log_step(2, total_steps, 'Funding account from faucet...')
+        self._fund_account()
+
+        # Step 3: Copy template
+        INIT_STATUS_FILE.write_text('step:3/6:copy')
+        log_step(3, total_steps, 'Copying template files...')
+        if project_path.exists():
+            log_warn('Directory exists, removing...')
+            shutil.rmtree(project_path)
+
+        project_path.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(template_path / 'contract', project_path / 'contract')
+        shutil.copytree(template_path / 'frontend', project_path / 'frontend')
+
+        # Step 4: Configure project
+        INIT_STATUS_FILE.write_text('step:4/6:configure')
+        log_step(4, total_steps, 'Configuring project...')
+        self._replace_placeholders(project_path, project_name, deployer_address)
+        self._create_env_file(project_path, deployer_address, private_key, meta)
+
+        # Step 5: Deploy contract
+        INIT_STATUS_FILE.write_text('step:5/6:deploy')
+        log_step(5, total_steps, 'Deploying contract...')
+        if not self._deploy_contract(project_path / 'contract'):
+            log_warn('Contract deployment may have issues, check manually')
+
+        # Step 6: Start frontend
+        INIT_STATUS_FILE.write_text('step:6/6:frontend')
+        log_step(6, total_steps, 'Starting frontend...')
+        self._install_deps(project_path / 'frontend')
+        self.start(str(project_path))
+
+        # Save project info
+        self.PROJECT_FILE.write_text(str(project_path))
+
+        # Done!
+        INIT_STATUS_FILE.write_text('complete')
+        print(f'\n{GREEN}{"=" * 50}{NC}')
+        print(f'{GREEN}  Project initialized successfully!{NC}')
+        print(f'{GREEN}{"=" * 50}{NC}\n')
+        print(f'Project:  {project_path}')
+        print(f'Deployer: {deployer_address}')
+        print(f'Frontend: {self.app_base_url}')
+        print(f'\nRun {CYAN}lu status{NC} to check frontend status')
+        print(f'Run {CYAN}lu logs -f{NC} to follow frontend logs\n')
+
+        return 0
+
+    def init_status(self) -> int:
+        """Check init status."""
+        if not INIT_STATUS_FILE.exists():
+            print('No init in progress')
+            return 0
+
+        status = INIT_STATUS_FILE.read_text().strip()
+
+        if status == 'complete':
+            print(f'{GREEN}Init complete!{NC}')
+            # Show frontend status
+            return self.status()
+        elif status.startswith('error'):
+            print(f'{RED}Init failed: {status}{NC}')
+            return 1
+        elif status.startswith('step:'):
+            parts = status.split(':')
+            step = parts[1] if len(parts) > 1 else '?'
+            action = parts[2] if len(parts) > 2 else ''
+            print(f'{YELLOW}Init in progress: {step} ({action}){NC}')
+
+            # Show recent log
+            if INIT_LOG_FILE.exists():
+                print(f'\nRecent output:')
+                code, output = run_cmd(f'tail -5 {INIT_LOG_FILE}')
+                print(output)
+            return 0
+        else:
+            print(f'Init status: {status}')
+            return 0
+
+    def _load_meta(self, template_path: Path) -> dict:
+        """Load template metadata from meta.json."""
+        meta_file = template_path / 'meta.json'
+        if meta_file.exists():
+            return json.loads(meta_file.read_text())
+        return {}
+
+    def _setup_account(self) -> tuple[Optional[str], Optional[str]]:
+        """Setup or get existing Lumio account."""
+        config_path = self.WORKSPACE / '.lumio' / 'config.yaml'
+
+        deployer_address = None
+        private_key = None
+
+        if config_path.exists():
+            log_info('Using existing Lumio config...')
+            content = config_path.read_text()
+            for line in content.split('\n'):
+                if 'account:' in line:
+                    deployer_address = line.split(':')[-1].strip().strip('"\'')
+                if 'private_key:' in line:
+                    private_key = line.split(':')[-1].strip().strip('"\'')
+                    private_key = private_key.replace('ed25519-priv-', '')
+
+        if not deployer_address:
+            log_info('Creating new Lumio account...')
+            import secrets
+
+            generated_key = secrets.token_hex(32)
+
+            run_cmd(
+                f'{self.LUMIO_BIN} init --assume-yes --network testnet --private-key {generated_key}',
+                cwd=str(self.WORKSPACE),
+            )
+
+            # Re-read config
+            if config_path.exists():
+                content = config_path.read_text()
+                for line in content.split('\n'):
+                    if 'account:' in line:
+                        deployer_address = line.split(':')[-1].strip().strip('"\'')
+                    if 'private_key:' in line:
+                        private_key = line.split(':')[-1].strip().strip('"\'')
+                        private_key = private_key.replace('ed25519-priv-', '')
+
+        # Ensure 0x prefix
+        if deployer_address and not deployer_address.startswith('0x'):
+            deployer_address = f'0x{deployer_address}'
+
+        return deployer_address, private_key
+
+    def _fund_account(self):
+        """Fund account from faucet."""
+        for attempt in range(3):
+            log_info(f'Faucet attempt {attempt + 1}/3...')
+            code, output = run_cmd(
+                f'{self.LUMIO_BIN} account fund-with-faucet --amount 100000000'
+            )
+            if any(word in output.lower() for word in ['success', 'funded', 'added']):
+                log_info('Account funded!')
+                return True
+            time.sleep(3)
+        log_warn('Faucet may have failed, continuing anyway...')
+        return False
+
+    def _replace_placeholders(
+        self, project_path: Path, project_name: str, deployer_address: str
+    ):
+        """Replace placeholders in project files."""
+        # Contract files
+        for file in (project_path / 'contract').rglob('*'):
+            if file.is_file() and file.suffix in ['.move', '.toml']:
+                content = file.read_text()
+                content = content.replace('__PROJECT_NAME__', project_name)
+                content = content.replace('__DEPLOYER_ADDRESS__', deployer_address)
+                file.write_text(content)
+
+        # Frontend package.json
+        pkg_json = project_path / 'frontend' / 'package.json'
+        if pkg_json.exists():
+            content = pkg_json.read_text()
+            content = content.replace('__PROJECT_NAME__', project_name)
+            pkg_json.write_text(content)
+
+    def _create_env_file(
+        self, project_path: Path, deployer_address: str, private_key: str, meta: dict
+    ):
+        """Create .env file for frontend."""
+        env_content = f'VITE_CONTRACT_ADDRESS={deployer_address}\n'
+        env_content += f'VITE_PRIVATE_KEY={private_key}\n'
+
+        # Add template-specific env vars
+        extra_env = meta.get('env', {})
+        for key, value in extra_env.items():
+            env_content += f'{key}={value}\n'
+
+        (project_path / 'frontend' / '.env').write_text(env_content)
+
+    def _deploy_contract(self, contract_path: Path) -> bool:
+        """Compile and deploy contract."""
+        log_info('Compiling contract...')
+        code, output = run_cmd(
+            f'{self.LUMIO_BIN} move compile --package-dir .', cwd=str(contract_path)
+        )
+        if code != 0 and 'BUILDING' not in output and 'Result' not in output:
+            log_error(f'Compile failed: {output}')
+            return False
+
+        log_info('Publishing contract...')
+        code, output = run_cmd(
+            f'{self.LUMIO_BIN} move deploy --package-dir . --assume-yes',
+            cwd=str(contract_path),
+        )
+        if any(
+            word in output.lower() for word in ['success', 'published', 'transaction']
+        ):
+            log_info('Contract deployed!')
+            return True
+
+        log_warn(f'Deploy output: {output[:200]}')
+        return False
+
+    def _install_deps(self, frontend_path: Path):
+        """Install frontend dependencies."""
+        if not (frontend_path / 'node_modules').exists():
+            log_info('Installing dependencies...')
+            run_cmd('pnpm install --silent', cwd=str(frontend_path))
+
+    # =========================================================================
+    # START - Start frontend in background
+    # =========================================================================
+    def start(self, project_dir: Optional[str] = None) -> int:
+        """Start frontend in background."""
+        project_path = self._resolve_project(project_dir)
+        if not project_path:
+            return 1
+
+        frontend_path = project_path / 'frontend'
+        if not frontend_path.exists():
+            log_error(f'Frontend not found at {frontend_path}')
+            return 1
+
+        # Stop any existing frontend
+        self.stop(quiet=True)
+
+        # Install deps if needed
+        self._install_deps(frontend_path)
+
+        log_info(f'Starting frontend on port {self.app_port}...')
+
+        # Start vite in background
+        cmd = f'cd {frontend_path} && nohup pnpm vite --host --port {self.app_port} --strictPort --base / > {self.LOG_FILE} 2>&1 & echo $!'
+
+        code, output = run_cmd(cmd)
+        if code == 0 and output.strip():
+            pid = output.strip().split('\n')[-1]
+            self.PID_FILE.write_text(pid)
+            self.PROJECT_FILE.write_text(str(project_path))
+
+            # Wait for server to start
+            log_info('Waiting for server to start...')
+            for i in range(15):
+                time.sleep(1)
+                code, _ = run_cmd(f'curl -s http://localhost:{self.app_port}')
+                if code == 0:
+                    print(f'\n{GREEN}Frontend is running!{NC}')
+                    print(f'  Local:    http://localhost:{self.app_port}')
+                    print(f'  External: {self.app_base_url}\n')
+                    return 0
+
+            log_warn('Server may still be starting, check with: lu status')
+            return 0
+
+        log_error('Failed to start frontend')
+        return 1
+
+    # =========================================================================
+    # STOP - Stop frontend
+    # =========================================================================
+    def stop(self, quiet: bool = False) -> int:
+        """Stop frontend."""
+
+        # Kill by PID file
+        if self.PID_FILE.exists():
+            pid = self.PID_FILE.read_text().strip()
+            if pid:
+                run_cmd(f'kill -9 {pid} 2>/dev/null')
+            self.PID_FILE.unlink(missing_ok=True)
+
+        # Kill by port
+        run_cmd(f'lsof -ti:{self.app_port} | xargs kill -9 2>/dev/null')
+
+        # Kill vite processes
+        run_cmd("pkill -9 -f 'vite.*--port' 2>/dev/null")
+
+        if not quiet:
+            log_info('Frontend stopped')
+        return 0
+
+    # =========================================================================
+    # STATUS - Check frontend status
+    # =========================================================================
+    def status(self) -> int:
+        """Check frontend status and show recent logs."""
+        print(f'\n{BOLD}LumioVibe Status{NC}\n')
+
+        # Check if running
+        code, _ = run_cmd(
+            f"curl -s -o /dev/null -w '%{{http_code}}' http://localhost:{self.app_port}"
+        )
+
+        if code == 0:
+            print(f'  Frontend: {GREEN}RUNNING{NC}')
+            print(f'  Port:     {self.app_port}')
+            print(f'  URL:      {self.app_base_url}')
+        else:
+            print(f'  Frontend: {RED}STOPPED{NC}')
+
+        # Show PID if available
+        if self.PID_FILE.exists():
+            pid = self.PID_FILE.read_text().strip()
+            print(f'  PID:      {pid}')
+
+        # Show project
+        if self.PROJECT_FILE.exists():
+            project = self.PROJECT_FILE.read_text().strip()
+            print(f'  Project:  {project}')
+
+        # Show recent logs
+        if self.LOG_FILE.exists():
+            print(f'\n{BOLD}Recent Logs:{NC}')
+            print('-' * 40)
+            code, output = run_cmd(f'tail -10 {self.LOG_FILE}')
+            print(output if output else '(no logs)')
+
+        print()
+        return 0
+
+    # =========================================================================
+    # LOGS - Show frontend logs
+    # =========================================================================
+    def logs(self, follow: bool = False) -> int:
+        """Show frontend logs."""
+        if not self.LOG_FILE.exists():
+            log_warn('No log file found')
+            return 1
+
+        if follow:
+            log_info('Following logs (Ctrl+C to stop)...')
+            os.system(f'tail -f {self.LOG_FILE}')
+        else:
+            code, output = run_cmd(f'cat {self.LOG_FILE}')
+            print(output)
+        return 0
+
+    # =========================================================================
+    # REDEPLOY - Redeploy contract
+    # =========================================================================
+    def redeploy(
+        self, project_dir: Optional[str] = None, new_account: bool = False
+    ) -> int:
+        """Redeploy contract and update frontend."""
+        project_path = self._resolve_project(project_dir)
+        if not project_path:
+            return 1
+
+        print(f'\n{BOLD}Redeploying: {project_path.name}{NC}\n')
+
+        contract_path = project_path / 'contract'
+        frontend_path = project_path / 'frontend'
+
+        if new_account:
+            log_info('Creating new account...')
+            # Remove existing config to force new account
+            config_path = self.WORKSPACE / '.lumio' / 'config.yaml'
+            if config_path.exists():
+                config_path.unlink()
+
+            deployer_address, private_key = self._setup_account()
+            if not deployer_address:
+                log_error('Failed to create new account')
+                return 1
+
+            self._fund_account()
+
+            # Update Move.toml with new address
+            move_toml = contract_path / 'Move.toml'
+            if move_toml.exists():
+                content = move_toml.read_text()
+                # Update the address in Move.toml
+                content = re.sub(
+                    r'(\w+)\s*=\s*"0x[a-fA-F0-9]+"',
+                    lambda m: f'{m.group(1)} = "{deployer_address}"',
+                    content,
+                )
+                move_toml.write_text(content)
+
+            # Update .env
+            env_file = frontend_path / '.env'
+            if env_file.exists():
+                content = env_file.read_text()
+                content = re.sub(
+                    r'VITE_CONTRACT_ADDRESS=.*',
+                    f'VITE_CONTRACT_ADDRESS={deployer_address}',
+                    content,
+                )
+                content = re.sub(
+                    r'VITE_PRIVATE_KEY=.*', f'VITE_PRIVATE_KEY={private_key}', content
+                )
+                env_file.write_text(content)
+
+            log_info(f'New deployer: {deployer_address}')
+
+        # Deploy
+        if not self._deploy_contract(contract_path):
+            return 1
+
+        # Restart frontend
+        log_info('Restarting frontend...')
+        self.start(str(project_path))
+
+        print(f'\n{GREEN}Redeploy complete!{NC}\n')
+        return 0
+
+    # =========================================================================
+    # LIST - List available templates
+    # =========================================================================
+    def list_templates(self) -> list[str]:
+        """List available templates."""
+        templates = []
+        if self.TEMPLATES_DIR.exists():
+            for d in self.TEMPLATES_DIR.iterdir():
+                if d.is_dir() and (d / 'meta.json').exists():
+                    templates.append(d.name)
+        return templates
+
+    def list_cmd(self) -> int:
+        """List available templates with details."""
+        print(f'\n{BOLD}Available Templates:{NC}\n')
+
+        for name in sorted(self.list_templates()):
+            meta = self._load_meta(self.TEMPLATES_DIR / name)
+            default = ' (default)' if meta.get('default') else ''
+            print(f'  {CYAN}{name}{NC}{default}')
+            print(f'    {meta.get("description", "No description")}')
+            print(f'    Difficulty: {meta.get("difficulty", "unknown")}')
+            print()
+        return 0
+
+    # =========================================================================
+    # HELPERS
+    # =========================================================================
+    def _resolve_project(self, project_dir: Optional[str]) -> Optional[Path]:
+        """Resolve project directory."""
+        if project_dir:
+            path = Path(project_dir)
+            if path.exists():
+                return path
+            # Try workspace relative
+            path = self.WORKSPACE / project_dir
+            if path.exists():
+                return path
+
+        # Try saved project
+        if self.PROJECT_FILE.exists():
+            path = Path(self.PROJECT_FILE.read_text().strip())
+            if path.exists():
+                return path
+
+        # Try default location
+        path = self.WORKSPACE / 'app'
+        if path.exists():
+            return path
+
+        log_error('Could not find project directory')
+        log_info('Specify project: lu start /workspace/app')
+        return None
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='LumioVibe CLI - Manage Lumio dApps',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__,
+    )
+    subparsers = parser.add_subparsers(dest='command', help='Commands')
+
+    # init
+    init_parser = subparsers.add_parser('init', help='Create project from template')
+    init_parser.add_argument(
+        'template', help='Template name (counter, token, nft, staking, swap)'
+    )
+    init_parser.add_argument('project_name', nargs='?', help='Project name')
+    init_parser.add_argument('--dir', '-d', help='Project directory')
+    init_parser.add_argument(
+        '--background', '-b', action='store_true', help='Run init in background'
+    )
+
+    # init-status
+    subparsers.add_parser('init-status', help='Check init progress')
+
+    # start
+    start_parser = subparsers.add_parser('start', help='Start frontend')
+    start_parser.add_argument('project_dir', nargs='?', help='Project directory')
+
+    # stop
+    subparsers.add_parser('stop', help='Stop frontend')
+
+    # status
+    subparsers.add_parser('status', help='Check frontend status')
+
+    # logs
+    logs_parser = subparsers.add_parser('logs', help='Show frontend logs')
+    logs_parser.add_argument('-f', '--follow', action='store_true', help='Follow logs')
+
+    # redeploy
+    redeploy_parser = subparsers.add_parser('redeploy', help='Redeploy contract')
+    redeploy_parser.add_argument('project_dir', nargs='?', help='Project directory')
+    redeploy_parser.add_argument(
+        '--new-account', action='store_true', help='Create new account'
+    )
+
+    # list
+    subparsers.add_parser('list', help='List available templates')
+
+    args = parser.parse_args()
+    cli = LumioCLI()
+
+    if args.command == 'init':
+        return cli.init(args.template, args.project_name, args.dir, args.background)
+    elif args.command == 'init-status':
+        return cli.init_status()
+    elif args.command == 'start':
+        return cli.start(args.project_dir)
+    elif args.command == 'stop':
+        return cli.stop()
+    elif args.command == 'status':
+        return cli.status()
+    elif args.command == 'logs':
+        return cli.logs(args.follow)
+    elif args.command == 'redeploy':
+        return cli.redeploy(args.project_dir, args.new_account)
+    elif args.command == 'list':
+        return cli.list_cmd()
+    else:
+        parser.print_help()
+        return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main() or 0)

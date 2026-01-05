@@ -169,17 +169,24 @@ Use pre-built CSS classes for professional look:
 <div className="animate-float">
 ```
 
-## Scripts
+## Frontend Commands
 
 ```bash
 # Build (check for TypeScript errors!)
 cd /workspace/app/frontend && pnpm build
 
-# Restart dev server
-bash /openhands/templates/counter/start.sh /workspace/app --background
+# Check frontend status
+lu status
 
-# Start in test mode (auto-sign without wallet)
-bash /openhands/templates/counter/start.sh /workspace/app --test --background
+# Start/restart frontend
+lu start
+
+# Stop frontend
+lu stop
+
+# View logs
+lu logs        # Last 50 lines
+lu logs -f     # Follow logs in real-time
 ```
 
 ## Common Errors
