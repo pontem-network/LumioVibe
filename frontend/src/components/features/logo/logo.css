@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap');
+
+
+
+.main-logo{
+  font-family: "Orbitron", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: bold;
+  font-style: normal;
+  letter-spacing: 1rem;
+  color: white;
+  font-size: 4rem;
+  line-height: 1;
+
+  display: flex;
+  align-items: end;
+}
+.main-logo img{
+  height: 3.4rem;
+  margin-bottom: .4rem;
+  margin-right: 1rem;
+}
+
+
+
+
