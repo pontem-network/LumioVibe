@@ -414,7 +414,9 @@ class ActionExecutor:
             try:
                 obs = await self.run(action)
                 if isinstance(obs, CmdOutputObservation):
-                    logger.info(f'LumioVibe: Background init started, check with: lu init-status')
+                    logger.info(
+                        'LumioVibe: Background init started, check with: lu init-status'
+                    )
                 else:
                     logger.warning(f'LumioVibe: Init returned unexpected: {obs}')
             except Exception as e:
@@ -423,7 +425,9 @@ class ActionExecutor:
 
         # Check if node_modules exists (dependencies installed)
         if not (frontend_dir / 'node_modules').exists():
-            logger.info('LumioVibe: Frontend found but node_modules missing, skipping auto-start')
+            logger.info(
+                'LumioVibe: Frontend found but node_modules missing, skipping auto-start'
+            )
             return
 
         project_dir = frontend_dir.parent
