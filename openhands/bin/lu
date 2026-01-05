@@ -9,6 +9,8 @@ Commands:
     lu status                          - Check frontend status and logs
     lu redeploy [project_dir]          - Redeploy contract
     lu logs [-f]                       - Show frontend logs
+    lu version                         - Show version info and create VERSION file
+    lu list                            - List available templates
 
 Examples:
     lu init counter my_dapp
@@ -16,6 +18,7 @@ Examples:
     lu status
     lu logs -f
     lu redeploy /workspace/app --new-account
+    lu version
 """
 
 import argparse
@@ -86,6 +89,8 @@ class LumioCLI:
     PID_FILE = Path('/tmp/lumiovibe-frontend.pid')
     LOG_FILE = Path('/tmp/lumiovibe-frontend.log')
     PROJECT_FILE = Path('/tmp/lumiovibe-current-project')
+    VERSION_FILE = Path(os.environ.get('WORKSPACE', '/workspace')) / 'VERSION'
+    PYPROJECT_PATH = Path('/openhands/code/pyproject.toml')
 
     def __init__(self):
         self.app_port = os.environ.get('APP_PORT_1', '50000')
@@ -181,6 +186,9 @@ class LumioCLI:
             INIT_STATUS_FILE.write_text('error: failed to setup account')
             return 1
         log_info(f'Deployer: {deployer_address}')
+
+        # Create/update VERSION file
+        self._create_version_file()
 
         # Step 2: Fund account
         INIT_STATUS_FILE.write_text('step:2/6:faucet')
@@ -613,6 +621,103 @@ class LumioCLI:
         return 0
 
     # =========================================================================
+    # VERSION - Show and create version file
+    # =========================================================================
+    def version(self, create_file: bool = True) -> int:
+        """Show version information and optionally create VERSION file."""
+        versions = self._get_versions()
+
+        print(f'\n{BOLD}LumioVibe Runtime{NC}')
+        print('=' * 40)
+        print(f'  Runtime:   {versions["runtime"]}')
+        print(f'  Lumio CLI: {versions["lumio_cli"]}')
+        print(f'  Node.js:   {versions["node"]}')
+        print(f'  pnpm:      {versions["pnpm"]}')
+        print('\n  Network:   testnet')
+        print('  API:       https://api.testnet.lumio.io/v1')
+        print()
+
+        if create_file:
+            self._create_version_file(versions)
+            print(f'  VERSION file: {self.VERSION_FILE}')
+            print()
+
+        return 0
+
+    def _get_versions(self) -> dict:
+        """Get all component versions."""
+        # Runtime version from pyproject.toml
+        runtime_version = 'unknown'
+        if self.PYPROJECT_PATH.exists():
+            try:
+                content = self.PYPROJECT_PATH.read_text()
+                for line in content.split('\n'):
+                    if line.strip().startswith('version = '):
+                        runtime_version = line.split('=')[1].strip().strip('"\'')
+                        break
+            except Exception:
+                pass
+
+        # Lumio CLI version
+        code, output = run_cmd(f'{self.LUMIO_BIN} --version')
+        lumio_version = output.strip().split()[-1] if code == 0 else 'unknown'
+
+        # Node version
+        code, output = run_cmd('node --version')
+        node_version = output.strip() if code == 0 else 'unknown'
+
+        # pnpm version
+        code, output = run_cmd('pnpm --version')
+        pnpm_version = output.strip() if code == 0 else 'unknown'
+
+        return {
+            'runtime': runtime_version,
+            'lumio_cli': lumio_version,
+            'node': node_version,
+            'pnpm': pnpm_version,
+        }
+
+    def _create_version_file(self, versions: Optional[dict] = None):
+        """Create VERSION file in workspace."""
+        if versions is None:
+            versions = self._get_versions()
+
+        # Get deployer address if available
+        deployer = 'not initialized'
+        config_path = self.WORKSPACE / '.lumio' / 'config.yaml'
+        if config_path.exists():
+            try:
+                content = config_path.read_text()
+                for line in content.split('\n'):
+                    if 'account:' in line:
+                        deployer = line.split(':')[-1].strip().strip('"\'')
+                        if deployer and not deployer.startswith('0x'):
+                            deployer = f'0x{deployer}'
+                        break
+            except Exception:
+                pass
+
+        from datetime import datetime, timezone
+
+        timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
+
+        content = f"""LumioVibe Runtime
+=================
+
+Runtime Version: {versions['runtime']}
+Lumio CLI:       {versions['lumio_cli']}
+Node.js:         {versions['node']}
+pnpm:            {versions['pnpm']}
+
+Network: testnet
+API:     https://api.testnet.lumio.io/v1
+
+Deployer: {deployer}
+Updated:  {timestamp}
+"""
+        self.VERSION_FILE.write_text(content)
+
+    # =========================================================================
     # HELPERS
     # =========================================================================
     def _resolve_project(self, project_dir: Optional[str]) -> Optional[Path]:
@@ -688,6 +793,12 @@ def main():
     # list
     subparsers.add_parser('list', help='List available templates')
 
+    # version
+    version_parser = subparsers.add_parser('version', help='Show version information')
+    version_parser.add_argument(
+        '--no-file', action='store_true', help='Do not create VERSION file'
+    )
+
     args = parser.parse_args()
     cli = LumioCLI()
 
@@ -707,6 +818,8 @@ def main():
         return cli.redeploy(args.project_dir, args.new_account)
     elif args.command == 'list':
         return cli.list_cmd()
+    elif args.command == 'version':
+        return cli.version(create_file=not args.no_file)
     else:
         parser.print_help()
         return 0
