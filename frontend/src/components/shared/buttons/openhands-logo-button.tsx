@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import OpenHandsLogo from "#/assets/branding/openhands-logo.svg?react";
+import bLogo from "#/assets/logo.png";
 import { I18nKey } from "#/i18n/declaration";
 import { TooltipButton } from "./tooltip-button";
 
@@ -12,7 +12,12 @@ export function OpenHandsLogoButton() {
       ariaLabel={t(I18nKey.BRANDING$OPENHANDS_LOGO)}
       navLinkTo="/"
     >
-      <OpenHandsLogo width={40} height={40} />
+      <img
+        width={40}
+        height={40}
+        src={bLogo}
+        alt={t(I18nKey.BRANDING$OPENHANDS_LOGO)}
+      />
     </TooltipButton>
   );
 }
