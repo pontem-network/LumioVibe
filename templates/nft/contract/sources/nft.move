@@ -1,4 +1,4 @@
-module __PROJECT_NAME__::nft {
+module nft::nft {
     use std::signer;
     use std::string::{Self, String};
     use std::vector;

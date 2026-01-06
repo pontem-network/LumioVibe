@@ -1,10 +1,10 @@
 [package]
-name = "__PROJECT_NAME__"
+name = "counter"
 version = "1.0.0"
 authors = []
 
 [addresses]
-__PROJECT_NAME__ = "__DEPLOYER_ADDRESS__"
+counter = "__DEPLOYER_ADDRESS__"
 
 [dependencies.LumioFramework]
 git = "https://github.com/pontem-network/lumio-framework"

@@ -1,6 +1,6 @@
 /// AMM DEX Module - Constant Product Market Maker (x * y = k)
 /// Supports creating pools, adding/removing liquidity, and swapping tokens
-module __PROJECT_NAME__::swap {
+module swap::swap {
     use std::signer;
     use std::string::{Self, String};
     use std::vector;

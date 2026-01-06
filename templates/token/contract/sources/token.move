@@ -1,4 +1,4 @@
-module __PROJECT_NAME__::token {
+module token::token {
     use std::signer;
     use std::string::{Self, String};
 

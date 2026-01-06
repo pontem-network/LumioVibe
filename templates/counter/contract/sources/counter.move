@@ -1,4 +1,4 @@
-module __PROJECT_NAME__::counter {
+module counter::counter {
     use std::signer;
 
     const E_NOT_INITIALIZED: u64 = 1;

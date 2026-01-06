@@ -209,7 +209,7 @@ class LumioCLI:
         # Step 4: Configure project
         INIT_STATUS_FILE.write_text('step:4/6:configure')
         log_step(4, total_steps, 'Configuring project...')
-        self._replace_placeholders(project_path, project_name, deployer_address)
+        self._replace_placeholders(project_path, deployer_address)
         self._create_env_file(project_path, deployer_address, private_key, meta)
 
         # Step 5: Deploy contract
@@ -336,24 +336,14 @@ class LumioCLI:
         log_warn('Faucet may have failed, continuing anyway...')
         return False
 
-    def _replace_placeholders(
-        self, project_path: Path, project_name: str, deployer_address: str
-    ):
+    def _replace_placeholders(self, project_path: Path, deployer_address: str):
         """Replace placeholders in project files."""
         # Contract files
         for file in (project_path / 'contract').rglob('*'):
             if file.is_file() and file.suffix in ['.move', '.toml']:
                 content = file.read_text()
-                content = content.replace('__PROJECT_NAME__', project_name)
                 content = content.replace('__DEPLOYER_ADDRESS__', deployer_address)
                 file.write_text(content)
-
-        # Frontend package.json
-        pkg_json = project_path / 'frontend' / 'package.json'
-        if pkg_json.exists():
-            content = pkg_json.read_text()
-            content = content.replace('__PROJECT_NAME__', project_name)
-            pkg_json.write_text(content)
 
     def _create_env_file(
         self, project_path: Path, deployer_address: str, private_key: str, meta: dict

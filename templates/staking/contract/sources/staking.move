@@ -1,4 +1,4 @@
-module __PROJECT_NAME__::staking {
+module staking::staking {
     use std::signer;
 
     const E_NOT_INITIALIZED: u64 = 1;
