@@ -11,6 +11,7 @@ from typing import Annotated
 import base62
 import docker
 import docker.models
+import docker.models.containers
 import docker.models.images
 import httpx
 from fastapi import APIRouter, Depends, Query, Request, status
@@ -1501,10 +1502,18 @@ def _to_conversation_info(app_conversation: AppConversation) -> ConversationInfo
 
 @app.get('/images')
 async def images():
-    logger.info("images")
     docker_client = docker.from_env()
 
     images:list[docker.models.images.Image] = docker_client.images.list(all=True)
     vibe_images = filter(lambda image: len(image.tags) > 0 and any("openhands" in tag for tag in image.tags), images)
 
     return [image.attrs for image in vibe_images]
+
+
+@app.get('/conversations/{conversation_id}/info')
+async def conversation_info(conversation_id: str = Depends(validate_conversation_id)):
+    docker_client = docker.from_env()
+
+    containers:list[docker.models.containers.Container] = docker_client.containers.list(all=True)
+    containers = filter(lambda container: "openhands-runtime-" in container.name and conversation_id in container.name, containers)
+    return [container.attrs for container in containers]
