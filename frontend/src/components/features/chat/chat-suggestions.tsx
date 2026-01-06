@@ -1,9 +1,8 @@
-import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 // import { Suggestions } from "#/components/features/suggestions/suggestions";
-import { I18nKey } from "#/i18n/declaration";
 // import { SUGGESTIONS } from "#/utils/suggestions";
 import { useConversationStore } from "#/state/conversation-store";
+import { Logo } from "#/components/features/logo/logo";
 
 interface ChatSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -11,7 +10,6 @@ interface ChatSuggestionsProps {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function ChatSuggestions({ onSuggestionsClick }: ChatSuggestionsProps) {
-  const { t } = useTranslation();
   const { shouldHideSuggestions } = useConversationStore();
 
   return (
@@ -25,26 +23,7 @@ export function ChatSuggestions({ onSuggestionsClick }: ChatSuggestionsProps) {
           transition={{ duration: 0.3, ease: "easeInOut" }}
           className="absolute top-0 left-0 right-0 bottom-[151px] flex flex-col items-center justify-center pointer-events-auto"
         >
-          <div className="flex flex-col items-center p-4 rounded-xl w-full">
-            <div className="flex items-end">
-              <span
-                className="text-[72px] font-bold leading-none"
-                style={{
-                  background:
-                    "linear-gradient(180deg, #FF69B4 0%, #9B30FF 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
-                BUILD
-              </span>
-              <span className="w-4 h-4 bg-white rounded-full mb-3 -ml-1" />
-            </div>
-            <span className="text-[32px] font-bold leading-5 text-white pt-4 pb-6">
-              {t(I18nKey.LANDING$TITLE)}
-            </span>
-          </div>
+          <Logo />
           {/* <Suggestions
             suggestions={Object.entries(SUGGESTIONS.repo)
               .slice(0, 4)
