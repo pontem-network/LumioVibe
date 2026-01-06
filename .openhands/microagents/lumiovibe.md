@@ -49,7 +49,7 @@ User messages include `<lumio-settings mode="..." />` tag. Your behavior depends
 ## Project Auto-Setup (BACKGROUND)
 
 <IMPORTANT>
-**The counter template initializes in BACKGROUND when conversation starts!**
+**The selected template initializes in BACKGROUND when conversation starts!**
 
 This means:
 - Init runs asynchronously (takes ~60-90 seconds)
@@ -75,7 +75,18 @@ sleep 10 && lu init-status
 ```bash
 lu status
 ```
+
+**IMPORTANT: Identify the template being used!**
+After init is complete, check which template was deployed:
+```bash
+ls /workspace/app/contract/sources/
+cat /workspace/app/frontend/package.json | grep name
+```
+
+The template spec is in `/openhands/templates/<template_name>/spec.md`. Read it to understand the full contract API!
 </IMPORTANT>
+
+Available templates: `counter`, `token`, `nft`, `staking`, `swap`
 
 The template includes:
 - Move contract (deployed after init completes)
@@ -95,9 +106,9 @@ Use the `lu` command for all project management:
 # Check background init progress (FIRST THING TO DO!)
 lu init-status                   # Check if init is complete
 
-# Create new project from template
-lu init counter my_app           # counter, token, nft, staking, swap
-lu init counter -b               # Run in background
+# Create new project from template (already done on conversation start!)
+lu init <template> my_app        # counter, token, nft, staking, swap
+lu init <template> -b            # Run in background
 lu list                          # List available templates
 
 # Frontend management
@@ -185,8 +196,8 @@ vite             # FORBIDDEN!
                           ↓
 ┌──────────────────────────────────────────────────────────────────┐
 │ Phase 2: IMPLEMENT CONTRACT                                       │
-│ → Modify /workspace/app/contract/sources/counter.move            │
-│ → Rename module if needed                                        │
+│ → Read template spec: /openhands/templates/<template>/spec.md    │
+│ → Modify /workspace/app/contract/sources/<module>.move           │
 │ → Compile: lumio move compile --package-dir .                    │
 └──────────────────────────────────────────────────────────────────┘
                           ↓
@@ -228,7 +239,7 @@ vite             # FORBIDDEN!
 ├── contract/
 │   ├── Move.toml
 │   └── sources/
-│       └── counter.move        # Main contract
+│       └── <module>.move       # Main contract (varies by template)
 ├── frontend/
 │   ├── .env                    # VITE_CONTRACT_ADDRESS, VITE_PRIVATE_KEY
 │   ├── package.json
@@ -240,8 +251,10 @@ vite             # FORBIDDEN!
 │       │   └── Home.tsx        # Main UI
 │       └── types/
 │           └── pontem.ts       # Config & types
-└── spec.md                     # Requirements doc
+└── spec.md                     # Requirements doc (copy from template!)
 ```
+
+**Template specs location:** `/openhands/templates/<template_name>/spec.md`
 
 ---
 
@@ -290,35 +303,43 @@ struct MyResource has key {
 
 ## Phase 2: Implement Contract
 
+### Read Template Spec First!
+
+Before modifying the contract, read the template specification:
+```bash
+# Find which template was used
+ls /workspace/app/contract/sources/
+# Read the template spec for full API documentation
+cat /openhands/templates/<template_name>/spec.md
+```
+
+The spec.md contains:
+- All data structures with fields
+- All entry functions with parameters
+- All view functions with return types
+- Error codes and constants
+- User flows and test cases
+
 ### Modify Contract
 
-Edit `/workspace/app/contract/sources/counter.move`:
+Edit `/workspace/app/contract/sources/<module>.move` based on the template spec.
 
+Example structure (actual code varies by template):
 ```move
-module counter::counter {
+module <module>::<module> {
     use std::signer;
 
-    struct Counter has key {
+    struct MyResource has key {
         value: u64
     }
 
     public entry fun initialize(account: &signer) {
-        move_to(account, Counter { value: 0 });
-    }
-
-    public entry fun increment(account: &signer) acquires Counter {
-        let counter = borrow_global_mut<Counter>(signer::address_of(account));
-        counter.value = counter.value + 1;
+        move_to(account, MyResource { value: 0 });
     }
 
     #[view]
-    public fun get_value(addr: address): u64 acquires Counter {
-        borrow_global<Counter>(addr).value
-    }
-
-    #[view]
-    public fun exists_at(addr: address): bool {
-        exists<Counter>(addr)
+    public fun get_value(addr: address): u64 acquires MyResource {
+        borrow_global<MyResource>(addr).value
     }
 }
 ```
@@ -334,27 +355,21 @@ lumio move compile --package-dir .
 
 ## Phase 3: Contract Tests (MANDATORY!)
 
-Create test file `/workspace/app/contract/sources/counter_tests.move`:
+Create test file `/workspace/app/contract/sources/<module>_tests.move`:
 
 ```move
 #[test_only]
-module counter::counter_tests {
+module <module>::<module>_tests {
     use std::signer;
-    use counter::counter;
+    use <module>::<module>;
 
-    #[test(account = @counter)]
+    #[test(account = @<module>)]
     fun test_initialize(account: &signer) {
-        counter::initialize(account);
-        assert!(counter::exists_at(signer::address_of(account)), 1);
-        assert!(counter::get_value(signer::address_of(account)) == 0, 2);
+        <module>::initialize(account);
+        // Add assertions based on template spec
     }
 
-    #[test(account = @counter)]
-    fun test_increment(account: &signer) {
-        counter::initialize(account);
-        counter::increment(account);
-        assert!(counter::get_value(signer::address_of(account)) == 1, 1);
-    }
+    // Add more tests for each entry function in the template spec
 }
 ```
 
@@ -365,6 +380,8 @@ lumio move test --package-dir .
 ```
 
 **DO NOT DEPLOY UNTIL ALL TESTS PASS!**
+
+Refer to the template spec.md for all functions that need tests.
 
 ---
 
@@ -419,20 +436,22 @@ lu start
 Edit `/workspace/app/frontend/src/hooks/useContract.ts`:
 
 ```typescript
-// Change module name if you renamed the contract
-const MODULE_NAME = 'counter';  // or 'your_module_name'
+// Module name should match your contract (from template)
+const MODULE_NAME = '<module>';  // e.g., 'counter', 'swap', 'token', etc.
 
-// Add functions for your contract
+// Add functions based on template spec
 const yourFunction = useCallback(() => callEntry('your_function'), [callEntry]);
 const getYourData = useCallback((addr: string) =>
   callView<number>('get_your_data', [addr]), [callView]);
 
 return {
-  // ... existing functions
+  // ... existing functions from template
   yourFunction,
   getYourData,
 };
 ```
+
+**Check the template's existing useContract.ts** - it already has functions for the template's API!
 
 ### Update Home.tsx with Modern Design
 
@@ -536,8 +555,8 @@ The screenshot will be displayed as the app preview on the home page.
 ### `lu` Commands
 
 ```bash
-# Project management
-lu init counter my_app           # Create from template
+# Project management (template already initialized on conversation start!)
+lu init <template> my_app        # Create from template (counter, token, nft, staking, swap)
 lu list                          # List templates
 
 # Frontend
@@ -574,11 +593,12 @@ lumio account fund-with-faucet --amount 100000000
 
 | File | Purpose |
 |------|---------|
-| `/workspace/app/contract/sources/counter.move` | Main contract |
+| `/workspace/app/contract/sources/<module>.move` | Main contract (varies by template) |
 | `/workspace/app/frontend/.env` | Contract address & key |
 | `/workspace/app/frontend/src/hooks/useContract.ts` | Contract functions |
 | `/workspace/app/frontend/src/pages/Home.tsx` | Main UI |
 | `/workspace/app/spec.md` | Requirements doc |
+| `/openhands/templates/<template>/spec.md` | Template API specification |
 
 ### Environment Variables
 

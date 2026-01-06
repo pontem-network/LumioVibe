@@ -221,7 +221,7 @@ set -e;
 ls -l /workspace/;
 cd /workspace/frontend;
 if [ ! -d "node_modules" ]; then
-    pnpm install
+    pnpm install --store-dir /tmp/pnpm-store --shamefully-hoist
 fi;
 ./start.sh;
 """

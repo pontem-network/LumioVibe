@@ -303,7 +303,10 @@ docker-run:
 build-runtime:
 	@echo "$(YELLOW)Building runtime image...$(RESET)"
 	@docker rmi -f $$(docker images -q "registry.wings.toys/lumio/lumiovibe-runtime") 2>/dev/null || true
-	@IMAGE_NAME=$$(OH_RUNTIME_RUNTIME_IMAGE_REPO=registry.wings.toys/lumio/lumiovibe-runtime poetry run python -m openhands.runtime.utils.runtime_build --force_rebuild 2>&1 | grep -oE 'registry.wings.toys/lumio/lumiovibe-runtime:[a-zA-Z0-9_.-]+' | tail -1); \
+	@BUILD_LOG=$$(mktemp); \
+	OH_RUNTIME_RUNTIME_IMAGE_REPO=registry.wings.toys/lumio/lumiovibe-runtime poetry run python -m openhands.runtime.utils.runtime_build --force_rebuild 2>&1 | tee $$BUILD_LOG; \
+	IMAGE_NAME=$$(grep -oE 'registry.wings.toys/lumio/lumiovibe-runtime:[a-zA-Z0-9_.-]+' $$BUILD_LOG | tail -1); \
+	rm -f $$BUILD_LOG; \
 	if [ -n "$$IMAGE_NAME" ]; then \
 		echo "$(GREEN)Runtime image built: $$IMAGE_NAME$(RESET)"; \
 		if [ -f $(CONFIG_FILE) ]; then \

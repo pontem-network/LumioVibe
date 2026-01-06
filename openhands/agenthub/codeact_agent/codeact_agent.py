@@ -206,7 +206,15 @@ class CodeActAgent(Agent):
         )
 
         initial_user_message = self._get_initial_user_message(state.history)
-        messages = self._get_messages(condensed_history, initial_user_message)
+
+        # Extract and update lumio settings from the latest user message
+        latest_lumio_settings = self.conversation_memory.extract_latest_lumio_settings(
+            condensed_history
+        )
+        if latest_lumio_settings:
+            state.lumio_settings = latest_lumio_settings
+
+        messages = self._get_messages(condensed_history, initial_user_message, state)
         params: dict = {
             'messages': messages,
         }
@@ -245,7 +253,10 @@ class CodeActAgent(Agent):
         return initial_user_message
 
     def _get_messages(
-        self, events: list[Event], initial_user_message: MessageAction
+        self,
+        events: list[Event],
+        initial_user_message: MessageAction,
+        state: State | None = None,
     ) -> list[Message]:
         """Constructs the message history for the LLM conversation.
 
@@ -260,9 +271,12 @@ class CodeActAgent(Agent):
         4. Manages message role alternation (user/assistant/tool)
         5. Applies caching for specific LLM providers (e.g., Anthropic)
         6. Adds environment reminders for non-function-calling mode
+        7. Adds Lumio settings reminder if state has lumio_settings
 
         Args:
             events: The list of events to convert to messages
+            initial_user_message: The initial user message action
+            state: Optional state object containing lumio_settings
 
         Returns:
             list[Message]: A list of formatted messages ready for LLM consumption, including:
@@ -287,6 +301,12 @@ class CodeActAgent(Agent):
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
         )
+
+        # Add Lumio settings reminder to ensure agent always sees current mode/skip_tests
+        if state and hasattr(state, 'lumio_settings') and state.lumio_settings:
+            self.prompt_manager.add_lumio_settings_reminder(
+                messages, state.lumio_settings
+            )
 
         if self.llm.is_caching_prompt_active():
             self.conversation_memory.apply_prompt_caching(messages)

@@ -108,6 +108,11 @@ class State:
     extra_data: dict[str, Any] = field(default_factory=dict)
     last_error: str = ''
 
+    # Lumio settings (parsed from user messages, persisted across context condensation)
+    lumio_settings: dict[str, Any] = field(
+        default_factory=lambda: {'mode': 'development', 'skip_tests': False}
+    )
+
     # NOTE: deprecated args, kept here temporarily for backwards compatability
     # Will be remove in 30 days
     iteration: int | None = None
@@ -243,6 +248,9 @@ class State:
 
         if not hasattr(self, 'budget_flag'):
             self.budget_flag = None
+
+        if not hasattr(self, 'lumio_settings'):
+            self.lumio_settings = {'mode': 'development', 'skip_tests': False}
 
     def get_current_user_intent(self) -> tuple[str | None, list[str] | None]:
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""

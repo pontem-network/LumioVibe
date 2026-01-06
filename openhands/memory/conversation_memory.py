@@ -1,4 +1,5 @@
-from typing import Generator
+import re
+from typing import Any, Generator
 
 from litellm import ModelResponse
 
@@ -71,6 +72,46 @@ class ConversationMemory:
             True if the URL is valid, False otherwise
         """
         return bool(url and url.strip())
+
+    @staticmethod
+    def parse_lumio_settings(content: str) -> dict[str, Any] | None:
+        """Parse <lumio-settings> tag from message content.
+
+        Args:
+            content: The message content to parse
+
+        Returns:
+            Dict with 'mode' and 'skip_tests' keys if found, None otherwise
+        """
+        match = re.search(
+            r'<lumio-settings\s+mode="([^"]+)"\s+skip-tests="([^"]+)"\s*/>', content
+        )
+        if match:
+            return {
+                'mode': match.group(1),
+                'skip_tests': match.group(2).lower() == 'true',
+            }
+        return None
+
+    @staticmethod
+    def extract_latest_lumio_settings(events: list) -> dict[str, Any] | None:
+        """Extract the latest lumio settings from a list of events.
+
+        Iterates through events in reverse to find the most recent user message
+        containing lumio-settings tag.
+
+        Args:
+            events: List of events to search through
+
+        Returns:
+            Dict with lumio settings if found, None otherwise
+        """
+        for event in reversed(events):
+            if isinstance(event, MessageAction) and event.source == 'user':
+                settings = ConversationMemory.parse_lumio_settings(event.content)
+                if settings:
+                    return settings
+        return None
 
     def process_events(
         self,

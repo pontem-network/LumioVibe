@@ -55,11 +55,12 @@ RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
 {% endif %}
 
 # Pre-install LumioVibe dependencies globally for faster project setup
-# This warms up pnpm's global store so template installs are fast
-RUN npm install -g typescript vite @vitejs/plugin-react vitest && \
+# This warms up pnpm's global store so template installs are near-instant
+# Includes ALL dependencies from all templates (counter, token, nft, staking, swap)
+RUN npm install -g typescript vite @vitejs/plugin-react @vitejs/plugin-react-swc vitest && \
     mkdir -p /opt/lumiovibe-cache && \
     cd /opt/lumiovibe-cache && \
-    echo '{"dependencies":{"@aptos-labs/ts-sdk":"^1.33.1","react":"^18.3.1","react-dom":"^18.3.1","react-router-dom":"^6.28.0"},"devDependencies":{"@testing-library/react":"^14.2.1","@testing-library/jest-dom":"^6.4.2","@types/react":"^18.3.12","@types/react-dom":"^18.3.1","@vitejs/plugin-react":"^4.3.4","autoprefixer":"^10.4.20","jsdom":"^24.0.0","postcss":"^8.4.49","tailwindcss":"^3.4.16","typescript":"^5.7.2","vite":"^6.0.3","vitest":"^1.3.1"}}' > package.json && \
+    echo '{"name":"lumiovibe-deps-cache","private":true,"dependencies":{"@aptos-labs/ts-sdk":"^1.33.1","@hookform/resolvers":"^3.10.0","@radix-ui/react-accordion":"^1.2.11","@radix-ui/react-alert-dialog":"^1.1.14","@radix-ui/react-aspect-ratio":"^1.1.7","@radix-ui/react-avatar":"^1.1.10","@radix-ui/react-checkbox":"^1.3.2","@radix-ui/react-collapsible":"^1.1.11","@radix-ui/react-context-menu":"^2.2.15","@radix-ui/react-dialog":"^1.1.14","@radix-ui/react-dropdown-menu":"^2.1.15","@radix-ui/react-hover-card":"^1.1.14","@radix-ui/react-label":"^2.1.7","@radix-ui/react-menubar":"^1.1.15","@radix-ui/react-navigation-menu":"^1.2.13","@radix-ui/react-popover":"^1.1.14","@radix-ui/react-progress":"^1.1.7","@radix-ui/react-radio-group":"^1.3.7","@radix-ui/react-scroll-area":"^1.2.9","@radix-ui/react-select":"^2.2.5","@radix-ui/react-separator":"^1.1.7","@radix-ui/react-slider":"^1.3.5","@radix-ui/react-slot":"^1.2.3","@radix-ui/react-switch":"^1.2.5","@radix-ui/react-tabs":"^1.1.12","@radix-ui/react-toast":"^1.2.14","@radix-ui/react-toggle":"^1.1.9","@radix-ui/react-toggle-group":"^1.1.10","@radix-ui/react-tooltip":"^1.2.7","@tanstack/react-query":"^5.83.0","class-variance-authority":"^0.7.1","clsx":"^2.1.1","cmdk":"^1.1.1","date-fns":"^3.6.0","embla-carousel-react":"^8.6.0","framer-motion":"^12.23.26","input-otp":"^1.4.2","lucide-react":"^0.462.0","next-themes":"^0.3.0","react":"^18.3.1","react-day-picker":"^8.10.1","react-dom":"^18.3.1","react-helmet":"^6.1.0","react-hook-form":"^7.61.1","react-resizable-panels":"^2.1.9","react-router-dom":"^6.30.1","recharts":"^2.15.4","sonner":"^1.7.4","tailwind-merge":"^2.6.0","tailwindcss-animate":"^1.0.7","vaul":"^0.9.9","zod":"^3.25.76"},"devDependencies":{"@eslint/js":"^9.32.0","@tailwindcss/typography":"^0.5.16","@testing-library/react":"^14.2.1","@testing-library/jest-dom":"^6.4.2","@types/node":"^22.16.5","@types/react":"^18.3.23","@types/react-dom":"^18.3.7","@types/react-helmet":"^6.1.11","@vitejs/plugin-react":"^4.3.4","@vitejs/plugin-react-swc":"^3.11.0","autoprefixer":"^10.4.21","eslint":"^9.32.0","eslint-plugin-react-hooks":"^5.2.0","eslint-plugin-react-refresh":"^0.4.20","globals":"^15.15.0","jsdom":"^24.0.0","postcss":"^8.5.6","tailwindcss":"^3.4.17","typescript":"^5.8.3","typescript-eslint":"^8.38.0","vite":"^6.0.3","vitest":"^1.3.1"}}' > package.json && \
     pnpm install && \
     rm -rf /opt/lumiovibe-cache
 
@@ -390,6 +391,34 @@ RUN chown -R openhands:openhands /openhands/microagents
 
 # Copy project templates to /openhands/templates (not visible in /workspace)
 COPY --chown=openhands:openhands ./code/templates /openhands/templates
+
+# ================================================================
+# Pre-compile all Move contracts to cache Lumio framework
+# This makes template deployments much faster (framework already compiled)
+# ================================================================
+RUN echo "Pre-compiling Move contracts for all templates..." && \
+    for template in counter token nft staking swap; do \
+        echo "Compiling $template contract..." && \
+        cd /openhands/templates/$template/contract && \
+        /openhands/bin/lumio move compile --named-addresses ${template}=0x1 2>/dev/null || true; \
+    done && \
+    echo "Move contracts pre-compiled successfully"
+
+# ================================================================
+# Install frontend dependencies for all templates as openhands user
+# This ensures pnpm install is near-instant when using templates
+# ================================================================
+USER openhands
+RUN echo "Installing frontend dependencies for all templates..." && \
+    for template in counter token nft staking swap; do \
+        if [ -d "/openhands/templates/$template/frontend" ]; then \
+            echo "Installing dependencies for $template frontend..." && \
+            cd /openhands/templates/$template/frontend && \
+            pnpm install --frozen-lockfile 2>/dev/null || pnpm install; \
+        fi; \
+    done && \
+    echo "Frontend dependencies installed for all templates"
+USER root
 
 # ================================================================
 # Install LumioVibe CLI (lu) - universal project management tool

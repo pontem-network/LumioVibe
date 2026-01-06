@@ -522,7 +522,7 @@ class AgentSession:
     async def _initialize_template(
         self, template_id: str, config: OpenHandsConfig
     ) -> None:
-        """Initialize a template by running init.sh and start.sh scripts.
+        """Initialize a template using lu CLI.
 
         Parameters:
         - template_id: The ID of the template to initialize
@@ -535,9 +535,9 @@ class AgentSession:
         from openhands.server.services.template_manager import TemplateManager
 
         template_manager = TemplateManager()
-        template_path = template_manager.get_template_path(template_id)
+        template = template_manager.get_template(template_id)
 
-        if not template_path:
+        if not template:
             self.logger.warning(f'Template not found: {template_id}')
             return
 
@@ -553,48 +553,30 @@ class AgentSession:
         project_name = 'app'
         project_dir = f'{config.workspace_mount_path_in_sandbox}/{project_name}'
 
-        init_script = template_path / 'init.sh'
-        if init_script.exists():
-            self.logger.info(f'Running template init.sh for {template_id}')
+        # Use lu CLI to initialize the template in background
+        self.logger.info(f'Running lu init {template_id} for project {project_name}')
 
-            from openhands.events.action import CmdRunAction
+        from openhands.events.action import CmdRunAction
 
-            init_action = CmdRunAction(
-                command=f'bash /openhands/templates/{template_id}/init.sh "{project_name}" "{project_dir}"',
-                blocking=True,
-                hidden=True,
-            )
-            init_action.set_hard_timeout(600)
+        init_action = CmdRunAction(
+            command=f'lu init {template_id} {project_name} --dir {project_dir} --background',
+            blocking=True,
+            hidden=True,
+        )
+        init_action.set_hard_timeout(30)  # Background init starts quickly
 
-            obs = await call_sync_from_async(self.runtime.run_action, init_action)
-            if hasattr(obs, 'exit_code') and obs.exit_code != 0:
-                self.logger.error(f'Template init.sh failed: {obs}')
-                if self._status_callback:
-                    self._status_callback(
-                        'error',
-                        RuntimeStatus.ERROR_TEMPLATE_INIT,
-                        f'Template initialization failed: {template_id}',
-                    )
-                return
-            self.logger.info(f'Template init.sh completed for {template_id}')
+        obs = await call_sync_from_async(self.runtime.run_action, init_action)
+        if hasattr(obs, 'exit_code') and obs.exit_code != 0:
+            self.logger.error(f'Template init failed: {obs}')
+            if self._status_callback:
+                self._status_callback(
+                    'error',
+                    RuntimeStatus.ERROR_TEMPLATE_INIT,
+                    f'Template initialization failed: {template_id}',
+                )
+            return
 
-        start_script = template_path / 'start.sh'
-        if start_script.exists():
-            self.logger.info(
-                f'Starting template frontend in background for {template_id}'
-            )
-
-            from openhands.events.action import CmdRunAction
-
-            start_action = CmdRunAction(
-                command=f'nohup bash /openhands/templates/{template_id}/start.sh "{project_dir}" --background > /tmp/template-start.log 2>&1 &',
-                hidden=True,
-            )
-
-            await call_sync_from_async(self.runtime.run_action, start_action)
-            self.logger.info(
-                f'Template start.sh launched in background for {template_id}'
-            )
+        self.logger.info(f'Template {template_id} initialization started in background')
 
         if self._status_callback:
             self._status_callback(

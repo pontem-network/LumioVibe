@@ -201,11 +201,24 @@ class LumioCLI:
         log_step(3, total_steps, 'Copying template files...')
         if project_path.exists():
             log_warn('Directory exists, removing...')
-            shutil.rmtree(project_path)
+            shutil.rmtree(project_path, ignore_errors=True)
 
         project_path.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(template_path / 'contract', project_path / 'contract')
-        shutil.copytree(template_path / 'frontend', project_path / 'frontend')
+        # Exclude node_modules and lock files - they cause issues with grpcfuse
+        # and will be reinstalled fresh by pnpm
+        ignore_patterns = shutil.ignore_patterns(
+            'node_modules', 'pnpm-lock.yaml', 'package-lock.json', 'bun.lockb'
+        )
+        shutil.copytree(
+            template_path / 'contract',
+            project_path / 'contract',
+            ignore=ignore_patterns,
+        )
+        shutil.copytree(
+            template_path / 'frontend',
+            project_path / 'frontend',
+            ignore=ignore_patterns,
+        )
 
         # Step 4: Configure project
         INIT_STATUS_FILE.write_text('step:4/6:configure')
@@ -385,10 +398,17 @@ class LumioCLI:
         return False
 
     def _install_deps(self, frontend_path: Path):
-        """Install frontend dependencies."""
+        """Install frontend dependencies.
+
+        Uses local store (/tmp/pnpm-store) to avoid permission issues with grpcfuse.
+        Uses --shamefully-hoist to ensure all dependencies are properly linked.
+        """
         if not (frontend_path / 'node_modules').exists():
             log_info('Installing dependencies...')
-            run_cmd('pnpm install --silent', cwd=str(frontend_path))
+            run_cmd(
+                'pnpm install --store-dir /tmp/pnpm-store --shamefully-hoist --silent',
+                cwd=str(frontend_path),
+            )
 
     # =========================================================================
     # START - Start frontend in background

@@ -149,3 +149,39 @@ class PromptManager:
         if latest_user_message:
             reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.iteration_flag.max_value - state.iteration_flag.current_value} turns left to complete the task. When finished reply with <finish></finish>.'
             latest_user_message.content.append(TextContent(text=reminder_text))
+
+    def add_lumio_settings_reminder(
+        self, messages: list[Message], lumio_settings: dict
+    ) -> None:
+        """Add current Lumio settings reminder to the latest user message.
+
+        This ensures the agent always sees the current mode and skip_tests settings,
+        even after context condensation removes the original <lumio-settings> tag.
+
+        Args:
+            messages: List of messages to modify
+            lumio_settings: Dict with 'mode' and 'skip_tests' keys
+        """
+        latest_user_message = next(
+            islice(
+                (
+                    m
+                    for m in reversed(messages)
+                    if m.role == 'user'
+                    and any(isinstance(c, TextContent) for c in m.content)
+                ),
+                1,
+            ),
+            None,
+        )
+        if latest_user_message and lumio_settings:
+            mode = lumio_settings.get('mode', 'development')
+            skip_tests = lumio_settings.get('skip_tests', False)
+            reminder_text = f"""
+
+<LUMIO_SETTINGS_STATE>
+Current Mode: {mode}
+Skip Tests: {skip_tests}
+⚠️ These are the ACTIVE settings. Follow the rules for this mode!
+</LUMIO_SETTINGS_STATE>"""
+            latest_user_message.content.append(TextContent(text=reminder_text))
