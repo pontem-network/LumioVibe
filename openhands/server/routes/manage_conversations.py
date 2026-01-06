@@ -1514,6 +1514,9 @@ async def images():
 async def conversation_info(conversation_id: str = Depends(validate_conversation_id)):
     docker_client = docker.from_env()
 
-    containers:list[docker.models.containers.Container] = docker_client.containers.list(all=True)
-    containers = filter(lambda container: "openhands-runtime-" in container.name and conversation_id in container.name, containers)
+    all_containers = docker_client.containers.list(all=True)
+    containers = [
+        container for container in all_containers
+        if container.name and "openhands-runtime-" in container.name and conversation_id in container.name
+    ]
     return [container.attrs for container in containers]

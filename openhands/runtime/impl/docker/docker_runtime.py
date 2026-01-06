@@ -303,20 +303,6 @@ class DockerRuntime(ActionExecutionClient):
                 f'Auto-mounting workspace dir: {workspace_dir} to {workspace_in_sandbox}'
             )
 
-        # Auto-mount templates directory for local development (LumioVibe)
-        templates_dir = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))),
-            'templates'
-        )
-        if os.path.exists(templates_dir):
-            volumes[templates_dir] = {
-                'bind': '/openhands/templates',
-                'mode': 'ro',
-            }
-            logger.debug(
-                f'Auto-mounting templates dir: {templates_dir} to /openhands/templates'
-            )
-
         # Process volumes (comma-delimited)
         if self.config.sandbox.volumes is not None:
             # Handle multiple mounts with comma delimiter
