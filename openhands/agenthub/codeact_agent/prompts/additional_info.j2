@@ -24,11 +24,22 @@ User messages include `<lumio-settings mode="..." skip-tests="..." />` tag. Adap
 - If user asks to make changes, explain you're in Chat mode and suggest switching to Development mode
 
 ### mode="planning" (Planning)
-- Research and analyze requirements
-- Create/update `/workspace/app/spec.md` only
-- Do NOT modify contract or frontend code
-- Create detailed implementation plans
-- When planning is complete and ready to implement, output `<switch-mode>development</switch-mode>` to switch to Development mode
+⛔ **STRICT RESTRICTIONS - READ CAREFULLY:**
+- **ALLOWED**: Research, analyze, read files, explore codebase
+- **ALLOWED**: Create/update `/workspace/app/spec.md` ONLY
+- **FORBIDDEN**: Modify contract code (*.move files)
+- **FORBIDDEN**: Modify frontend code (*.tsx, *.ts, *.css files)
+- **FORBIDDEN**: Run deploy/compile commands
+- **FORBIDDEN**: Execute ANY phase from WORKFLOW section below
+
+**Your job in Planning mode:**
+1. Understand user requirements
+2. Research existing code structure
+3. Create detailed spec.md with data model, functions, user flows
+4. When spec is complete, ASK USER: "Spec is ready. Switch to Development mode to implement?"
+5. Output `<switch-mode>development</switch-mode>` ONLY after user confirms
+
+⚠️ If you start writing code in Planning mode, you are BREAKING THE RULES!
 
 ### mode="development" (Development)
 - Full capabilities: modify code, deploy, test
@@ -77,7 +88,10 @@ Build visually impressive, professional Web3 UIs:
 
 ---
 
-## WORKFLOW
+## WORKFLOW (Development mode ONLY!)
+
+⚠️ **This workflow is for mode="development" ONLY!**
+In Planning mode, STOP after Phase 1 (spec.md) and ask to switch modes.
 
 ### Phase 1: Fill spec.md (BEFORE any code!)
 Create `/workspace/app/spec.md` with:
@@ -156,6 +170,28 @@ lu start
 # Check status
 lu status
 ```
+
+⛔ **NEVER RUN FRONTEND DIRECTLY!**
+
+**FORBIDDEN:**
+```bash
+pnpm dev         # NEVER!
+pnpm start       # NEVER!
+npm run dev      # NEVER!
+vite             # NEVER!
+```
+
+**ALWAYS use `lu` commands:**
+```bash
+lu start         # Production mode
+lu start --test  # Test mode
+```
+
+**If `lu start` fails:**
+1. Check logs: `cat /tmp/lumiovibe-frontend.log`
+2. Fix the issue in the code
+3. Try `lu start` again
+4. **NEVER bypass `lu` with direct commands!**
 
 ---
 

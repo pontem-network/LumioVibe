@@ -128,7 +128,7 @@ You MUST fill spec.md with complete requirements BEFORE modifying contract code.
 ### Rule 3: No Mock Data
 ALL data must come from blockchain via view functions. NEVER hardcode values.
 
-### Rule 4: Use `lu` Commands
+### Rule 4: ONLY Use `lu` Commands - NEVER Run Directly!
 ```bash
 # Redeploy contract (same account)
 lu redeploy
@@ -142,6 +142,20 @@ lu start --test
 # Start in PRODUCTION MODE (for user with Pontem Wallet)
 lu start
 ```
+
+⛔ **FORBIDDEN - NEVER RUN DIRECTLY:**
+```bash
+pnpm dev         # FORBIDDEN!
+pnpm start       # FORBIDDEN!
+npm run dev      # FORBIDDEN!
+vite             # FORBIDDEN!
+```
+
+**If `lu start` fails:**
+1. Check logs: `cat /tmp/lumiovibe-frontend.log`
+2. Fix the code issue
+3. Try `lu start` again
+4. **NEVER bypass `lu` with direct commands!**
 
 ---
 

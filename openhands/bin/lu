@@ -413,11 +413,28 @@ class LumioCLI:
         mode_str = ' (TEST MODE)' if test_mode else ''
         log_info(f'Starting frontend on port {self.app_port}{mode_str}...')
 
-        # Set test mode environment variable if requested
-        env_prefix = 'VITE_WALLET_MODE=test ' if test_mode else ''
+        # Extract base path from APP_BASE_URL for Vite asset serving
+        # e.g., https://beta.3uild.ai/runtime/53396 -> /runtime/53396/
+        # Local: http://localhost:50000 -> /
+        vite_base = '/'
+        try:
+            from urllib.parse import urlparse
 
-        # Start vite in background
-        cmd = f'cd {frontend_path} && nohup {env_prefix}pnpm vite --host --port {self.app_port} --strictPort --base / > {self.LOG_FILE} 2>&1 & echo $!'
+            parsed = urlparse(self.app_base_url)
+            if parsed.path and parsed.path != '/':
+                vite_base = parsed.path.rstrip('/') + '/'
+        except Exception:
+            pass
+
+        # Build environment variables for vite
+        # VITE_BASE_URL is needed for BrowserRouter basename to match the external URL path
+        env_vars = [f'VITE_BASE_URL={self.app_base_url}']
+        if test_mode:
+            env_vars.append('VITE_WALLET_MODE=test')
+        env_args = ' '.join(env_vars)
+
+        # Start vite in background using 'env' command to properly set environment variables
+        cmd = f'cd {frontend_path} && nohup env {env_args} pnpm vite --host --port {self.app_port} --strictPort --base {vite_base} > {self.LOG_FILE} 2>&1 & echo $!'
 
         code, output = run_cmd(cmd)
         if code == 0 and output.strip():
