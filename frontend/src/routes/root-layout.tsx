@@ -21,6 +21,7 @@ import { MaintenanceBanner } from "#/components/features/maintenance/maintenance
 import { cn, isMobileDevice } from "#/utils/utils";
 import { useAuthWallet } from "#/hooks/use-auth";
 import { WalletPanel } from "#/components/wallet/walletPanel";
+import { FloatingSpheres } from "#/components/ui/floating-spheres";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -218,7 +219,7 @@ export default function MainApp() {
     <div
       data-testid="root-layout"
       className={cn(
-        "h-screen lg:min-w-[1024px] flex flex-col md:flex-row bg-base relative",
+        "h-screen lg:min-w-[1024px] flex flex-col md:flex-row relative",
         pathname === "/" ? "p-0" : "p-0 md:p-3 md:pl-0",
         isMobileDevice() && "overflow-hidden",
       )}
@@ -234,6 +235,8 @@ export default function MainApp() {
           `,
         }}
       />
+      {/* Animated floating spheres */}
+      <FloatingSpheres />
       <WalletPanel />
       <Sidebar />
 

@@ -410,3 +410,122 @@
 #new_conversation_section {
   min-height: 200px;
 }
+
+/* Floating spheres animations - multiple variants for variety */
+@keyframes float-1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  20% {
+    transform: translate(30px, -20px) scale(1.08);
+  }
+  40% {
+    transform: translate(-10px, 30px) scale(0.92);
+  }
+  60% {
+    transform: translate(25px, 10px) scale(1.05);
+  }
+  80% {
+    transform: translate(-20px, -15px) scale(0.95);
+  }
+}
+
+@keyframes float-2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(-25px, 20px) scale(0.9);
+  }
+  50% {
+    transform: translate(15px, -30px) scale(1.1);
+  }
+  75% {
+    transform: translate(-30px, -10px) scale(0.95);
+  }
+}
+
+@keyframes float-3 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  15% {
+    transform: translate(20px, 25px) scale(1.12);
+  }
+  35% {
+    transform: translate(-35px, -5px) scale(0.88);
+  }
+  55% {
+    transform: translate(10px, -25px) scale(1.06);
+  }
+  75% {
+    transform: translate(-15px, 15px) scale(0.94);
+  }
+}
+
+@keyframes float-4 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  30% {
+    transform: translate(-20px, -30px) scale(0.85);
+  }
+  60% {
+    transform: translate(35px, 20px) scale(1.15);
+  }
+}
+
+@keyframes float-5 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  20% {
+    transform: translate(15px, 35px) scale(1.1);
+  }
+  45% {
+    transform: translate(-25px, -20px) scale(0.9);
+  }
+  70% {
+    transform: translate(30px, -15px) scale(1.05);
+  }
+}
+
+@keyframes float-6 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  35% {
+    transform: translate(-30px, 15px) scale(0.92);
+  }
+  65% {
+    transform: translate(20px, -35px) scale(1.08);
+  }
+}
+
+.floating-sphere {
+  will-change: transform;
+}
+
+.floating-sphere:nth-child(1) {
+  animation: float-1 22s ease-in-out infinite;
+}
+
+.floating-sphere:nth-child(2) {
+  animation: float-2 18s ease-in-out infinite;
+}
+
+.floating-sphere:nth-child(3) {
+  animation: float-3 25s ease-in-out infinite;
+}
+
+.floating-sphere:nth-child(4) {
+  animation: float-4 20s ease-in-out infinite;
+}
+
+.floating-sphere:nth-child(5) {
+  animation: float-5 23s ease-in-out infinite;
+}
+
+.floating-sphere:nth-child(6) {
+  animation: float-6 19s ease-in-out infinite;
+}

@@ -1,15 +1,17 @@
 import {
   Links,
+  LinksFunction,
   Meta,
   MetaFunction,
   Outlet,
   Scripts,
   ScrollRestoration,
 } from "react-router";
-import "./tailwind.css";
-import "./index.css";
 import React from "react";
 import { Toaster } from "react-hot-toast";
+import logoUrl from "./assets/logo.png";
+import "./tailwind.css";
+import "./index.css";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -32,8 +34,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export const meta: MetaFunction = () => [
-  { title: "LumioVibe" },
+  { title: "build" },
   { name: "description", content: "Let's Start Building!" },
+];
+
+export const links: LinksFunction = () => [
+  { rel: "icon", type: "image/png", href: logoUrl },
 ];
 
 export default function App() {
