@@ -52,6 +52,12 @@ export function TemplateCard({ template, onClick }: TemplateCardProps) {
             {CATEGORY_LABELS[template.category]}
           </span>
         </div>
+        {/* FREE badge */}
+        <div className="absolute top-2 left-2">
+          <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-500/90 text-white backdrop-blur-sm">
+            FREE
+          </span>
+        </div>
       </div>
 
       {/* Content */}

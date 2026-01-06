@@ -77,7 +77,7 @@ export function TemplateGrid({
         <div className="flex items-center justify-between">
           {/* eslint-disable-next-line i18next/no-literal-string */}
           <h2 className="text-xs leading-4 text-white font-bold">
-            Create from template
+            Marketplace
           </h2>
           {showNewAppButton && (
             <button
