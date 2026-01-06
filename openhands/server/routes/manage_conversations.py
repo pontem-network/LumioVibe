@@ -9,6 +9,9 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 import base62
+import docker
+import docker.models
+import docker.models.images
 import httpx
 from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import JSONResponse
@@ -1493,3 +1496,15 @@ def _to_conversation_info(app_conversation: AppConversation) -> ConversationInfo
             sub_id.hex for sub_id in app_conversation.sub_conversation_ids
         ],
     )
+
+
+
+@app.get('/images')
+async def images():
+    logger.info("images")
+    docker_client = docker.from_env()
+
+    images:list[docker.models.images.Image] = docker_client.images.list(all=True)
+    vibe_images = filter(lambda image: len(image.tags) > 0 and any("openhands" in tag for tag in image.tags), images)
+
+    return [image.attrs for image in vibe_images]
