@@ -181,8 +181,8 @@ lu status
 # Start/restart frontend
 lu start
 
-# Stop frontend
-lu stop
+# Start in test mode (auto-sign TX)
+lu start --test
 
 # View logs
 lu logs        # Last 50 lines

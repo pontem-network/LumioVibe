@@ -15278,5 +15278,21 @@
     "tr": "Yetenek hazır",
     "de": "Fähigkeit bereit",
     "uk": "Навичка готова"
+  },
+  "LUMIO_MODE_TOGGLES$testing": {
+    "en": "Testing",
+    "ja": "テスト",
+    "zh-CN": "测试",
+    "zh-TW": "測試",
+    "ko-KR": "테스트",
+    "no": "Testing",
+    "it": "Testing",
+    "pt": "Testando",
+    "es": "Pruebas",
+    "ar": "الاختبار",
+    "fr": "Tests",
+    "tr": "Test",
+    "de": "Testen",
+    "uk": "Тестування"
   }
 }

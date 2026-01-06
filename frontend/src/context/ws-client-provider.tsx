@@ -28,6 +28,8 @@ import {
 import { useErrorMessageStore } from "#/stores/error-message-store";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { useEventStore } from "#/stores/use-event-store";
+import { useConversationStore } from "#/state/conversation-store";
+import { parseAgentModeSwitch } from "#/utils/parse-agent-mode-switch";
 
 /**
  * @deprecated Use `V1_WebSocketConnectionState` from `conversation-websocket-context.tsx` instead.
@@ -140,6 +142,7 @@ export function WsClientProvider({
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
   const { addEvent, clearEvents } = useEventStore();
+  const { setAgentMode } = useConversationStore();
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
   const pendingEventsRef = React.useRef<Record<string, unknown>[]>([]);
@@ -233,6 +236,16 @@ export function WsClientProvider({
 
       if (isMessageAction(event)) {
         messageRateHandler.record(new Date().getTime());
+      }
+
+      // Handle agent mode switching from agent messages
+      if (isAssistantMessage(event) && event.message) {
+        const newMode = parseAgentModeSwitch(event.message);
+        if (newMode) {
+          // eslint-disable-next-line no-console
+          console.log("[LumioVibe] Switching mode to:", newMode);
+          setAgentMode(newMode);
+        }
       }
 
       // Invalidate diffs cache when a file is edited or written

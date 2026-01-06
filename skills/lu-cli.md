@@ -7,7 +7,7 @@ triggers:
 - lu
 - lu init
 - lu start
-- lu stop
+- lu start --test
 - lu status
 - lu logs
 - lu redeploy
@@ -27,7 +27,7 @@ lu init <template> [name]     # Create project from template
 lu init <template> -b         # Create project in background
 lu init-status                # Check background init progress
 lu start [project_dir]        # Start frontend in background
-lu stop                       # Stop frontend
+lu start --test               # Start in test mode (auto-sign TX)
 lu status                     # Check status and logs
 lu logs [-f]                  # View logs (optionally follow)
 lu redeploy [--new-account]   # Redeploy contract
@@ -84,14 +84,6 @@ The start command:
 2. Starts Vite dev server on `$APP_PORT_1`
 3. Logs output to `/tmp/lumiovibe-frontend.log`
 4. Saves PID to `/tmp/lumiovibe-frontend.pid`
-
-### `lu stop` - Stop Frontend
-
-Stop the running frontend:
-
-```bash
-lu stop
-```
 
 ### `lu status` - Check Status
 
@@ -190,7 +182,7 @@ The `lu` CLI uses these environment variables:
 | Issue | Solution |
 |-------|----------|
 | Frontend not starting | Run `lu logs` to see errors |
-| Port already in use | Run `lu stop` then `lu start` |
+| Port already in use | Run `lu start` (auto-kills old process) |
 | Contract address mismatch | Check `.env` or run `lu redeploy` |
 | ABI incompatible | Run `lu redeploy --new-account` |
 | Dependencies missing | Run `cd frontend && pnpm install` |

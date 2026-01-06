@@ -1,20 +1,28 @@
 import { Tooltip } from "@heroui/react";
-import { useConversationStore } from "#/state/conversation-store";
+import { useTranslation } from "react-i18next";
+import {
+  useConversationStore,
+  type AgentMode,
+} from "#/state/conversation-store";
 import { cn } from "#/utils/utils";
 
-interface ToggleButtonProps {
+interface ModeButtonProps {
+  mode: AgentMode;
   label: string;
+  icon: string;
   tooltip: string;
-  isEnabled: boolean;
-  onToggle: (value: boolean) => void;
+  isSelected: boolean;
+  onSelect: (mode: AgentMode) => void;
 }
 
-function ToggleButton({
+function ModeButton({
+  mode,
   label,
+  icon,
   tooltip,
-  isEnabled,
-  onToggle,
-}: ToggleButtonProps) {
+  isSelected,
+  onSelect,
+}: ModeButtonProps) {
   return (
     <Tooltip
       content={tooltip}
@@ -23,51 +31,95 @@ function ToggleButton({
     >
       <button
         type="button"
-        onClick={() => onToggle(!isEnabled)}
+        onClick={() => onSelect(mode)}
         className={cn(
-          "px-2 py-1 text-xs rounded-md transition-all",
+          "px-3 py-1.5 text-xs rounded-md transition-all flex items-center gap-1.5",
           "border border-transparent",
-          isEnabled
-            ? "bg-[#25272D] text-white hover:bg-[#35373D]"
-            : "bg-transparent text-gray-500 hover:bg-[#25272D]/50 border-gray-600",
+          isSelected
+            ? "bg-[#25272D] text-white border-indigo-500/50"
+            : "bg-transparent text-gray-500 hover:bg-[#25272D]/50 hover:text-gray-300",
         )}
       >
-        {label}
+        <span>{icon}</span>
+        <span>{label}</span>
       </button>
     </Tooltip>
   );
 }
 
+const MODES: Array<{
+  mode: AgentMode;
+  label: string;
+  icon: string;
+  tooltip: string;
+}> = [
+  {
+    mode: "chat",
+    label: "Chat",
+    icon: "💬",
+    tooltip: "Consultation mode - answers questions without modifying code",
+  },
+  {
+    mode: "planning",
+    label: "Planning",
+    icon: "📋",
+    tooltip: "Planning mode - research, analysis, and spec creation",
+  },
+  {
+    mode: "development",
+    label: "Development",
+    icon: "🛠️",
+    tooltip: "Development mode - full code modification capabilities",
+  },
+];
+
 export function LumioModeToggles() {
-  const {
-    enableTesting,
-    enableVerification,
-    setEnableTesting,
-    setEnableVerification,
-  } = useConversationStore();
+  const { t } = useTranslation();
+  const { agentMode, setAgentMode, skipTesting, setSkipTesting } =
+    useConversationStore();
 
   return (
-    <div className="flex items-center gap-1">
-      <ToggleButton
-        label="Testing"
-        tooltip={
-          enableTesting
-            ? "Browser testing enabled - click to skip"
-            : "Browser testing disabled - click to enable"
-        }
-        isEnabled={enableTesting}
-        onToggle={setEnableTesting}
-      />
-      <ToggleButton
-        label="Verification"
-        tooltip={
-          enableVerification
-            ? "Data verification enabled - click to skip"
-            : "Data verification disabled - click to enable"
-        }
-        isEnabled={enableVerification}
-        onToggle={setEnableVerification}
-      />
+    <div className="flex items-center gap-3">
+      <div className="flex items-center gap-0.5 bg-[#1a1b1e] rounded-lg p-0.5">
+        {MODES.map(({ mode, label, icon, tooltip }) => (
+          <ModeButton
+            key={mode}
+            mode={mode}
+            label={label}
+            icon={icon}
+            tooltip={tooltip}
+            isSelected={agentMode === mode}
+            onSelect={setAgentMode}
+          />
+        ))}
+      </div>
+
+      {agentMode === "development" && (
+        <Tooltip
+          content={
+            !skipTesting
+              ? "Testing enabled - contract tests and browser testing required"
+              : "Testing disabled - skip testing phases for faster iteration"
+          }
+          closeDelay={100}
+          className="bg-white text-black text-xs max-w-[200px]"
+        >
+          <button
+            type="button"
+            onClick={() => setSkipTesting(!skipTesting)}
+            className={cn(
+              "px-3 py-1.5 text-xs rounded-md transition-all flex items-center gap-1.5",
+              "border border-transparent bg-[#1a1b1e]",
+              !skipTesting
+                ? "text-white border-green-500/50"
+                : "text-gray-500 hover:text-gray-300",
+            )}
+          >
+            <span>🧪</span>
+            <span>{t("LUMIO_MODE_TOGGLES$testing")}</span>
+          </button>
+        </Tooltip>
+      )}
     </div>
   );
 }

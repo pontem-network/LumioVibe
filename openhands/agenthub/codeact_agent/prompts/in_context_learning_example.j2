@@ -4,10 +4,10 @@ Here's a running example of how to perform a task with the provided tools.
 
 USER: Create a simple staking contract on Lumio with a React frontend.
 
-A: Sure! Let me start by running the scaffold script:
+A: Sure! Let me start by creating the project:
 <function=execute_bash>
 <parameter=command>
-bash /openhands/templates/scaffold-fast.sh staking_app
+lu init counter staking_app
 </parameter>
 </function>
 
@@ -35,25 +35,27 @@ A: Contract deployed! Now I MUST update useContract.ts to match my contract (NOT
 USER: EXECUTION RESULT of [str_replace_editor]:
 File updated successfully.
 
-A: Now adding my contract's functions to useContract.ts and updating the exports. Starting Test Mode for testing:
+A: Now adding my contract's functions to useContract.ts and updating the exports. Starting frontend in TEST MODE for automated testing:
 <function=execute_bash>
 <parameter=command>
-cd /workspace/staking_app/frontend && pnpm install && ./start.sh --test &
+lu start --test /workspace/staking_app
 </parameter>
 </function>
 
 USER: EXECUTION RESULT of [execute_bash]:
-VITE ready. Local: http://localhost:55000/
+Frontend is running! (TEST MODE)
+  Local:    http://localhost:50000
+  External: $APP_BASE_URL_1
 
-A: Test Mode running. Now I'll test - first initialize the contract:
+A: Frontend running in TEST MODE (auto-signs transactions). Now I'll test - first initialize the contract:
 <function=execute_browser>
 <parameter=command>
-goto('http://localhost:55000')
+goto('http://localhost:50000')
 </parameter>
 </function>
 
 USER: BROWSER OBSERVATION:
-Page shows: TEST MODE banner, account 0x123...abc, "Initialize" button, all values show 0
+Page shows: account 0x123...abc, "Initialize" button, all values show 0
 
 A: Contract not initialized. Let me click Initialize:
 <function=execute_browser>
@@ -75,25 +77,25 @@ click('Stake 10 tokens')
 USER: BROWSER OBSERVATION:
 Transaction submitted. Staked amount: 10 (was 0)
 
-A: Data changed from 0 to 10 - this proves it's NOT mock data! Now I MUST start Production Mode for the user:
+A: Data changed from 0 to 10 - this proves it's NOT mock data! Now switching to PRODUCTION MODE for the user:
 <function=execute_bash>
 <parameter=command>
-cd /workspace/staking_app/frontend && ./start.sh &
+lu start /workspace/staking_app
 </parameter>
 </function>
 
 USER: EXECUTION RESULT of [execute_bash]:
-VITE ready. Local: http://localhost:50000/
+Frontend is running!
+  Local:    http://localhost:50000
+  External: $APP_BASE_URL_1
 
-A: Both servers running:
-- Test Mode (verified): port $APP_PORT_2 ✅
-- Production Mode (for user): port $APP_PORT_1 ✅
+A: Testing complete! Frontend now in PRODUCTION MODE.
 
 Checklist:
 - [x] useContract.ts MODULE_NAME = 'staking' (not counter!)
 - [x] Contract initialized
-- [x] Data changes after TX (verified: 0→10)
-- [x] Production Mode running
+- [x] Data changes after TX (verified in TEST MODE: 0→10)
+- [x] Frontend running in PRODUCTION MODE at $APP_BASE_URL_1
 
 The dApp is ready! You can access it via the App tab with your Pontem Wallet.
 <function=finish>
@@ -125,17 +127,27 @@ A: Found the issue - wrong parameter type. Let me fix it:
 USER: EXECUTION RESULT of [str_replace_editor]:
 File updated successfully.
 
-A: Fix applied! Now I MUST do FULL REGRESSION TEST in Test Mode (not just test the fix!):
+A: Fix applied! Now I MUST do FULL REGRESSION TEST in TEST MODE (not just test the fix!):
+<function=execute_bash>
+<parameter=command>
+lu start --test /workspace/staking_app
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+Frontend is running! (TEST MODE)
+
+A: TEST MODE running. Now testing:
 <function=execute_browser>
 <parameter=command>
-goto('http://localhost:55000')
+goto('http://localhost:50000')
 </parameter>
 </function>
 
 USER: BROWSER OBSERVATION:
-Page shows: TEST MODE, Staked: 10, Balance: 90
+Page shows: Staked: 10, Balance: 90
 
-A: Test Mode active. Now running FULL regression - testing ALL functionality:
+A: Now running FULL regression - testing ALL functionality:
 
 1. Testing STAKE (existing feature):
 <function=execute_browser>
@@ -167,34 +179,26 @@ click('Claim Rewards')
 USER: BROWSER OBSERVATION:
 Rewards claimed! Balance updated ✅
 
-A: All features verified in Test Mode:
-- [x] Stake: works ✅
-- [x] Unstake: FIXED and works ✅
-- [x] Claim Rewards: works ✅
-
-Now I MUST start Production Mode on $APP_PORT_1:
+A: All tests pass! Switching to PRODUCTION MODE:
 <function=execute_bash>
 <parameter=command>
-cd /workspace/staking_app/frontend && ./start.sh &
+lu start /workspace/staking_app
 </parameter>
 </function>
 
 USER: EXECUTION RESULT of [execute_bash]:
-VITE ready. Local: http://localhost:50000/
+Frontend is running!
 
 A: Bug fixed and verified!
 
 Regression Test Results:
-- [x] Stake: ✅ works
-- [x] Unstake: ✅ FIXED
-- [x] Claim Rewards: ✅ works
+- [x] Stake: ✅ works (TEST MODE)
+- [x] Unstake: ✅ FIXED (TEST MODE)
+- [x] Claim Rewards: ✅ works (TEST MODE)
 - [x] No regressions found
+- [x] Frontend running in PRODUCTION MODE at $APP_BASE_URL_1
 
-Deployment:
-- [x] Test Mode running on $APP_PORT_2
-- [x] Production Mode running on $APP_PORT_1
-
-The fix is complete. You can test unstaking in Production Mode with your Pontem Wallet.
+The fix is complete. You can test unstaking with your Pontem Wallet.
 <function=finish>
 </function>
 
@@ -230,10 +234,10 @@ cd /workspace/staking_app/contract && lumio move compile --package-dir . && lumi
 USER: EXECUTION RESULT of [execute_bash]:
 Error: BACKWARD_INCOMPATIBLE_MODULE_UPDATE - cannot upgrade module with incompatible ABI changes
 
-A: ABI incompatible! I need to create a new account and redeploy. Using the redeploy script:
+A: ABI incompatible! I need to create a new account and redeploy:
 <function=execute_bash>
 <parameter=command>
-bash /openhands/templates/redeploy-contract.sh /workspace/staking_app
+lu redeploy /workspace/staking_app --new-account
 </parameter>
 </function>
 
@@ -243,26 +247,25 @@ New address: 0x456...def
 Contract redeployed successfully!
 Updated: Move.toml, useContract.ts, types/index.ts
 
-A: Contract redeployed to new address! Now I need to restart frontend servers and run full regression:
+A: Contract redeployed to new address! Starting TEST MODE for regression testing:
 <function=execute_bash>
 <parameter=command>
-pkill -f "vite.*staking_app" || true
-cd /workspace/staking_app/frontend && ./start.sh --test &
+lu start --test /workspace/staking_app
 </parameter>
 </function>
 
 USER: EXECUTION RESULT of [execute_bash]:
-VITE ready. Local: http://localhost:55000/
+Frontend is running! (TEST MODE)
 
-A: Test Mode restarted with new contract address. Running full regression test:
+A: TEST MODE running. Testing the new contract:
 <function=execute_browser>
 <parameter=command>
-goto('http://localhost:55000')
+goto('http://localhost:50000')
 </parameter>
 </function>
 
 USER: BROWSER OBSERVATION:
-Page shows: TEST MODE, account 0x456...def, "Initialize" button (contract needs init)
+Page shows: account 0x456...def, "Initialize" button (contract needs init)
 
 A: New contract needs initialization:
 <function=execute_browser>
@@ -284,28 +287,25 @@ click('Stake 10 tokens')
 USER: BROWSER OBSERVATION:
 Staked: 10 ✅, Total Rewards Distributed: 0 (new field working!)
 
-A: All features work! Now starting Production Mode:
+A: Tests pass in TEST MODE! Switching to PRODUCTION MODE:
 <function=execute_bash>
 <parameter=command>
-cd /workspace/staking_app/frontend && ./start.sh &
+lu start /workspace/staking_app
 </parameter>
 </function>
 
 USER: EXECUTION RESULT of [execute_bash]:
-VITE ready. Local: http://localhost:50000/
+Frontend is running!
 
 A: Contract upgrade complete!
 
 Summary:
 - Added `total_rewards_distributed` field to contract
-- ABI was incompatible, so created new account via redeploy script
+- ABI was incompatible, so used `lu redeploy --new-account`
 - New contract address: 0x456...def
 - All files updated automatically
-- Full regression passed
-
-Servers:
-- [x] Test Mode: $APP_PORT_2 ✅
-- [x] Production Mode: $APP_PORT_1 ✅
+- Full regression passed in TEST MODE
+- Frontend running in PRODUCTION MODE at $APP_BASE_URL_1
 
 The new field is now available. Connect with Pontem Wallet to use it.
 <function=finish>

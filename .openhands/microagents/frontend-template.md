@@ -102,7 +102,7 @@ cd /workspace/app/frontend && pnpm build
 # Look for: TypeScript errors, missing imports, type mismatches
 
 # 3b. If build SUCCEEDS - restart dev server
-bash /openhands/templates/counter/start.sh /workspace/app --background
+lu start
 
 # 4. Browser test the changes
 # Use http://localhost:$APP_PORT_1 for browser() tool
@@ -204,17 +204,17 @@ cat /workspace/app/frontend/.env
 
 ```bash
 # Restart frontend
-bash /openhands/templates/counter/start.sh /workspace/app --background
+lu start
 
-# Start in test mode (no wallet needed)
-bash /openhands/templates/counter/start.sh /workspace/app --test --background
+# Check status
+lu status
 
 # Redeploy contract (updates .env automatically)
-bash /openhands/templates/counter/redeploy.sh /workspace/app
+lu redeploy
 ```
 
 <IMPORTANT>
-⚠️ ALWAYS use `./start.sh` - it automatically uses $APP_PORT_1 and kills previous instances!
+⚠️ ALWAYS use `lu start` - it automatically uses $APP_PORT_1 and kills previous instances!
 ⚠️ NEVER use `pnpm dev` directly - Vite may pick random unmapped port!
 ⚠️ Start the server ONCE and NEVER restart - Vite HMR handles all changes automatically.
 </IMPORTANT>

@@ -1,7 +1,7 @@
 ---
 name: lumiovibe
 type: repo
-version: 11.0.0
+version: 12.0.0
 agent: CodeActAgent
 ---
 
@@ -19,6 +19,32 @@ Create dApps that look like premium Web3 products:
 - **Professional typography** - Large stats, gradient headings, mono addresses
 
 **DO NOT make generic boring UIs!** Every dApp should feel unique and polished.
+
+---
+
+## Agent Modes
+
+User messages include `<lumio-settings mode="..." />` tag. Your behavior depends on the selected mode:
+
+### Chat Mode (💬)
+- **READ-ONLY** - Do NOT modify any files
+- Answer questions about the project, Move language, Lumio Network, React, blockchain concepts
+- Explore codebase, explain code, provide guidance
+- If user asks to make changes, explain you're in Chat mode and suggest switching to Development mode
+
+### Planning Mode (📋)
+- Research and analyze requirements thoroughly
+- Create/update `/workspace/app/spec.md` with detailed specifications
+- Do NOT modify contract or frontend code
+- Create implementation plans with clear steps
+- When planning is complete, output `<switch-mode>development</switch-mode>` to switch to Development mode
+
+### Development Mode (🛠️)
+- Full capabilities: modify code, deploy contracts, test in browser
+- **Smart Detection**: Even in Development mode, if user asks a QUESTION (contains "what is", "how does", "why", "explain", ends with "?"), answer without modifying code unless explicitly asked
+- Execute full workflow: spec → contract → tests → deploy → frontend → browser testing
+
+---
 
 ## Project Auto-Setup (BACKGROUND)
 
@@ -76,7 +102,7 @@ lu list                          # List available templates
 
 # Frontend management
 lu start                         # Start frontend in background
-lu stop                          # Stop frontend
+lu start --test                  # Start in test mode (auto-sign TX)
 lu status                        # Check status and recent logs
 lu logs -f                       # Follow logs in real-time
 
@@ -110,7 +136,10 @@ lu redeploy
 # Redeploy with NEW account (for incompatible changes)
 lu redeploy --new-account
 
-# Restart frontend
+# Start in TEST MODE (for automated browser testing)
+lu start --test
+
+# Start in PRODUCTION MODE (for user with Pontem Wallet)
 lu start
 ```
 
@@ -169,8 +198,10 @@ lu start
                           ↓
 ┌──────────────────────────────────────────────────────────────────┐
 │ Phase 6: BROWSER TESTING                                          │
+│ → lu start --test (TEST MODE for automated testing)              │
 │ → Test ALL user flows from spec.md                               │
 │ → Verify data updates after transactions                         │
+│ → lu start (PRODUCTION MODE for user with Pontem Wallet)         │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -357,10 +388,13 @@ ALWAYS verify frontend builds after changes!
 cd /workspace/app/frontend && pnpm build
 
 # 3a. If build FAILS → fix errors, repeat step 2
-# 3b. If build SUCCEEDS → restart dev server
-lu start
+# 3b. If build SUCCEEDS → restart in TEST MODE for testing
+lu start --test
 
-# 4. Browser test the changes
+# 4. Browser test the changes (test mode auto-signs TX!)
+
+# 5. After testing, switch to PRODUCTION MODE for user
+lu start
 ```
 
 **NEVER skip the build step!** TypeScript errors caught early save debugging time.
@@ -445,21 +479,29 @@ const handleAction = async () => {
 
 ## Phase 6: Browser Testing
 
-Use localhost for browser() tool:
+### Step 1: Start TEST MODE
+```bash
+lu start --test
+```
+Test mode auto-signs transactions - no wallet needed for browser() tool!
 
+### Step 2: Run Browser Tests
 ```python
-# CORRECT
+# Use localhost for browser() tool
 goto("http://localhost:$APP_PORT_1")
-
-# WRONG - external URL won't work
-goto("$APP_BASE_URL_1")
 ```
 
 Test all user flows from spec.md:
-1. Connect wallet / Test mode
-2. Initialize if needed
-3. Perform actions
-4. Verify data updates
+1. Initialize if needed
+2. Perform all actions
+3. Verify data updates after each TX
+
+### Step 3: Switch to PRODUCTION MODE
+```bash
+lu start
+```
+After testing is complete, restart in production mode for the user.
+User accesses via `$APP_BASE_URL_1` with Pontem Wallet.
 
 ### Save App Preview Screenshot
 
@@ -486,7 +528,7 @@ lu list                          # List templates
 
 # Frontend
 lu start                         # Start frontend
-lu stop                          # Stop frontend
+lu start --test                  # Start in test mode (auto-sign TX)
 lu status                        # Check status + logs
 lu logs -f                       # Follow logs
 

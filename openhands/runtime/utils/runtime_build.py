@@ -368,19 +368,53 @@ def get_tag_for_versioned_image(base_image: str) -> str:
 
 
 def get_hash_for_source_files() -> str:
+    """Calculate hash for source files including templates and microagents.
+
+    Previously only hashed openhands/ directory, which meant template updates
+    (like vite.config.ts fixes) didn't trigger image rebuilds. Now includes
+    templates/ and .openhands/microagents/ to ensure runtime images are
+    rebuilt when these files change.
+    """
     openhands_source_dir = Path(openhands.__file__).parent
+    project_root = openhands_source_dir.parent
+
+    md5 = hashlib.md5()
+
     dir_hash = dirhash(
         openhands_source_dir,
         'md5',
         ignore=[
-            '.*/',  # hidden directories
+            '.*/',
             '__pycache__/',
             '*.pyc',
         ],
     )
-    # We get away with truncation because we want something that is unique
-    # rather than something that is cryptographically secure
-    result = truncate_hash(dir_hash)
+    md5.update(dir_hash.encode())
+
+    templates_dir = Path(project_root, 'templates')
+    if templates_dir.exists():
+        templates_hash = dirhash(
+            templates_dir,
+            'md5',
+            ignore=[
+                '.*/',
+                'node_modules/',
+                '__pycache__/',
+                '*.pyc',
+            ],
+        )
+        md5.update(templates_hash.encode())
+
+    microagents_dir = Path(project_root, '.openhands', 'microagents')
+    if microagents_dir.exists():
+        microagents_hash = dirhash(
+            microagents_dir,
+            'md5',
+            ignore=['.*/', '__pycache__/', '*.pyc'],
+        )
+        md5.update(microagents_hash.encode())
+
+    result = truncate_hash(md5.hexdigest())
     return result
 
 

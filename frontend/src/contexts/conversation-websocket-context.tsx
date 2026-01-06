@@ -18,6 +18,7 @@ import {
   isV1Event,
   isAgentErrorEvent,
   isUserMessageEvent,
+  isMessageEvent,
   isActionEvent,
   isConversationStateUpdateEvent,
   isFullStateConversationStateUpdateEvent,
@@ -28,6 +29,8 @@ import {
   isConversationErrorEvent,
   isPlanningFileEditorObservationEvent,
 } from "#/types/v1/type-guards";
+import { useConversationStore } from "#/state/conversation-store";
+import { parseAgentModeSwitch } from "#/utils/parse-agent-mode-switch";
 import { ConversationStateUpdateEventStats } from "#/types/v1/core/events/conversation-state-event";
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
 import { buildWebSocketUrl } from "#/utils/websocket-url";
@@ -36,7 +39,6 @@ import type {
   V1SendMessageRequest,
 } from "#/api/conversation-service/v1-conversation-service.types";
 import EventService from "#/api/event-service/event-service.api";
-import { useConversationStore } from "#/state/conversation-store";
 import { isBudgetOrCreditError } from "#/utils/error-handler";
 import { useTracking } from "#/hooks/use-tracking";
 import { useReadConversationFile } from "#/hooks/mutation/use-read-conversation-file";
@@ -90,6 +92,7 @@ export function ConversationWebSocketProvider({
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
   const { setExecutionStatus } = useV1ConversationStateStore();
+  const { setAgentMode } = useConversationStore();
   const { appendInput, appendOutput } = useCommandStore();
   const { trackCreditLimitReached } = useTracking();
 
@@ -342,6 +345,46 @@ export function ConversationWebSocketProvider({
           // Clear optimistic user message when a user message is confirmed
           if (isUserMessageEvent(event)) {
             removeOptimisticUserMessage();
+          }
+
+          // Handle agent mode switching from agent messages
+          // eslint-disable-next-line no-console
+          console.log("[LumioVibe Debug] Event:", {
+            isMessage: isMessageEvent(event),
+            source: event.source,
+            hasLlmMessage: "llm_message" in event,
+          });
+          if (isMessageEvent(event) && event.source === "agent") {
+            let textContent = "";
+            const messageContent = event.llm_message?.content;
+            // eslint-disable-next-line no-console
+            console.log("[LumioVibe Debug] Content:", messageContent);
+            if (messageContent) {
+              if (Array.isArray(messageContent)) {
+                textContent = messageContent
+                  .filter(
+                    (c): c is { type: "text"; text: string } =>
+                      c.type === "text",
+                  )
+                  .map((c) => c.text)
+                  .join("");
+              } else if (typeof messageContent === "string") {
+                textContent = messageContent;
+              }
+            }
+            // eslint-disable-next-line no-console
+            console.log(
+              "[LumioVibe Debug] TextContent:",
+              textContent?.substring(0, 200),
+            );
+            if (textContent) {
+              const newMode = parseAgentModeSwitch(textContent);
+              if (newMode) {
+                // eslint-disable-next-line no-console
+                console.log("[LumioVibe] Switching mode to:", newMode);
+                setAgentMode(newMode);
+              }
+            }
           }
 
           // Handle cache invalidation for ActionEvent

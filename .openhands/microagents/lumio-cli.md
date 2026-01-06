@@ -55,7 +55,7 @@ lu list                      # List available templates
 
 # Frontend
 lu start                     # Start frontend in background
-lu stop                      # Stop frontend
+lu start --test              # Start in test mode (auto-sign TX)
 lu status                    # Check status + recent logs
 lu logs -f                   # Follow logs in real-time
 
@@ -160,8 +160,8 @@ lu logs
 # Restart frontend
 lu start
 
-# Stop frontend
-lu stop
+# Restart in test mode
+lu start --test
 ```
 
 ### Faucet Not Working

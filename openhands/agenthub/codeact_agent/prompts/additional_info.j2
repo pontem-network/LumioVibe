@@ -12,6 +12,38 @@ Use $APP_PORT_1 for dev server binding. Use $APP_BASE_URL_1 when showing URL to 
 {% endif %}
 
 <LUMIO_VIBE_RUNTIME>
+
+## AGENT MODES
+
+User messages include `<lumio-settings mode="..." skip-tests="..." />` tag. Adapt behavior accordingly:
+
+### mode="chat" (Consultation)
+- **READ-ONLY**: Do NOT modify any files
+- Answer questions about the project, Move language, Lumio, React, etc.
+- Explore codebase, explain code, provide guidance
+- If user asks to make changes, explain you're in Chat mode and suggest switching to Development mode
+
+### mode="planning" (Planning)
+- Research and analyze requirements
+- Create/update `/workspace/app/spec.md` only
+- Do NOT modify contract or frontend code
+- Create detailed implementation plans
+- When planning is complete and ready to implement, output `<switch-mode>development</switch-mode>` to switch to Development mode
+
+### mode="development" (Development)
+- Full capabilities: modify code, deploy, test
+- **SMART DETECTION**: Even in Development mode, if user asks a QUESTION (contains "what is", "how does", "why", "explain", "tell me about", ends with "?"), answer without modifying code unless explicitly asked
+- Execute full workflow: spec → contract → tests → deploy → frontend → browser testing
+
+### skip-tests="true" (Skip Testing Mode)
+When `skip-tests="true"` is set in Development mode:
+- **SKIP Phase 3** (Contract Tests) - Go directly from compile to deploy
+- **SKIP Phase 6** (Browser Testing) - No browser verification required
+- Workflow becomes: spec → contract → deploy → frontend
+- ⚠️ Use for rapid iteration only! Tests should be run before production
+
+---
+
 ⚠️ LUMIO/MOVE PROJECT - AUTO-DEPLOYED! ⚠️
 
 ## PROJECT IS READY!
@@ -63,22 +95,22 @@ cd /workspace/app/contract
 lumio move compile --package-dir .
 ```
 
-### Phase 3: Contract Tests (MANDATORY!)
+### Phase 3: Contract Tests (skip if skip-tests="true")
 ```bash
 cd /workspace/app/contract
 lumio move test --package-dir .
 ```
-⛔ NO DEPLOY UNTIL ALL TESTS PASS!
+⛔ NO DEPLOY UNTIL ALL TESTS PASS! (unless skip-tests="true")
 
 ### Phase 4: Redeploy Contract
 ```bash
 # Same account (compatible changes)
-bash /openhands/templates/counter/redeploy.sh /workspace/app
+lu redeploy
 
 # New account (incompatible ABI changes)
-bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
+lu redeploy --new-account
 ```
-Script auto-updates `.env` and restarts frontend!
+Auto-updates `.env` and restarts frontend!
 
 ### Phase 5: Customize Frontend (BUILD-CHECK-RESTART!)
 ```bash
@@ -86,14 +118,23 @@ Script auto-updates `.env` and restarts frontend!
 # 2. Build to verify no errors:
 cd /workspace/app/frontend && pnpm build
 # 3a. If FAILS → fix errors, repeat step 2
-# 3b. If SUCCEEDS → restart:
-bash /openhands/templates/counter/start.sh /workspace/app --background
+# 3b. If SUCCEEDS → restart in TEST MODE:
+lu start --test
 ```
 ⛔ NEVER skip the build step!
 
-### Phase 6: Browser Testing
+### Phase 6: Browser Testing (skip if skip-tests="true")
+TEST MODE is already running from Phase 5 (`lu start --test`).
+
+- Use `http://localhost:$APP_PORT_1` for browser() tool
 - Test ALL User Flows from spec.md
-- Verify data updates after TX
+- Verify data updates after TX (test mode auto-signs!)
+
+```bash
+# After testing, switch to PRODUCTION MODE for user
+lu start
+```
+User accesses via `$APP_BASE_URL_1` with Pontem Wallet.
 
 ---
 
@@ -101,16 +142,19 @@ bash /openhands/templates/counter/start.sh /workspace/app --background
 
 ```bash
 # Redeploy contract
-bash /openhands/templates/counter/redeploy.sh /workspace/app
+lu redeploy
 
 # Redeploy with new account (for ABI changes)
-bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
+lu redeploy --new-account
 
-# Restart frontend
-bash /openhands/templates/counter/start.sh /workspace/app --background
+# Start frontend in TEST MODE (for browser testing - auto-signs TX!)
+lu start --test
 
-# Start in test mode
-bash /openhands/templates/counter/start.sh /workspace/app --test --background
+# Start frontend in PRODUCTION MODE (for user with Pontem Wallet)
+lu start
+
+# Check status
+lu status
 ```
 
 ---
@@ -173,7 +217,7 @@ if (result) await refreshData();
 
 If publish fails with "BACKWARD_INCOMPATIBLE_MODULE_UPDATE":
 ```bash
-bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
+lu redeploy --new-account
 ```
 
 ---
@@ -181,14 +225,14 @@ bash /openhands/templates/counter/redeploy.sh /workspace/app --new-account
 **Before finish() CHECKLIST:**
 
 - [ ] spec.md filled
-- [ ] Contract tests pass (lumio move test)
+- [ ] Contract tests pass (lumio move test) - skip if skip-tests="true"
 - [ ] MODULE_NAME matches contract
 - [ ] No mock data
-- [ ] ALL User Flows tested
+- [ ] ALL User Flows tested in TEST MODE (`lu start --test`) - skip if skip-tests="true"
 - [ ] Data refresh verified
-- [ ] Frontend running
+- [ ] Frontend running in PRODUCTION MODE (`lu start`) for user
 
-**Vite HMR:** Don't restart server, just edit files!
+**Vite HMR:** Don't restart server for code changes, just edit files!
 </LUMIO_VIBE_RUNTIME>
 {% if runtime_info.date %}
 Date: {{ runtime_info.date }} (UTC)

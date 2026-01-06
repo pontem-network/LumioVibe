@@ -5,7 +5,7 @@ LumioVibe CLI (lu) - Universal tool for Lumio dApp development
 Commands:
     lu init <template> [project_name]  - Create project from template
     lu start [project_dir]             - Start frontend in background
-    lu stop                            - Stop frontend
+    lu start --test                    - Start in test mode (auto-sign TX)
     lu status                          - Check frontend status and logs
     lu redeploy [project_dir]          - Redeploy contract
     lu logs [-f]                       - Show frontend logs
@@ -15,6 +15,7 @@ Commands:
 Examples:
     lu init counter my_dapp
     lu start /workspace/app
+    lu start --test
     lu status
     lu logs -f
     lu redeploy /workspace/app --new-account
@@ -392,7 +393,7 @@ class LumioCLI:
     # =========================================================================
     # START - Start frontend in background
     # =========================================================================
-    def start(self, project_dir: Optional[str] = None) -> int:
+    def start(self, project_dir: Optional[str] = None, test_mode: bool = False) -> int:
         """Start frontend in background."""
         project_path = self._resolve_project(project_dir)
         if not project_path:
@@ -404,15 +405,19 @@ class LumioCLI:
             return 1
 
         # Stop any existing frontend
-        self.stop(quiet=True)
+        self._stop_frontend(quiet=True)
 
         # Install deps if needed
         self._install_deps(frontend_path)
 
-        log_info(f'Starting frontend on port {self.app_port}...')
+        mode_str = ' (TEST MODE)' if test_mode else ''
+        log_info(f'Starting frontend on port {self.app_port}{mode_str}...')
+
+        # Set test mode environment variable if requested
+        env_prefix = 'VITE_WALLET_MODE=test ' if test_mode else ''
 
         # Start vite in background
-        cmd = f'cd {frontend_path} && nohup pnpm vite --host --port {self.app_port} --strictPort --base / > {self.LOG_FILE} 2>&1 & echo $!'
+        cmd = f'cd {frontend_path} && nohup {env_prefix}pnpm vite --host --port {self.app_port} --strictPort --base / > {self.LOG_FILE} 2>&1 & echo $!'
 
         code, output = run_cmd(cmd)
         if code == 0 and output.strip():
@@ -437,11 +442,8 @@ class LumioCLI:
         log_error('Failed to start frontend')
         return 1
 
-    # =========================================================================
-    # STOP - Stop frontend
-    # =========================================================================
-    def stop(self, quiet: bool = False) -> int:
-        """Stop frontend."""
+    def _stop_frontend(self, quiet: bool = False) -> int:
+        """Stop frontend (internal method used by start)."""
 
         # Kill by PID file
         if self.PID_FILE.exists():
@@ -762,9 +764,9 @@ def main():
     # start
     start_parser = subparsers.add_parser('start', help='Start frontend')
     start_parser.add_argument('project_dir', nargs='?', help='Project directory')
-
-    # stop
-    subparsers.add_parser('stop', help='Stop frontend')
+    start_parser.add_argument(
+        '--test', '-t', action='store_true', help='Start in test mode (auto-sign TX)'
+    )
 
     # status
     subparsers.add_parser('status', help='Check frontend status')
@@ -797,9 +799,7 @@ def main():
     elif args.command == 'init-status':
         return cli.init_status()
     elif args.command == 'start':
-        return cli.start(args.project_dir)
-    elif args.command == 'stop':
-        return cli.stop()
+        return cli.start(args.project_dir, args.test)
     elif args.command == 'status':
         return cli.status()
     elif args.command == 'logs':

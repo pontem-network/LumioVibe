@@ -11,6 +11,8 @@ export type ConversationTab =
 
 export type ConversationMode = "code" | "plan";
 
+export type AgentMode = "chat" | "planning" | "development";
+
 export interface IMessageToSend {
   text: string;
   timestamp: number;
@@ -31,8 +33,8 @@ interface ConversationState {
   planContent: string | null;
   conversationMode: ConversationMode;
   subConversationTaskId: string | null; // Task ID for sub-conversation creation
-  enableTesting: boolean; // LumioVibe: enable browser testing phase
-  enableVerification: boolean; // LumioVibe: enable verification phase
+  agentMode: AgentMode; // LumioVibe: chat | planning | development
+  skipTesting: boolean; // LumioVibe: skip testing phases in development mode
 }
 
 interface ConversationActions {
@@ -59,8 +61,8 @@ interface ConversationActions {
   setConversationMode: (conversationMode: ConversationMode) => void;
   setSubConversationTaskId: (taskId: string | null) => void;
   setPlanContent: (planContent: string | null) => void;
-  setEnableTesting: (enableTesting: boolean) => void;
-  setEnableVerification: (enableVerification: boolean) => void;
+  setAgentMode: (agentMode: AgentMode) => void;
+  setSkipTesting: (skipTesting: boolean) => void;
 }
 
 type ConversationStore = ConversationState & ConversationActions;
@@ -89,8 +91,8 @@ export const useConversationStore = create<ConversationStore>()(
       planContent: null,
       conversationMode: "code",
       subConversationTaskId: null,
-      enableTesting: true,
-      enableVerification: true,
+      agentMode: "development",
+      skipTesting: false,
 
       // Actions
       setIsRightPanelShown: (isRightPanelShown) =>
@@ -245,11 +247,10 @@ export const useConversationStore = create<ConversationStore>()(
       setPlanContent: (planContent) =>
         set({ planContent }, false, "setPlanContent"),
 
-      setEnableTesting: (enableTesting) =>
-        set({ enableTesting }, false, "setEnableTesting"),
+      setAgentMode: (agentMode) => set({ agentMode }, false, "setAgentMode"),
 
-      setEnableVerification: (enableVerification) =>
-        set({ enableVerification }, false, "setEnableVerification"),
+      setSkipTesting: (skipTesting) =>
+        set({ skipTesting }, false, "setSkipTesting"),
     }),
     {
       name: "conversation-store",

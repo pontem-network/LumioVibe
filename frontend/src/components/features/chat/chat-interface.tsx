@@ -62,8 +62,7 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const posthog = usePostHog();
-  const { setMessageToSend, enableTesting, enableVerification } =
-    useConversationStore();
+  const { setMessageToSend, agentMode, skipTesting } = useConversationStore();
   const { data: conversation } = useActiveConversation();
   const { errorMessage } = useErrorMessageStore();
   const { isLoadingMessages } = useWsClient();
@@ -210,7 +209,7 @@ export function ChatInterface() {
     let prompt =
       uploadedFiles.length > 0 ? `${content}\n\n${filePrompt}` : content;
 
-    const lumioSettings = `<lumio-settings testing="${enableTesting}" verification="${enableVerification}" />`;
+    const lumioSettings = `<lumio-settings mode="${agentMode}" skip-tests="${skipTesting}" />`;
     prompt = `${lumioSettings}\n${prompt}`;
 
     send(createChatMessage(prompt, imageUrls, uploadedFiles, timestamp));
