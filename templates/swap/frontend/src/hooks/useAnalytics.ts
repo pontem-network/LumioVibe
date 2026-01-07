@@ -5,7 +5,7 @@ const generateVolumeData = (days: number): VolumeData[] => {
   const data: VolumeData[] = [];
   const now = Date.now();
   const baseVolume = 45000000;
-  
+
   for (let i = days; i >= 0; i--) {
     const timestamp = new Date(now - i * 24 * 60 * 60 * 1000);
     const dayOfWeek = timestamp.getDay();
@@ -17,7 +17,7 @@ const generateVolumeData = (days: number): VolumeData[] => {
       volume: (baseVolume + trend) * weekendFactor * randomFactor,
     });
   }
-  
+
   return data;
 };
 
@@ -25,7 +25,7 @@ const generateTVLData = (days: number): TVLData[] => {
   const data: TVLData[] = [];
   const now = Date.now();
   const baseTVL = 180000000;
-  
+
   for (let i = days; i >= 0; i--) {
     const timestamp = new Date(now - i * 24 * 60 * 60 * 1000);
     const trend = (days - i) * 2000000;
@@ -35,7 +35,7 @@ const generateTVLData = (days: number): TVLData[] => {
       tvl: baseTVL + trend + randomChange,
     });
   }
-  
+
   return data;
 };
 
@@ -43,7 +43,7 @@ const generateFeesData = (days: number): FeesData[] => {
   const data: FeesData[] = [];
   const now = Date.now();
   let cumulative = 0;
-  
+
   for (let i = days; i >= 0; i--) {
     const timestamp = new Date(now - i * 24 * 60 * 60 * 1000);
     const dailyFees = 120000 + Math.random() * 80000;
@@ -54,7 +54,7 @@ const generateFeesData = (days: number): FeesData[] => {
       cumulative,
     });
   }
-  
+
   return data;
 };
 

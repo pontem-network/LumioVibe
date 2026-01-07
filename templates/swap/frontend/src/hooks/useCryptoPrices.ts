@@ -135,19 +135,19 @@ const notifyListeners = () => {
 
 const fetchPrices = async () => {
   const ids = Object.values(SYMBOL_TO_ID).join(',');
-  
+
   try {
     const response = await fetch(
       `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&sparkline=false&price_change_percentage=24h`
     );
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch prices');
     }
-    
+
     const data = await response.json();
     const newPrices = new Map<string, CryptoPrice>();
-    
+
     // Map API response to our format
     for (const coin of data) {
       const symbol = Object.entries(SYMBOL_TO_ID).find(([, id]) => id === coin.id)?.[0];
@@ -164,7 +164,7 @@ const fetchPrices = async () => {
         });
       }
     }
-    
+
     // Add 3LD with simulated price (not on CoinGecko)
     const threeLdBase = FALLBACK_PRICES['3LD'];
     const randomChange = (Math.random() - 0.5) * 0.002; // Small random fluctuation
@@ -177,18 +177,18 @@ const fetchPrices = async () => {
       marketCap: 84700000,
       icon: '✦',
     });
-    
+
     globalState = {
       prices: newPrices,
       isLoading: false,
       lastUpdated: new Date(),
       error: null,
     };
-    
+
     notifyListeners();
   } catch (error) {
     console.error('Failed to fetch crypto prices:', error);
-    
+
     // Use fallback prices on error
     if (globalState.prices.size === 0) {
       const fallbackMap = new Map<string, CryptoPrice>();
@@ -222,7 +222,7 @@ if (typeof window !== 'undefined') {
 
 export const useCryptoPrices = () => {
   const [, forceUpdate] = useState({});
-  
+
   useEffect(() => {
     const listener = () => forceUpdate({});
     listeners.add(listener);
@@ -230,11 +230,11 @@ export const useCryptoPrices = () => {
       listeners.delete(listener);
     };
   }, []);
-  
+
   const getPrice = useCallback((symbol: string): CryptoPrice | null => {
     return globalState.prices.get(symbol) || null;
   }, []);
-  
+
   const getFormattedPrice = useCallback((symbol: string): string => {
     const price = globalState.prices.get(symbol);
     if (!price) {
@@ -243,16 +243,16 @@ export const useCryptoPrices = () => {
     }
     return formatPrice(price.price);
   }, []);
-  
+
   const getAllPrices = useCallback((): CryptoPrice[] => {
     return Array.from(globalState.prices.values());
   }, []);
-  
+
   const getFormattedVolume = useCallback((symbol: string): string => {
     const price = globalState.prices.get(symbol);
     return price ? formatVolume(price.volume24h) : '$0';
   }, []);
-  
+
   return {
     prices: globalState.prices,
     isLoading: globalState.isLoading,

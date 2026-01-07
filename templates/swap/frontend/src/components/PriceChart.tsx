@@ -1,12 +1,12 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { 
-  ComposedChart, 
-  Bar, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
   ResponsiveContainer,
   ReferenceLine,
   Area,
@@ -19,7 +19,7 @@ const generateChartData = (days: number, volatility: number = 0.05) => {
   const data = [];
   let price = 3420;
   const now = Date.now();
-  
+
   for (let i = days; i >= 0; i--) {
     const change = (Math.random() - 0.48) * volatility * price;
     price = Math.max(price + change, 100);
@@ -28,7 +28,7 @@ const generateChartData = (days: number, volatility: number = 0.05) => {
     const low = price * (1 - Math.random() * 0.02);
     const close = price + (Math.random() - 0.5) * volatility * price * 0.5;
     const volume = Math.random() * 1000000 + 500000;
-    
+
     data.push({
       time: new Date(now - i * 3600000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       price: parseFloat(close.toFixed(2)),
@@ -48,9 +48,9 @@ const timeframes = ["1m", "5m", "15m", "1h", "4h", "1d"];
 export const PriceChart = () => {
   const [selectedTimeframe, setSelectedTimeframe] = useState("1h");
   const [chartType, setChartType] = useState<"line" | "candle">("line");
-  
+
   const data = useMemo(() => generateChartData(48, 0.03), []);
-  
+
   const currentPrice = data[data.length - 1]?.price || 0;
   const previousPrice = data[data.length - 2]?.price || currentPrice;
   const priceChange = currentPrice - previousPrice;
@@ -145,34 +145,34 @@ export const PriceChart = () => {
                   <stop offset="100%" stopColor="hsl(270, 70%, 50%)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis 
-                dataKey="time" 
-                axisLine={false} 
-                tickLine={false} 
+              <XAxis
+                dataKey="time"
+                axisLine={false}
+                tickLine={false}
                 tick={{ fill: 'hsl(240, 5%, 55%)', fontSize: 10 }}
                 interval="preserveStartEnd"
               />
-              <YAxis 
+              <YAxis
                 domain={['dataMin - 50', 'dataMax + 50']}
-                axisLine={false} 
-                tickLine={false} 
+                axisLine={false}
+                tickLine={false}
                 tick={{ fill: 'hsl(240, 5%, 55%)', fontSize: 10 }}
                 orientation="right"
                 tickFormatter={(val) => `$${val.toLocaleString()}`}
               />
               <Tooltip content={<CustomTooltip />} />
               <ReferenceLine y={currentPrice} stroke="hsl(270, 70%, 50%)" strokeDasharray="3 3" />
-              <Area 
-                type="monotone" 
-                dataKey="price" 
-                stroke="hsl(270, 70%, 50%)" 
+              <Area
+                type="monotone"
+                dataKey="price"
+                stroke="hsl(270, 70%, 50%)"
                 strokeWidth={2}
                 fill="url(#priceGradient)"
               />
-              <Line 
-                type="monotone" 
-                dataKey="ma20" 
-                stroke="hsl(0, 85%, 70%)" 
+              <Line
+                type="monotone"
+                dataKey="ma20"
+                stroke="hsl(0, 85%, 70%)"
                 strokeWidth={1}
                 strokeDasharray="5 5"
                 dot={false}
@@ -180,40 +180,40 @@ export const PriceChart = () => {
             </AreaChart>
           ) : (
             <ComposedChart data={data}>
-              <XAxis 
-                dataKey="time" 
-                axisLine={false} 
-                tickLine={false} 
+              <XAxis
+                dataKey="time"
+                axisLine={false}
+                tickLine={false}
                 tick={{ fill: 'hsl(240, 5%, 55%)', fontSize: 10 }}
               />
-              <YAxis 
+              <YAxis
                 yAxisId="price"
                 domain={['dataMin - 50', 'dataMax + 50']}
-                axisLine={false} 
-                tickLine={false} 
+                axisLine={false}
+                tickLine={false}
                 tick={{ fill: 'hsl(240, 5%, 55%)', fontSize: 10 }}
                 orientation="right"
                 tickFormatter={(val) => `$${val}`}
               />
-              <YAxis 
+              <YAxis
                 yAxisId="volume"
                 orientation="left"
-                axisLine={false} 
+                axisLine={false}
                 tickLine={false}
                 tick={false}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Bar 
+              <Bar
                 yAxisId="volume"
-                dataKey="volume" 
-                fill="hsl(270, 70%, 50%)" 
+                dataKey="volume"
+                fill="hsl(270, 70%, 50%)"
                 opacity={0.2}
               />
-              <Line 
+              <Line
                 yAxisId="price"
-                type="monotone" 
-                dataKey="price" 
-                stroke="hsl(270, 70%, 50%)" 
+                type="monotone"
+                dataKey="price"
+                stroke="hsl(270, 70%, 50%)"
                 strokeWidth={2}
                 dot={false}
               />
@@ -234,7 +234,7 @@ const StatCard = ({ label, value }: { label: string; value: string }) => (
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null;
-  
+
   const data = payload[0].payload;
   return (
     <div className="glass-card rounded-lg p-3 text-xs">

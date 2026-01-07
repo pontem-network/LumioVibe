@@ -87,8 +87,16 @@ class DeploymentMetadata(BaseModel):
             self.conversation_id, self.user_id
         )
 
+        # First try to find project by spec.md
         for found in glob.glob(f'{root_path}/{relative_conv_dir}*/spec.md'):
             self.project_dir = os.path.basename(Path(found).parent)
+            return True
+
+        # Fallback: find project by frontend/package.json
+        for found in glob.glob(
+            f'{root_path}/{relative_conv_dir}*/frontend/package.json'
+        ):
+            self.project_dir = os.path.basename(Path(found).parent.parent)
             return True
 
         return False
@@ -108,11 +116,11 @@ class DeploymentMetadata(BaseModel):
         relative_conv_dir = get_conversation_workspace_dir(
             self.conversation_id, self.user_id
         )
-        start_path = (
-            f'{root_path}/{relative_conv_dir}{self.project_dir}/frontend/start.sh'
+        package_json_path = (
+            f'{root_path}/{relative_conv_dir}{self.project_dir}/frontend/package.json'
         )
 
-        return os.path.exists(start_path)
+        return os.path.exists(package_json_path)
 
     def project_path(self) -> str | None:
         if self.project_dir is None:

@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Activity, 
-  Flame, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  Flame,
   Zap,
   Target,
   BarChart3
@@ -18,19 +18,19 @@ export const MarketSignals = ({ selectedSymbol = "ETH" }: MarketSignalsProps) =>
   const { getPrice, getFormattedPrice } = useCryptoPrices();
   const priceData = getPrice(selectedSymbol);
   const currentPrice = priceData?.price || 0;
-  
+
   // Calculate dynamic levels based on current price
   const resistance1 = currentPrice * 1.03;
   const resistance2 = currentPrice * 1.07;
   const support1 = currentPrice * 0.96;
   const support2 = currentPrice * 0.91;
-  
+
   const formatLevel = (price: number) => {
     if (price >= 1000) return `$${price.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
     if (price >= 1) return `$${price.toFixed(2)}`;
     return `$${price.toFixed(6)}`;
   };
-  
+
   const tradeScore = 78;
   const buyPressure = 65;
   const rsi = 58;
@@ -51,7 +51,7 @@ export const MarketSignals = ({ selectedSymbol = "ETH" }: MarketSignalsProps) =>
           </h3>
           <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Live</span>
         </div>
-        
+
         <div className="relative flex items-center justify-center mb-4">
           <svg className="w-32 h-32 transform -rotate-90">
             <circle
@@ -96,17 +96,17 @@ export const MarketSignals = ({ selectedSymbol = "ETH" }: MarketSignalsProps) =>
           <Activity className="h-4 w-4 text-secondary" />
           Market Pressure
         </h3>
-        
+
         <div className="space-y-4">
-          <PressureBar 
-            label="Buy Pressure" 
-            value={buyPressure} 
-            color="success" 
+          <PressureBar
+            label="Buy Pressure"
+            value={buyPressure}
+            color="success"
             icon={<TrendingUp className="h-3 w-3" />}
           />
-          <PressureBar 
-            label="Sell Pressure" 
-            value={100 - buyPressure} 
+          <PressureBar
+            label="Sell Pressure"
+            value={100 - buyPressure}
             color="destructive"
             icon={<TrendingDown className="h-3 w-3" />}
           />
@@ -119,25 +119,25 @@ export const MarketSignals = ({ selectedSymbol = "ETH" }: MarketSignalsProps) =>
           <BarChart3 className="h-4 w-4 text-primary" />
           Indicators
         </h3>
-        
+
         <div className="space-y-3">
-          <IndicatorRow 
-            label="RSI (14)" 
+          <IndicatorRow
+            label="RSI (14)"
             value={rsi}
             status={rsi < 30 ? "oversold" : rsi > 70 ? "overbought" : "neutral"}
           />
-          <IndicatorRow 
-            label="MACD" 
+          <IndicatorRow
+            label="MACD"
             value="Bullish Cross"
             status="bullish"
           />
-          <IndicatorRow 
-            label="Volume" 
+          <IndicatorRow
+            label="Volume"
             value="+42% avg"
             status="bullish"
           />
-          <IndicatorRow 
-            label="Volatility" 
+          <IndicatorRow
+            label="Volatility"
             value="Medium"
             status="neutral"
           />
@@ -166,7 +166,7 @@ export const MarketSignals = ({ selectedSymbol = "ETH" }: MarketSignalsProps) =>
           <Target className="h-4 w-4 text-secondary" />
           Key Levels
         </h3>
-        
+
         <div className="space-y-2">
           <LevelRow label="Resistance 2" value={formatLevel(resistance2)} type="resistance" />
           <LevelRow label="Resistance 1" value={formatLevel(resistance1)} type="resistance" />
@@ -184,14 +184,14 @@ export const MarketSignals = ({ selectedSymbol = "ETH" }: MarketSignalsProps) =>
   );
 };
 
-const PressureBar = ({ 
-  label, 
-  value, 
-  color, 
-  icon 
-}: { 
-  label: string; 
-  value: number; 
+const PressureBar = ({
+  label,
+  value,
+  color,
+  icon
+}: {
+  label: string;
+  value: number;
   color: "success" | "destructive";
   icon: React.ReactNode;
 }) => (
@@ -209,8 +209,8 @@ const PressureBar = ({
         animate={{ width: `${value}%` }}
         transition={{ duration: 1, ease: "easeOut" }}
         className={`h-full rounded-full ${
-          color === "success" 
-            ? "bg-gradient-to-r from-success/50 to-success" 
+          color === "success"
+            ? "bg-gradient-to-r from-success/50 to-success"
             : "bg-gradient-to-r from-destructive/50 to-destructive"
         }`}
       />
@@ -218,13 +218,13 @@ const PressureBar = ({
   </div>
 );
 
-const IndicatorRow = ({ 
-  label, 
-  value, 
-  status 
-}: { 
-  label: string; 
-  value: string | number; 
+const IndicatorRow = ({
+  label,
+  value,
+  status
+}: {
+  label: string;
+  value: string | number;
   status: "bullish" | "bearish" | "neutral" | "oversold" | "overbought";
 }) => {
   const statusColors = {
@@ -245,13 +245,13 @@ const IndicatorRow = ({
   );
 };
 
-const LevelRow = ({ 
-  label, 
-  value, 
-  type 
-}: { 
-  label: string; 
-  value: string; 
+const LevelRow = ({
+  label,
+  value,
+  type
+}: {
+  label: string;
+  value: string;
   type: "support" | "resistance";
 }) => (
   <div className="flex items-center justify-between">

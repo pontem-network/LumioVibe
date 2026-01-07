@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ComposedChart, 
-  Bar, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
   ResponsiveContainer,
   ReferenceLine,
   Area,
@@ -14,12 +14,12 @@ import {
   CartesianGrid,
   Brush
 } from "recharts";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Clock, 
-  BarChart3, 
-  LineChart, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  BarChart3,
+  LineChart,
   Pencil,
   Crosshair,
   TrendingUp as TrendIcon,
@@ -35,7 +35,7 @@ const generateChartData = (days: number, volatility: number = 0.05, basePrice: n
   const data = [];
   let price = basePrice;
   const now = Date.now();
-  
+
   for (let i = days; i >= 0; i--) {
     const change = (Math.random() - 0.48) * volatility * price;
     price = Math.max(price + change, basePrice * 0.01);
@@ -44,7 +44,7 @@ const generateChartData = (days: number, volatility: number = 0.05, basePrice: n
     const low = price * (1 - Math.random() * 0.02);
     const close = price + (Math.random() - 0.5) * volatility * price * 0.5;
     const volume = Math.random() * 1000000 + 500000;
-    
+
     data.push({
       time: new Date(now - i * 3600000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       fullTime: new Date(now - i * 3600000).toLocaleString(),
@@ -99,10 +99,10 @@ export const EnhancedPriceChart = ({ selectedCoin }: EnhancedPriceChartProps) =>
   useEffect(() => {
     setChartKey(prev => prev + 1);
   }, [coin.symbol]);
-  
+
   const basePrice = parsePrice(coin.price);
   const data = useMemo(() => generateChartData(72, 0.03, basePrice), [basePrice, chartKey]);
-  
+
   const currentPrice = data[data.length - 1]?.price || 0;
   const previousPrice = data[data.length - 2]?.price || currentPrice;
   const priceChange = currentPrice - previousPrice;
@@ -160,7 +160,7 @@ export const EnhancedPriceChart = ({ selectedCoin }: EnhancedPriceChartProps) =>
             >
               <Pencil className="h-4 w-4" />
             </Button>
-            
+
             {showDrawingTools && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
@@ -247,120 +247,120 @@ export const EnhancedPriceChart = ({ selectedCoin }: EnhancedPriceChartProps) =>
                   <stop offset="100%" stopColor="hsl(270, 70%, 50%)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid 
-                strokeDasharray="3 3" 
-                stroke="hsl(240, 10%, 20%)" 
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="hsl(240, 10%, 20%)"
                 vertical={false}
               />
-              <XAxis 
-                dataKey="time" 
-                axisLine={false} 
-                tickLine={false} 
+              <XAxis
+                dataKey="time"
+                axisLine={false}
+                tickLine={false}
                 tick={{ fill: 'hsl(240, 5%, 55%)', fontSize: 10 }}
                 interval="preserveStartEnd"
               />
-              <YAxis 
+              <YAxis
                 domain={['dataMin - 30', 'dataMax + 30']}
-                axisLine={false} 
-                tickLine={false} 
+                axisLine={false}
+                tickLine={false}
                 tick={{ fill: 'hsl(240, 5%, 55%)', fontSize: 10 }}
                 orientation="right"
                 tickFormatter={(val) => `$${val.toLocaleString()}`}
                 width={80}
               />
               <Tooltip content={<EnhancedTooltip coinSymbol={coin.symbol} />} />
-              <ReferenceLine 
-                y={currentPrice} 
-                stroke="hsl(330, 80%, 60%)" 
+              <ReferenceLine
+                y={currentPrice}
+                stroke="hsl(330, 80%, 60%)"
                 strokeDasharray="5 5"
-                label={{ 
-                  value: `$${currentPrice.toLocaleString()}`, 
-                  position: 'right', 
+                label={{
+                  value: `$${currentPrice.toLocaleString()}`,
+                  position: 'right',
                   fill: 'hsl(330, 80%, 60%)',
                   fontSize: 10
                 }}
               />
-              <Area 
-                type="monotone" 
-                dataKey="price" 
-                stroke="hsl(270, 70%, 60%)" 
+              <Area
+                type="monotone"
+                dataKey="price"
+                stroke="hsl(270, 70%, 60%)"
                 strokeWidth={2}
                 fill="url(#priceGradientEnhanced)"
               />
-              <Line 
-                type="monotone" 
-                dataKey="ma20" 
-                stroke="hsl(330, 80%, 60%)" 
+              <Line
+                type="monotone"
+                dataKey="ma20"
+                stroke="hsl(330, 80%, 60%)"
                 strokeWidth={1}
                 strokeDasharray="5 5"
                 dot={false}
                 name="MA 20"
               />
-              <Line 
-                type="monotone" 
-                dataKey="ma50" 
-                stroke="hsl(45, 90%, 50%)" 
+              <Line
+                type="monotone"
+                dataKey="ma50"
+                stroke="hsl(45, 90%, 50%)"
                 strokeWidth={1}
                 strokeDasharray="3 3"
                 dot={false}
                 name="MA 50"
               />
-              <Brush 
-                dataKey="time" 
-                height={30} 
+              <Brush
+                dataKey="time"
+                height={30}
                 stroke="hsl(270, 70%, 50%)"
                 fill="hsl(240, 10%, 12%)"
               />
             </AreaChart>
           ) : (
             <ComposedChart data={data}>
-              <CartesianGrid 
-                strokeDasharray="3 3" 
-                stroke="hsl(240, 10%, 20%)" 
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="hsl(240, 10%, 20%)"
                 vertical={false}
               />
-              <XAxis 
-                dataKey="time" 
-                axisLine={false} 
-                tickLine={false} 
+              <XAxis
+                dataKey="time"
+                axisLine={false}
+                tickLine={false}
                 tick={{ fill: 'hsl(240, 5%, 55%)', fontSize: 10 }}
               />
-              <YAxis 
+              <YAxis
                 yAxisId="price"
                 domain={['dataMin - 30', 'dataMax + 30']}
-                axisLine={false} 
-                tickLine={false} 
+                axisLine={false}
+                tickLine={false}
                 tick={{ fill: 'hsl(240, 5%, 55%)', fontSize: 10 }}
                 orientation="right"
                 tickFormatter={(val) => `$${val}`}
                 width={80}
               />
-              <YAxis 
+              <YAxis
                 yAxisId="volume"
                 orientation="left"
-                axisLine={false} 
+                axisLine={false}
                 tickLine={false}
                 tick={false}
               />
               <Tooltip content={<EnhancedTooltip coinSymbol={coin.symbol} />} />
-              <Bar 
+              <Bar
                 yAxisId="volume"
-                dataKey="volume" 
-                fill="hsl(270, 70%, 50%)" 
+                dataKey="volume"
+                fill="hsl(270, 70%, 50%)"
                 opacity={0.2}
                 radius={[2, 2, 0, 0]}
               />
-              <Line 
+              <Line
                 yAxisId="price"
-                type="monotone" 
-                dataKey="price" 
-                stroke="hsl(270, 70%, 60%)" 
+                type="monotone"
+                dataKey="price"
+                stroke="hsl(270, 70%, 60%)"
                 strokeWidth={2}
                 dot={false}
               />
-              <Brush 
-                dataKey="time" 
-                height={30} 
+              <Brush
+                dataKey="time"
+                height={30}
                 stroke="hsl(270, 70%, 50%)"
                 fill="hsl(240, 10%, 12%)"
               />
@@ -397,7 +397,7 @@ const StatCard = ({ label, value, positive }: { label: string; value: string; po
 
 const EnhancedTooltip = ({ active, payload, coinSymbol }: any) => {
   if (!active || !payload?.length) return null;
-  
+
   const data = payload[0].payload;
   return (
     <div className="glass-card rounded-lg p-4 text-xs border border-pink/20">

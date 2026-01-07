@@ -1499,13 +1499,16 @@ def _to_conversation_info(app_conversation: AppConversation) -> ConversationInfo
     )
 
 
-
 @app.get('/images')
 async def images():
     docker_client = docker.from_env()
 
-    images:list[docker.models.images.Image] = docker_client.images.list(all=True)
-    vibe_images = filter(lambda image: len(image.tags) > 0 and any("openhands" in tag for tag in image.tags), images)
+    images: list[docker.models.images.Image] = docker_client.images.list(all=True)
+    vibe_images = filter(
+        lambda image: len(image.tags) > 0
+        and any('openhands' in tag for tag in image.tags),
+        images,
+    )
 
     return [image.attrs for image in vibe_images]
 
@@ -1516,7 +1519,10 @@ async def conversation_info(conversation_id: str = Depends(validate_conversation
 
     all_containers = docker_client.containers.list(all=True)
     containers = [
-        container for container in all_containers
-        if container.name and "openhands-runtime-" in container.name and conversation_id in container.name
+        container
+        for container in all_containers
+        if container.name
+        and 'openhands-runtime-' in container.name
+        and conversation_id in container.name
     ]
     return [container.attrs for container in containers]

@@ -11,11 +11,11 @@ interface Particle {
   speed: number;
 }
 
-export const SwapSuccessParticles = ({ 
-  isActive, 
-  onComplete 
-}: { 
-  isActive: boolean; 
+export const SwapSuccessParticles = ({
+  isActive,
+  onComplete
+}: {
+  isActive: boolean;
   onComplete: () => void;
 }) => {
   const [particles, setParticles] = useState<Particle[]>([]);

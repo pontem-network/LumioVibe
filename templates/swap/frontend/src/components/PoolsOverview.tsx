@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
-import { 
-  Layers, 
-  TrendingUp, 
-  Droplet, 
-  Percent, 
+import {
+  Layers,
+  TrendingUp,
+  Droplet,
+  Percent,
   Plus,
-  ArrowRight 
+  ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -57,8 +57,8 @@ export const PoolsOverview = () => {
             <div className="flex items-center gap-3">
               <div className="flex -space-x-2">
                 {pool.icons.map((icon, i) => (
-                  <span 
-                    key={i} 
+                  <span
+                    key={i}
                     className="text-lg bg-muted rounded-full w-8 h-8 flex items-center justify-center border-2 border-background"
                   >
                     {icon}
@@ -75,7 +75,7 @@ export const PoolsOverview = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="text-right hidden sm:block">
                 <div className="text-xs text-muted-foreground">24h Vol</div>

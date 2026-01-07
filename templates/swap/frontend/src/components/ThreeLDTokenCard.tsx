@@ -19,7 +19,7 @@ export const ThreeLDTokenCard = ({ onBuyClick }: ThreeLDTokenCardProps) => {
   const { getPrice } = useCryptoPrices();
 
   const threeLdPrice = getPrice("3LD");
-  
+
   const tokenData = {
     price: threeLdPrice ? formatPrice(threeLdPrice.price) : "$0.0847",
     change24h: threeLdPrice?.change24h || 12.5,

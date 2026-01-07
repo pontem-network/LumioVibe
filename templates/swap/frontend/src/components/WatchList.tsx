@@ -65,8 +65,8 @@ export const WatchList = ({ onCoinSelect, selectedSymbol }: WatchListProps) => {
             transition={{ delay: 0.35 + idx * 0.05 }}
             onClick={() => handleItemClick(item)}
             className={`w-full flex items-center justify-between p-3 rounded-xl transition-all group cursor-pointer ${
-              selectedSymbol === item.symbol 
-                ? "bg-pink/20 ring-1 ring-pink/40" 
+              selectedSymbol === item.symbol
+                ? "bg-pink/20 ring-1 ring-pink/40"
                 : "hover:bg-muted/50"
             }`}
           >
@@ -77,7 +77,7 @@ export const WatchList = ({ onCoinSelect, selectedSymbol }: WatchListProps) => {
                 <div className="text-[10px] text-muted-foreground">{item.name}</div>
               </div>
             </div>
-            
+
             <div className="text-right">
               <div className="font-mono text-sm">{item.price}</div>
               <div className={`flex items-center justify-end gap-1 text-xs ${

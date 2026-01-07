@@ -13,18 +13,18 @@ export const TOKEN_LOGOS: Record<string, string> = {
   DOGE: "https://assets.coingecko.com/coins/images/5/small/dogecoin.png",
   DOT: "https://assets.coingecko.com/coins/images/12171/small/polkadot.png",
   LINK: "https://assets.coingecko.com/coins/images/877/small/chainlink-new-logo.png",
-  
+
   // Layer 2 & DeFi
   MATIC: "https://assets.coingecko.com/coins/images/4713/small/polygon.png",
   ARB: "https://assets.coingecko.com/coins/images/16547/small/photo_2023-03-29_21.47.00.jpeg",
   OP: "https://assets.coingecko.com/coins/images/25244/small/Optimism.png",
   UNI: "https://assets.coingecko.com/coins/images/12504/small/uni.jpg",
-  
+
   // Meme coins
   SHIB: "https://assets.coingecko.com/coins/images/11939/small/shiba.png",
   PEPE: "https://assets.coingecko.com/coins/images/29850/small/pepe-token.jpeg",
   WIF: "https://assets.coingecko.com/coins/images/33566/small/dogwifhat.jpg",
-  
+
   // Other majors
   LTC: "https://assets.coingecko.com/coins/images/2/small/litecoin.png",
   ATOM: "https://assets.coingecko.com/coins/images/1481/small/cosmos_hub.png",
@@ -35,21 +35,21 @@ export const TOKEN_LOGOS: Record<string, string> = {
   NEAR: "https://assets.coingecko.com/coins/images/10365/small/near.jpg",
   FTM: "https://assets.coingecko.com/coins/images/4001/small/Fantom_round.png",
   SEI: "https://assets.coingecko.com/coins/images/28205/small/Sei_Logo_-_Transparent.png",
-  
+
   // AI & Gaming
   RENDER: "https://assets.coingecko.com/coins/images/11636/small/rndr.png",
   FET: "https://assets.coingecko.com/coins/images/5681/small/Fetch.jpg",
   IMX: "https://assets.coingecko.com/coins/images/17233/small/immutableX-symbol-BLK-RGB.png",
-  
+
   // Stablecoins
   USDC: "https://assets.coingecko.com/coins/images/6319/small/usdc.png",
   USDT: "https://assets.coingecko.com/coins/images/325/small/Tether.png",
   DAI: "https://assets.coingecko.com/coins/images/9956/small/Badge_Dai.png",
-  
+
   // Wrapped
   WBTC: "https://assets.coingecko.com/coins/images/7598/small/wrapped_bitcoin_wbtc.png",
   WETH: "https://assets.coingecko.com/coins/images/2518/small/weth.png",
-  
+
   // 3LD Token
   "3LD": threeLdLogo,
 };

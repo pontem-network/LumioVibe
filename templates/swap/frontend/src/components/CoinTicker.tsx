@@ -16,7 +16,7 @@ interface CoinTickerProps {
 
 export const CoinTicker = ({ onCoinSelect, selectedSymbol }: CoinTickerProps) => {
   const { prices, getFormattedPrice } = useCryptoPrices();
-  
+
   const coins = TICKER_SYMBOLS.map(symbol => {
     const priceData = prices.get(symbol);
     return {
@@ -65,14 +65,14 @@ export const CoinTicker = ({ onCoinSelect, selectedSymbol }: CoinTickerProps) =>
               key={`${coin.symbol}-${index}`}
               onClick={() => handleCoinClick(coin)}
               className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300 ease-out cursor-pointer ${
-                isSelected 
-                  ? "bg-gradient-to-r from-pink/30 via-pink/20 to-transparent ring-2 ring-pink/60 shadow-[0_0_20px_rgba(255,0,128,0.3)] scale-105 relative z-10" 
+                isSelected
+                  ? "bg-gradient-to-r from-pink/30 via-pink/20 to-transparent ring-2 ring-pink/60 shadow-[0_0_20px_rgba(255,0,128,0.3)] scale-105 relative z-10"
                   : "hover:bg-pink/10 hover:scale-105"
               }`}
             >
               <div className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full transition-all duration-300 ${
-                isSelected 
-                  ? "ring-2 ring-pink/50 shadow-[0_0_12px_rgba(255,0,128,0.5)]" 
+                isSelected
+                  ? "ring-2 ring-pink/50 shadow-[0_0_12px_rgba(255,0,128,0.5)]"
                   : ""
               }`}>
                 <TokenIcon symbol={coin.symbol} size={24} />

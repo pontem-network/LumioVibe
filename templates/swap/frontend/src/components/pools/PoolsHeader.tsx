@@ -26,7 +26,7 @@ export const PoolsHeader = ({
             Provide liquidity and earn fees from trades
           </p>
         </div>
-        
+
         <div className="flex items-center gap-4">
           <div className="glass-card rounded-xl px-4 py-2">
             <div className="text-xs text-muted-foreground">Total TVL</div>

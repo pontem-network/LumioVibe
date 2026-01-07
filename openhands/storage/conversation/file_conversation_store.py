@@ -62,8 +62,10 @@ class FileConversationStore(ConversationStore):
             return False
 
     def ids(self) -> list[str]:
-        result:list[str] = self.file_store.list(self._get_conversations_dir())
-        return list(map(lambda path: Path(path).name, result))
+        result: list[str] = self.file_store.list(self._get_conversations_dir())
+        return [
+            Path(path).name for path in result if not Path(path).name.startswith('.')
+        ]
 
     async def search(
         self,

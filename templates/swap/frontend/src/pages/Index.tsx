@@ -19,7 +19,7 @@ const Index = () => {
   const { toast } = useToast();
   const swapCardRef = useRef<HTMLDivElement>(null);
   const { getPrice, getFormattedPrice } = useCryptoPrices();
-  
+
   // Parallax: background moves at 30% of scroll speed for subtle depth
   const backgroundY = useTransform(scrollY, [0, 1000], [0, 300]);
   const overlayOpacity = useTransform(scrollY, [0, 500], [0.8, 0.95]);
@@ -32,7 +32,7 @@ const Index = () => {
     price: "$3,420",
     change: 1.87
   });
-  
+
   // Update selected coin price when prices change
   useEffect(() => {
     const priceData = getPrice(selectedCoin.symbol);
@@ -65,7 +65,7 @@ const Index = () => {
   return (
     <div className="min-h-screen relative overflow-x-hidden">
       {/* Parallax Background Image */}
-      <motion.div 
+      <motion.div
         className="fixed inset-0 z-0 pointer-events-none"
         style={{
           backgroundImage: 'url(/images/background.png)',
@@ -78,22 +78,22 @@ const Index = () => {
         }}
       />
       {/* Gradient overlay with dynamic opacity */}
-      <motion.div 
+      <motion.div
         className="fixed inset-0 z-0 pointer-events-none bg-gradient-to-t from-background via-background/80 to-transparent"
         style={{ opacity: overlayOpacity }}
       />
-      
+
       <Header />
-      
+
       {/* Global Coin Search */}
       <GlobalCoinSearch onSelectCoin={handleCoinSelect} />
-      
+
       {/* Coin Ticker Banner */}
       <CoinTicker onCoinSelect={handleCoinSelect} selectedSymbol={selectedCoin.symbol} />
-      
+
       <main className="container py-6 relative z-10">
         {/* Hero Stats */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"
@@ -151,16 +151,16 @@ const Index = () => {
   );
 };
 
-const StatCard = ({ 
-  label, 
-  value, 
-  change, 
-  positive, 
-  badge 
-}: { 
-  label: string; 
-  value: string; 
-  change?: string; 
+const StatCard = ({
+  label,
+  value,
+  change,
+  positive,
+  badge
+}: {
+  label: string;
+  value: string;
+  change?: string;
   positive?: boolean;
   badge?: string;
 }) => (

@@ -38,7 +38,7 @@
     /* Trading colors */
     --success: 142 70% 45%;
     --success-foreground: 0 0% 100%;
-    
+
     --destructive: 350 80% 55%;
     --destructive-foreground: 0 0% 100%;
 
@@ -57,7 +57,7 @@
     --gradient-background: linear-gradient(180deg, hsl(250, 20%, 8%) 0%, hsl(270, 25%, 5%) 50%, hsl(280, 20%, 4%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(250, 15%, 12%) 0%, hsl(260, 15%, 8%) 100%);
     --gradient-glow: radial-gradient(ellipse at 50% 0%, hsl(270, 80%, 50%, 0.15) 0%, hsl(330, 80%, 50%, 0.05) 50%, transparent 80%);
-    
+
     /* Glassmorphism - more translucent */
     --glass-bg: hsl(250, 20%, 10%, 0.4);
     --glass-border: hsl(330, 80%, 55%, 0.15);

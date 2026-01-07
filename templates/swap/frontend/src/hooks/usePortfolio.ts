@@ -63,7 +63,7 @@ const generateHistoryData = (): PortfolioHistory[] => {
   const data: PortfolioHistory[] = [];
   const now = Date.now();
   const baseValue = 42000;
-  
+
   for (let i = 30; i >= 0; i--) {
     const timestamp = new Date(now - i * 24 * 60 * 60 * 1000);
     const randomChange = (Math.random() - 0.45) * 2000;
@@ -73,7 +73,7 @@ const generateHistoryData = (): PortfolioHistory[] => {
       value: baseValue + trend + randomChange,
     });
   }
-  
+
   return data;
 };
 
@@ -112,7 +112,7 @@ export const usePortfolio = () => {
       0
     );
     const change24h = (totalValue * weightedChange) / 100;
-    
+
     return {
       totalValue,
       change24h,

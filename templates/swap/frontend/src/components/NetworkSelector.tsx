@@ -26,9 +26,9 @@ export const NetworkSelector = () => {
 
   return (
     <div className="relative">
-      <Button 
-        variant="glass" 
-        size="sm" 
+      <Button
+        variant="glass"
+        size="sm"
         className="gap-2"
         onClick={() => setIsOpen(!isOpen)}
       >

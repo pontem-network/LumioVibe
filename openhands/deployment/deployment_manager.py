@@ -1,3 +1,4 @@
+import asyncio
 import os
 import time
 from datetime import datetime, timezone
@@ -5,6 +6,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import docker
+import httpx
 from docker.errors import NotFound
 from docker.models.containers import Container
 
@@ -80,11 +82,18 @@ class DeploymentManager:
             return None
 
     def _is_deployable(self, conversation_id: str, user_id: str) -> bool:
-        """Check if conversation workspace has deployable frontend."""
+        """Check if conversation workspace has deployable frontend with package.json."""
         workspace_rel = get_conversation_workspace_dir(conversation_id, user_id)
         workspace_path = self._get_abs_path(workspace_rel)
-        frontend_path = workspace_path / 'frontend' / 'package.json'
-        return frontend_path.exists()
+        if not workspace_path.exists():
+            return False
+        # Look for package.json in any project's frontend folder
+        for project_dir in workspace_path.iterdir():
+            if project_dir.is_dir():
+                frontend_package = project_dir / 'frontend' / 'package.json'
+                if frontend_package.exists():
+                    return True
+        return False
 
     def get_deployment_status(self, conversation_id: str, user_id: str) -> dict:
         """Get current deployment status with live stats."""
@@ -223,7 +232,7 @@ cd /workspace/frontend;
 if [ ! -d "node_modules" ]; then
     pnpm install --store-dir /tmp/pnpm-store --shamefully-hoist
 fi;
-./start.sh;
+pnpm vite --host --port ${APP_PORT_1} --strictPort;
 """
 
             run_kwargs: dict[str, Any] = {
@@ -257,6 +266,8 @@ fi;
             start_time = time.time()
             is_ready = False
 
+            logger.info(f'Waiting for app to start on port {app_port}...')
+
             while time.time() - start_time < startup_timeout:
                 container.reload()
                 state = container.attrs.get('State', {})
@@ -266,34 +277,40 @@ fi;
                     metadata.status = DeploymentStatus.ERROR
                     metadata.error_message = f'Container stopped unexpectedly:\n{logs}'
                     self._save_metadata(metadata, user_id)
+                    logger.error(f'Container stopped: {logs[:500]}')
                     return {
                         'success': False,
                         'error': metadata.error_message,
                     }
 
-                import socket
-
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                # Check if app is responding with HTTP request
                 try:
-                    sock.settimeout(1)
-                    result = sock.connect_ex(('localhost', app_port))
-                    if result == 0:
-                        is_ready = True
-                        break
-                except Exception:
+                    async with httpx.AsyncClient() as client:
+                        response = await client.head(
+                            f'http://localhost:{app_port}',
+                            timeout=2.0,
+                        )
+                        if response.status_code < 500:
+                            is_ready = True
+                            logger.info(f'App is ready on port {app_port}')
+                            break
+                except (httpx.ConnectError, httpx.TimeoutException):
                     pass
-                finally:
-                    sock.close()
+                except Exception as e:
+                    logger.debug(f'Health check failed: {e}')
 
-                time.sleep(2)
+                await asyncio.sleep(2)
 
             if not is_ready:
                 logs = container.logs(tail=100).decode('utf-8')
                 container.stop()
                 container.remove()
                 metadata.status = DeploymentStatus.ERROR
-                metadata.error_message = f'Startup timeout:\n{logs}'
+                metadata.error_message = (
+                    f'Startup timeout ({startup_timeout}s):\n{logs}'
+                )
                 self._save_metadata(metadata, user_id)
+                logger.error(f'Startup timeout: {logs[:500]}')
                 return {
                     'success': False,
                     'error': metadata.error_message,

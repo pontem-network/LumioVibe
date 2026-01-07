@@ -54,7 +54,7 @@ export const RemoveLiquidityModal = ({ position, isOpen, onClose }: RemoveLiquid
               <span className="text-sm text-muted-foreground">Amount to Remove</span>
               <span className="font-mono text-2xl font-bold">{percentage}%</span>
             </div>
-            
+
             <Slider
               value={[percentage]}
               onValueChange={([value]) => setPercentage(value)}
@@ -81,7 +81,7 @@ export const RemoveLiquidityModal = ({ position, isOpen, onClose }: RemoveLiquid
           {/* Receive Summary */}
           <div className="glass-card rounded-xl p-4 space-y-3">
             <div className="text-sm text-muted-foreground mb-2">You will receive</div>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-xl">{position.pool.token0.icon}</span>
@@ -89,7 +89,7 @@ export const RemoveLiquidityModal = ({ position, isOpen, onClose }: RemoveLiquid
               </div>
               <span className="font-mono font-semibold">{token0ToReceive.toFixed(4)}</span>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-xl">{position.pool.token1.icon}</span>

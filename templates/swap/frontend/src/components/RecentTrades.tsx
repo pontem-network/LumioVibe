@@ -73,8 +73,8 @@ export const RecentTrades = () => {
                 <td className="py-3 text-right font-mono text-xs font-medium">{trade.total}</td>
                 <td className="py-3 text-right text-xs text-muted-foreground">{trade.time}</td>
                 <td className="py-3 text-right">
-                  <a 
-                    href="#" 
+                  <a
+                    href="#"
                     className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
                   >
                     {trade.txHash}

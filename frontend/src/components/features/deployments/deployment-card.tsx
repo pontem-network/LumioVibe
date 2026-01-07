@@ -100,6 +100,7 @@ export function DeploymentCard({
       className={cn(
         "app-card p-4 rounded-lg border border-gray-700 bg-[#1a1a1a] hover:bg-[#222] cursor-pointer transition-all",
         isError && "border-red-500/50",
+        isRunning && "border-green-500/50",
       )}
       onClick={onClick}
     >
@@ -113,17 +114,6 @@ export function DeploymentCard({
         </div>
 
         <div className="flex items-center gap-2">
-          {isRunning && deployment.app_url && (
-            <button
-              type="button"
-              onClick={handleOpenApp}
-              className="p-2 rounded-md hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
-              title="Open App"
-            >
-              <ExternalLinkIcon width={16} height={16} />
-            </button>
-          )}
-
           <button
             type="button"
             onClick={handleActionClick}
@@ -150,6 +140,19 @@ export function DeploymentCard({
           </button>
         </div>
       </div>
+
+      {isRunning && deployment.app_url && (
+        <div className="mt-3 pt-3 border-t border-gray-700">
+          <button
+            type="button"
+            onClick={handleOpenApp}
+            className="w-full py-2 px-3 rounded-md bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+          >
+            <ExternalLinkIcon width={14} height={14} />
+            Open App: {deployment.app_url}
+          </button>
+        </div>
+      )}
 
       {isRunning && deployment.current_session_cost !== undefined && (
         <div className="mt-3 pt-3 border-t border-gray-700">
