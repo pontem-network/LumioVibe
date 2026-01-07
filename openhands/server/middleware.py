@@ -145,7 +145,10 @@ class TokenRateLimitMiddleware(BaseHTTPMiddleware):
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         # Skip rate limiting for token status checks
-        if not request.url.path.startswith('/api/token') or request.url.path == '/api/token/status':
+        if (
+            not request.url.path.startswith('/api/token')
+            or request.url.path == '/api/token/status'
+        ):
             return await call_next(request)
 
         ok = await self.rate_limiter(request)
