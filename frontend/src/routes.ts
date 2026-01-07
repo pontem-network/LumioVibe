@@ -21,5 +21,6 @@ export default [
       route("api-keys", "routes/api-keys.tsx"),
     ]),
     route("conversations/:conversationId", "routes/conversation.tsx"),
+    route("*", "routes/catch-all.tsx"),
   ]),
 ] satisfies RouteConfig;
