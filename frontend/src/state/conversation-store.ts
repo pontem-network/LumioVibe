@@ -33,8 +33,8 @@ interface ConversationState {
   planContent: string | null;
   conversationMode: ConversationMode;
   subConversationTaskId: string | null; // Task ID for sub-conversation creation
-  agentMode: AgentMode; // LumioVibe: chat | planning | development
-  skipTesting: boolean; // LumioVibe: skip testing phases in development mode
+  agentMode: AgentMode; // build: chat | planning | development
+  skipTesting: boolean; // build: skip testing phases in development mode
 }
 
 interface ConversationActions {

@@ -7,10 +7,13 @@ import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversat
 <PrefetchPageLinks page="/conversations/:conversationId" />;
 
 function HomeScreen() {
-  const { data: conversationsList } = usePaginatedConversations(10);
+  const { data: conversationsList, isPending } = usePaginatedConversations(10);
   const conversations =
     conversationsList?.pages.flatMap((page) => page.results) ?? [];
   const hasApps = conversations.length > 0;
+
+  // Wait for initial load to determine layout
+  const isInitialLoading = isPending && !conversationsList;
 
   return (
     <div
@@ -25,18 +28,14 @@ function HomeScreen() {
           className="flex flex-col gap-6 px-6 w-full lg:px-0 lg:max-w-[1000px]"
           data-testid="home-screen-new-conversation-section"
         >
-          {hasApps ? (
+          {isInitialLoading && <TemplateGrid />}
+          {!isInitialLoading && hasApps && (
             <>
-              {/* User has apps - show apps first, then templates */}
               <RecentConversations />
               <TemplateGrid compact />
             </>
-          ) : (
-            <>
-              {/* New user - show templates with New App button */}
-              <TemplateGrid showNewAppButton />
-            </>
           )}
+          {!isInitialLoading && !hasApps && <TemplateGrid showNewAppButton />}
         </div>
       </div>
     </div>

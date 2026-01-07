@@ -118,6 +118,7 @@ const renderUserMessageWithSkillReady = (
     );
   } catch (error) {
     // If skill ready event creation fails, just render the user message
+    // eslint-disable-next-line no-console
     console.error("Failed to create skill ready event:", error);
     return (
       <UserAssistantEventMessage

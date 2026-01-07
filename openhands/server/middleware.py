@@ -144,7 +144,8 @@ class TokenRateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
-        if not request.url.path.startswith('/api/token'):
+        # Skip rate limiting for token status checks
+        if not request.url.path.startswith('/api/token') or request.url.path == '/api/token/status':
             return await call_next(request)
 
         ok = await self.rate_limiter(request)

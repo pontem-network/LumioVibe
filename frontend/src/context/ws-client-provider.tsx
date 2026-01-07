@@ -243,7 +243,7 @@ export function WsClientProvider({
         const newMode = parseAgentModeSwitch(event.message);
         if (newMode) {
           // eslint-disable-next-line no-console
-          console.log("[LumioVibe] Switching mode to:", newMode);
+          console.log("[build] Switching mode to:", newMode);
           setAgentMode(newMode);
         }
       }

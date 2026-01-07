@@ -349,7 +349,7 @@ export function ConversationWebSocketProvider({
 
           // Handle agent mode switching from agent messages
           // eslint-disable-next-line no-console
-          console.log("[LumioVibe Debug] Event:", {
+          console.log("[build Debug] Event:", {
             isMessage: isMessageEvent(event),
             source: event.source,
             hasLlmMessage: "llm_message" in event,
@@ -358,7 +358,7 @@ export function ConversationWebSocketProvider({
             let textContent = "";
             const messageContent = event.llm_message?.content;
             // eslint-disable-next-line no-console
-            console.log("[LumioVibe Debug] Content:", messageContent);
+            console.log("[build Debug] Content:", messageContent);
             if (messageContent) {
               if (Array.isArray(messageContent)) {
                 textContent = messageContent
@@ -374,14 +374,14 @@ export function ConversationWebSocketProvider({
             }
             // eslint-disable-next-line no-console
             console.log(
-              "[LumioVibe Debug] TextContent:",
+              "[build Debug] TextContent:",
               textContent?.substring(0, 200),
             );
             if (textContent) {
               const newMode = parseAgentModeSwitch(textContent);
               if (newMode) {
                 // eslint-disable-next-line no-console
-                console.log("[LumioVibe] Switching mode to:", newMode);
+                console.log("[build] Switching mode to:", newMode);
                 setAgentMode(newMode);
               }
             }

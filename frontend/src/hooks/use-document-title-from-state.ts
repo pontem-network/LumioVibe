@@ -5,9 +5,9 @@ import { useActiveConversation } from "./query/use-active-conversation";
  * Hook that updates the document title based on the current conversation.
  * This ensures that any changes to the conversation title are reflected in the document title.
  *
- * @param suffix Optional suffix to append to the title (default: "LumioVibe")
+ * @param suffix Optional suffix to append to the title (default: "build")
  */
-export function useDocumentTitleFromState(suffix = "LumioVibe") {
+export function useDocumentTitleFromState(suffix = "build") {
   const { data: conversation } = useActiveConversation();
   const lastValidTitleRef = useRef<string | null>(null);
 
