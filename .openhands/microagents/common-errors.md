@@ -346,6 +346,38 @@ const refreshData = async () => {
 
 ---
 
+## Error Category 7: Build & Runtime Errors
+
+### 7.1 SWC Native Binding Error
+
+**Error:**
+```
+Error: Failed to load native binding
+    at @swc/core/binding.js
+cannot open shared object file: Operation not permitted
+```
+
+**Cause:** `@vitejs/plugin-react-swc` uses native binaries that don't work in Docker with grpcfuse mounts.
+
+**Solution:**
+```bash
+# 1. Replace SWC with esbuild plugin
+sed -i "s/@vitejs\/plugin-react-swc/@vitejs\/plugin-react/g" package.json vite.config.ts
+
+# 2. Fix version (SWC uses different version numbers)
+sed -i 's/"@vitejs\/plugin-react": "\^3\..*"/"@vitejs\/plugin-react": "^4.3.4"/g' package.json
+
+# 3. Reinstall
+rm -rf node_modules pnpm-lock.yaml && pnpm install
+
+# 4. Restart frontend
+lu start
+```
+
+**Prevention:** 🚫 NEVER install `@vitejs/plugin-react-swc` - always use `@vitejs/plugin-react`
+
+---
+
 ## Quick Self-Check Before Finishing
 
 ```

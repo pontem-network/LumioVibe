@@ -162,6 +162,10 @@ npm run dev      # FORBIDDEN!
 vite             # FORBIDDEN!
 ```
 
+🚫 **FORBIDDEN PACKAGES - NEVER INSTALL:**
+- `@vitejs/plugin-react-swc` - SWC native binaries don't work in Docker!
+- Always use `@vitejs/plugin-react` (esbuild) instead
+
 **If `lu start` fails:**
 1. Check logs: `cat /tmp/lumiovibe-frontend.log`
 2. Fix the code issue

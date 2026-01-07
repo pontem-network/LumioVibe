@@ -605,6 +605,7 @@ await pontem.signAndSubmit(payload);
 8. **Never restart Vite** - HMR handles all code changes
 9. **⚠️ NO MOCK DATA** - ALL data from blockchain via view functions!
 10. **⚠️ BOTH modes required** - Production on APP_PORT_1, Test on APP_PORT_2
+11. **🚫 NEVER use @vitejs/plugin-react-swc** - SWC native binaries don't work in Docker! Always use `@vitejs/plugin-react` (esbuild)
 
 ---
 
