@@ -86,18 +86,25 @@ export default function MainApp() {
     }
   }, [settings?.IS_NEW_USER, config.data?.APP_MODE]);
 
-  if (!isWalletAuth && pathname !== "/auth") {
-    navigate("/auth");
-    return <PreLoader />;
-  }
-  if (isWalletAuth && pathname === "/auth") {
-    navigate("/");
-    return <PreLoader />;
-  }
-  // Don't do any redirects when on TOS page
-  // Don't allow users to use the app if it 402s
-  if (!isOnTosPage && error?.status === 402 && pathname !== "/") {
-    navigate("/");
+  React.useEffect(() => {
+    if (!isWalletAuth && pathname !== "/auth") {
+      navigate("/auth");
+    } else if (isWalletAuth && pathname === "/auth") {
+      navigate("/");
+    }
+  }, [isWalletAuth, pathname]);
+  React.useEffect(() => {
+    // Don't do any redirects when on TOS page
+    // Don't allow users to use the app if it 402s
+    if (!isOnTosPage && error?.status === 402 && pathname !== "/") {
+      navigate("/");
+    }
+  }, [error?.status, pathname, isOnTosPage]);
+
+  if (
+    (!isWalletAuth && pathname !== "/auth") ||
+    (isWalletAuth && pathname === "/auth")
+  ) {
     return <PreLoader />;
   }
 
