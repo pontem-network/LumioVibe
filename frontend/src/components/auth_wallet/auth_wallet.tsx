@@ -10,7 +10,7 @@ export function WalletPage() {
 
   return (
     <div id="wallet_page">
-      <Logo />
+      <Logo size={1.4} />
       <p>
         {text[0]}
         <br />

@@ -1,4 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap");
+:root{
+  --logo-spacing: .3em;
+}
 
 .main-logo{
   font-family: "Orbitron", sans-serif;
@@ -11,34 +14,38 @@
   align-items: center;
   justify-content: center;
 
-  margin-bottom: 2rem;
+  margin-bottom: 2em;
 }
 .main-logo .logo {
-  letter-spacing: 1rem;
-  font-size: 4.1rem;
+  font-size: 4em;
+  letter-spacing: var(--logo-spacing);
   line-height: 1;
+
+
+  margin-right: -.3em;
 
   display: flex;
   align-items: end;
   justify-content: center;
-  margin-right: -1rem;
 }
+
 .main-logo .logo img {
-  height: 3.4rem;
-  margin-bottom: 0.4rem;
-  margin-right: 1rem;
+  height: .8em;
+  margin-bottom: .1em;
+  margin-right: var(--logo-spacing);
 }
 
 .main-logo .subtext{
-  width: 22rem;
-  margin: 1.5rem auto 0;
+  width: 14em;
+  margin: 1em auto 0;
 
   text-align: center;
-  font-size: 1.6rem;
+  font-size: 1.6em;
   line-height: 1.1;
   text-decoration: uppercase;
   font-weight: bold;
 }
+
 .main-logo .subtext  b{
   background: linear-gradient(90deg, #39b3f6 0%, #5bffff 100%);
   color: transparent;
@@ -46,16 +53,16 @@
   -webkit-background-clip: text;
 }
 .main-logo .desc{
-  max-width: 32rem;
-  margin-top: .7rem;
+  width: 44em;
+  margin-top: .7em;
   color: #a59ea6;
-  font-size: .7rem;
+  font-size: .7em;
 }
 .main-logo .desc span{
-  border: .1rem solid #537678;
+  border: .1em solid #537678;
   background-color: #26494d;
   color: #7effed;
-  padding: .2rem .8rem;
-  border-radius: .6rem;
+  padding: .2em .8em;
+  border-radius: .6em;
 
 }
