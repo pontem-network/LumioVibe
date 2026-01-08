@@ -1,15 +1,19 @@
 import "./logo.css";
 import bLogo from "#/assets/logo.png";
 
-export function Logo() {
+export function Logo({ size = 1 }) {
   const subText = ["CREATE", "WEB3 APPS", "WITH JUST A PROMPT"];
   const desc = [
     "TYPE",
     " a prompt, get production-ready smart contracts instantly. No coding required.",
   ];
 
+  const styles = {
+    fontSize: `${size}rem`,
+  };
+
   return (
-    <div className="main-logo">
+    <div className="main-logo" style={styles}>
       <div className="logo">
         <img src={bLogo} alt="B" />
         UILD
