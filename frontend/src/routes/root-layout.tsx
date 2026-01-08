@@ -22,6 +22,7 @@ import { cn, isMobileDevice } from "#/utils/utils";
 import { useAuthWallet } from "#/hooks/use-auth";
 import { WalletPanel } from "#/components/wallet/walletPanel";
 import { FloatingSpheres } from "#/components/ui/floating-spheres";
+import { PreLoader } from "#/assets/preloader";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -62,57 +63,15 @@ export default function MainApp() {
   const isOnTosPage = useIsOnTosPage();
   const { data: settings } = useSettings();
   const { error } = useBalance();
-  // const { migrateUserConsent } = useMigrateUserConsent();
   const { t } = useTranslation();
 
   const config = useConfig();
-  // const {
-  //   data: isAuthed,
-  //   isFetching: isFetchingAuth,
-  //   isError: isAuthError,
-  // } = useIsAuthed();
-
   const authWallet = useAuthWallet();
   const isWalletAuth = authWallet.connected;
-  const isInitializing = authWallet.initializing;
 
   React.useEffect(() => {
     if (pathname.indexOf("/settings") === 0) navigate("/");
   }, [pathname]);
-
-  React.useEffect(() => {
-    if (isInitializing) return;
-
-    if (!isWalletAuth && pathname !== "/auth") {
-      navigate("/auth");
-    } else if (isWalletAuth && pathname === "/auth") {
-      navigate("/");
-    }
-  }, [isWalletAuth, isInitializing, pathname]);
-
-  // // Always call the hook, but we'll only use the result when not on TOS page
-  // const gitHubAuthUrl = useGitHubAuthUrl({
-  //   appMode: config.data?.APP_MODE || null,
-  //   gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
-  //   authUrl: config.data?.AUTH_URL,
-  // });
-
-  // // When on TOS page, we don't use the GitHub auth URL
-  // const effectiveGitHubAuthUrl = isOnTosPage ? null : gitHubAuthUrl;
-
-  // const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
-
-  // // Auto-login if login method is stored in local storage
-  // useAutoLogin();
-
-  // // Handle authentication callback and set login method after successful authentication
-  // useAuthCallback();
-
-  // // Initialize Reo.dev tracking in SaaS mode
-  // useReoTracking();
-
-  // Sync PostHog opt-in/out state with backend setting on mount
-  // useSyncPostHogConsent();
 
   React.useEffect(() => {
     // Don't change language when on TOS page
@@ -121,126 +80,26 @@ export default function MainApp() {
     }
   }, [settings?.LANGUAGE, isOnTosPage]);
 
-  // React.useEffect(() => {
-  //   // Don't show consent form when on TOS page
-  //   if (!isOnTosPage) {
-  //     const consentFormModalIsOpen =
-  //       settings?.USER_CONSENTS_TO_ANALYTICS === null;
-
-  //     setConsentFormIsOpen(consentFormModalIsOpen);
-  //   }
-  // }, [settings, isOnTosPage]);
-
-  // React.useEffect(() => {
-  //   // Don't migrate user consent when on TOS page
-  //   if (!isOnTosPage) {
-  //     // Migrate user consent to the server if it was previously stored in localStorage
-  //     migrateUserConsent({
-  //       handleAnalyticsWasPresentInLocalStorage: () => {
-  //         setConsentFormIsOpen(false);
-  //       },
-  //     });
-  //   }
-  // }, [isOnTosPage]);
-
   React.useEffect(() => {
     if (settings?.IS_NEW_USER && config.data?.APP_MODE === "saas") {
       displaySuccessToast(t(I18nKey.BILLING$YOURE_IN));
     }
   }, [settings?.IS_NEW_USER, config.data?.APP_MODE]);
 
-  React.useEffect(() => {
-    // Don't do any redirects when on TOS page
-    // Don't allow users to use the app if it 402s
-    if (!isOnTosPage && error?.status === 402 && pathname !== "/") {
-      navigate("/");
-    }
-  }, [error?.status, pathname, isOnTosPage]);
-
-  // Show loading screen while auth is initializing or while redirect is pending
-  // This prevents flash of main content before auth redirect
-  const shouldShowLoading =
-    isInitializing || (!isWalletAuth && pathname !== "/auth");
-
-  if (shouldShowLoading) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-[#0a0a0a]">
-        {/* Lumio background glow effect */}
-        <div
-          className="fixed inset-0 pointer-events-none z-0"
-          style={{
-            background: `
-              radial-gradient(ellipse 80% 50% at 20% 20%, rgba(174, 121, 147, 0.15) 0%, transparent 50%),
-              radial-gradient(ellipse 60% 40% at 80% 80%, rgba(14, 105, 169, 0.15) 0%, transparent 50%),
-              radial-gradient(ellipse 50% 30% at 50% 50%, rgba(174, 121, 147, 0.05) 0%, transparent 40%)
-            `,
-          }}
-        />
-        <FloatingSpheres />
-        <div className="z-10 flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
-        </div>
-      </div>
-    );
+  if (!isWalletAuth && pathname !== "/auth") {
+    navigate("/auth");
+    return <PreLoader />;
   }
-
-  // // Function to check if login method exists in local storage
-  // const checkLoginMethodExists = React.useCallback(() => {
-  //   // Only check localStorage if we're in a browser environment
-  //   if (typeof window !== "undefined" && window.localStorage) {
-  //     return localStorage.getItem(LOCAL_STORAGE_KEYS.LOGIN_METHOD) !== null;
-  //   }
-  //   return false;
-  // }, []);
-
-  // // State to track if login method exists
-  // const [loginMethodExists, setLoginMethodExists] = React.useState(
-  //   checkLoginMethodExists(),
-  // );
-
-  // // Listen for storage events to update loginMethodExists when logout happens
-  // React.useEffect(() => {
-  //   const handleStorageChange = (event: StorageEvent) => {
-  //     if (event.key === LOCAL_STORAGE_KEYS.LOGIN_METHOD) {
-  //       setLoginMethodExists(checkLoginMethodExists());
-  //     }
-  //   };
-
-  //   // Also check on window focus, as logout might happen in another tab
-  //   const handleWindowFocus = () => {
-  //     setLoginMethodExists(checkLoginMethodExists());
-  //   };
-
-  //   window.addEventListener("storage", handleStorageChange);
-  //   window.addEventListener("focus", handleWindowFocus);
-
-  //   return () => {
-  //     window.removeEventListener("storage", handleStorageChange);
-  //     window.removeEventListener("focus", handleWindowFocus);
-  //   };
-  // }, [checkLoginMethodExists]);
-
-  // // Check login method status when auth status changes
-  // React.useEffect(() => {
-  //   // When auth status changes (especially on logout), recheck login method
-  //   setLoginMethodExists(checkLoginMethodExists());
-  // }, [isAuthed, checkLoginMethodExists]);
-
-  // const renderAuthModal =
-  //   !isAuthed &&
-  //   !isAuthError &&
-  //   !isFetchingAuth &&
-  //   !isOnTosPage &&
-  //   config.data?.APP_MODE === "saas" &&
-  //   !loginMethodExists; // Don't show auth modal if login method exists in local storage
-
-  // const renderReAuthModal =
-  //   !isAuthed &&
-  //   !isAuthError &&
-  //   !isFetchingAuth &&
-  //   !isOnTosPage &&
-  //   config.data?.APP_MODE === "saas" &&
-  //   loginMethodExists;
+  if (isWalletAuth && pathname === "/auth") {
+    navigate("/");
+    return <PreLoader />;
+  }
+  // Don't do any redirects when on TOS page
+  // Don't allow users to use the app if it 402s
+  if (!isOnTosPage && error?.status === 402 && pathname !== "/") {
+    navigate("/");
+    return <PreLoader />;
+  }
 
   return (
     <div
