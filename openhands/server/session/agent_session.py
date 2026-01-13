@@ -553,30 +553,37 @@ class AgentSession:
         project_name = 'app'
         project_dir = f'{config.workspace_mount_path_in_sandbox}/{project_name}'
 
-        # Use lu CLI to initialize the template in background
+        # Use lu CLI to initialize the template synchronously
         self.logger.info(f'Running lu init {template_id} for project {project_name}')
 
         from openhands.events.action import CmdRunAction
 
         init_action = CmdRunAction(
-            command=f'lu init {template_id} {project_name} --dir {project_dir} --background',
+            command=f'lu init {template_id} {project_name} --dir {project_dir}',
             blocking=True,
             hidden=True,
         )
-        init_action.set_hard_timeout(30)  # Background init starts quickly
+        # Foreground init: account setup, faucet, copy, configure, deploy, start frontend
+        init_action.set_hard_timeout(300)
 
         obs = await call_sync_from_async(self.runtime.run_action, init_action)
         if hasattr(obs, 'exit_code') and obs.exit_code != 0:
-            self.logger.error(f'Template init failed: {obs}')
+            error_content = getattr(obs, 'content', str(obs))
+            self.logger.error(f'Template init failed: {error_content}')
             if self._status_callback:
                 self._status_callback(
                     'error',
                     RuntimeStatus.ERROR_TEMPLATE_INIT,
                     f'Template initialization failed: {template_id}',
                 )
+            # Notify the agent about the failure
+            error_message = MessageAction(
+                content=f'⚠️ Template initialization failed. The project could not be set up automatically.\n\nError details:\n```\n{error_content[:1000]}\n```\n\nYou can try to initialize the project manually by running `lu init {template_id}` in the terminal.',
+            )
+            self.event_stream.add_event(error_message, EventSource.ENVIRONMENT)
             return
 
-        self.logger.info(f'Template {template_id} initialization started in background')
+        self.logger.info(f'Template {template_id} initialized successfully')
 
         if self._status_callback:
             self._status_callback(
@@ -584,3 +591,9 @@ class AgentSession:
                 RuntimeStatus.TEMPLATE_INITIALIZED,
                 f'Template initialized: {template_id}',
             )
+
+        # Notify the agent about successful initialization
+        success_message = MessageAction(
+            content=f'✅ Project initialized successfully from template `{template_id}`.\n\nThe contract has been deployed and the frontend is running. You can now start working on the project.',
+        )
+        self.event_stream.add_event(success_message, EventSource.ENVIRONMENT)

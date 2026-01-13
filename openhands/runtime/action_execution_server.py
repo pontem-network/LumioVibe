@@ -406,21 +406,9 @@ class ActionExecutor:
                         frontend_dir = candidate
                         break
 
-        # If no project found, auto-init counter template in background
+        # If no project found, skip auto-start (template init is handled by agent_session)
         if not frontend_dir:
-            logger.info('LumioVibe: No project found, starting background init...')
-            action = CmdRunAction(command='lu init counter --background')
-            action.set_hard_timeout(10)  # Quick return for background init
-            try:
-                obs = await self.run(action)
-                if isinstance(obs, CmdOutputObservation):
-                    logger.info(
-                        'LumioVibe: Background init started, check with: lu init-status'
-                    )
-                else:
-                    logger.warning(f'LumioVibe: Init returned unexpected: {obs}')
-            except Exception as e:
-                logger.warning(f'LumioVibe: Error starting auto-init: {e}')
+            logger.info('LumioVibe: No existing project found, skipping auto-start')
             return
 
         # Check if node_modules exists (dependencies installed)
