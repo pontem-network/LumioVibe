@@ -3,7 +3,11 @@ import ConversationService from "#/api/conversation-service/conversation-service
 import { useConversationId } from "../use-conversation-id";
 
 export const useMicroagentPrompt = (eventId: number) => {
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
   return useQuery({
     queryKey: ["memory", "prompt", conversationId, eventId],
     queryFn: () =>

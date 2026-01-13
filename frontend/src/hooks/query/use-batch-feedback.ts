@@ -24,7 +24,11 @@ export const getFeedbackExistsQueryKey = (
 ) => ["feedback", "exists", conversationId, eventId] as const;
 
 export const useBatchFeedback = () => {
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
   const { data: config } = useConfig();
   const { data: conversation } = useActiveConversation();
   const queryClient = useQueryClient();

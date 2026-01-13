@@ -10,7 +10,11 @@ import { useConversationId } from "#/hooks/use-conversation-id";
  * - For V1 conversations: Returns status from ConversationWebSocketProvider
  */
 export function useUnifiedWebSocketStatus(): V0_WebSocketStatus {
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
   const { data: conversation } = useActiveConversation();
   const v0Status = useWsClient();
   const v1Context = useConversationWebSocket();

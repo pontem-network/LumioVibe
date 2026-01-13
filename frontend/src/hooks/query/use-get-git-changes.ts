@@ -6,7 +6,11 @@ import { GitChange } from "#/api/open-hands.types";
 import { useRuntimeIsReady } from "#/hooks/use-runtime-is-ready";
 
 export const useGetGitChanges = () => {
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
   const [orderedChanges, setOrderedChanges] = React.useState<GitChange[]>([]);
   const previousDataRef = React.useRef<GitChange[]>(null);
   const runtimeIsReady = useRuntimeIsReady();

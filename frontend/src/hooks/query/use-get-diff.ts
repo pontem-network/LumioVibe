@@ -10,7 +10,11 @@ type UseGetDiffConfig = {
 };
 
 export const useGitDiff = (config: UseGetDiffConfig) => {
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
 
   return useQuery({
     queryKey: ["file_diff", conversationId, config.filePath, config.type],

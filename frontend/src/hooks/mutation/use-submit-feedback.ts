@@ -9,7 +9,11 @@ type SubmitFeedbackArgs = {
 };
 
 export const useSubmitFeedback = () => {
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
 
   return useMutation({
     mutationFn: ({ feedback }: SubmitFeedbackArgs) =>

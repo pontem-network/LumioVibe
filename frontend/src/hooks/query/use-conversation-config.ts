@@ -11,7 +11,11 @@ import { useActiveConversation } from "./use-active-conversation";
  * or useV1ConversationConfig once we fully migrate to V1.
  */
 export const useV0ConversationConfig = () => {
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
   const runtimeIsReady = useRuntimeIsReady();
 
   const query = useQuery({
@@ -42,7 +46,11 @@ export const useV0ConversationConfig = () => {
 };
 
 export const useV1ConversationConfig = () => {
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
   const runtimeIsReady = useRuntimeIsReady();
 
   const query = useQuery({
@@ -79,7 +87,11 @@ export const useV1ConversationConfig = () => {
  * Once we fully migrate to V1, all code should use useV1ConversationConfig directly.
  */
 export const useUnifiedConversationConfig = () => {
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
   const { data: conversation } = useActiveConversation();
   const runtimeIsReady = useRuntimeIsReady();
   const isV1Conversation = conversation?.conversation_version === "V1";

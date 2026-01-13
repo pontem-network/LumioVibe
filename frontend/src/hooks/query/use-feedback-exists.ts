@@ -8,7 +8,11 @@ export type FeedbackData = BatchFeedbackData;
 
 export const useFeedbackExists = (eventId?: number) => {
   const queryClient = useQueryClient();
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
   const { data: config } = useConfig();
   const { data: conversation } = useActiveConversation();
 

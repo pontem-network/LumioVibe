@@ -1,5 +1,8 @@
 import { useLocation, useParams } from "react-router";
 
+interface ConversationIdReturn {
+  conversationId: string;
+}
 /**
  * Gets conversationId from either the URL path or the hash in the address bar.
  * There are two ways to specify conversationId in the URL:
@@ -8,7 +11,7 @@ import { useLocation, useParams } from "react-router";
  *
  * @returns {object | null} - An object with { conversationId: string } if found, otherwise null
  */
-export function useConversationId(): { conversationId: string } | null {
+export function useConversationId(): ConversationIdReturn | null {
   const { conversationId } = useParams<{ conversationId: string }>();
   const location = useLocation();
 

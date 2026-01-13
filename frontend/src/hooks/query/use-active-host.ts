@@ -7,7 +7,11 @@ import { useRuntimeIsReady } from "#/hooks/use-runtime-is-ready";
 
 export const useActiveHost = () => {
   const [activeHost, setActiveHost] = React.useState<string | null>(null);
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
   const runtimeIsReady = useRuntimeIsReady();
 
   const { data } = useQuery({

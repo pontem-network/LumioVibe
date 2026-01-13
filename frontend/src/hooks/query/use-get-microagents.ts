@@ -3,7 +3,11 @@ import { useConversationId } from "../use-conversation-id";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 
 export const useGetMicroagents = (microagentDirectory: string) => {
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
 
   return useQuery({
     queryKey: ["files", "microagents", conversationId, microagentDirectory],

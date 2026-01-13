@@ -4,7 +4,11 @@ import { useUserConversation } from "./use-user-conversation";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 
 export const useActiveConversation = () => {
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
 
   // Don't poll if this is a task ID (format: "task-{uuid}")
   // Task polling is handled by useTaskPolling hook

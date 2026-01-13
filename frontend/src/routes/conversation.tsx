@@ -35,7 +35,11 @@ function AppContent() {
   useConversationConfig();
 
   const { t } = useTranslation();
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
   const clearEvents = useEventStore((state) => state.clearEvents);
 
   // Handle both task IDs (task-{uuid}) and regular conversation IDs
