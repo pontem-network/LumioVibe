@@ -264,6 +264,7 @@ test-results
 .eval_sessions
 
 .history
+.continue
 CLAUDE.md
 
 .local_node
