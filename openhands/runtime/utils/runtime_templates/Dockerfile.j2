@@ -214,7 +214,8 @@ RUN rm -rf ${OPENVSCODE_SERVER_ROOT}/extensions/{handlebars,pug,json,diff,grunt,
 {% endmacro %}
 
 {% macro install_dependencies_root() %}
-# Install system-level dependencies that require root
+# Install system-level dependencies that require root (FULL version for scratch builds)
+# This includes recursive chown which creates large layers - only use for scratch!
 USER root
 RUN \
     {% if enable_browser %}
@@ -243,7 +244,7 @@ RUN \
     {% endif %}
     # Set environment variables (requires root)
     /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
-    # Set permissions for shared read-only access
+    # Set permissions for shared read-only access (recursive chown - large layers!)
     chmod -R 755 /openhands/poetry && \
     chmod -R 755 /openhands/micromamba && \
     chown -R openhands:openhands /openhands/poetry && \
@@ -263,6 +264,20 @@ RUN \
     echo 'micromamba activate openhands 2>/dev/null || true' >> /root/.bashrc && \
     # Clean up system packages (requires root)
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+{% endmacro %}
+
+{% macro install_dependencies_root_lightweight() %}
+# Lightweight version for versioned builds - NO recursive chown!
+# Permissions are already set in base image, only update env vars
+USER root
+RUN \
+    # Update OH_INTERPRETER_PATH in case it changed
+    /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
+    # Ensure workspace directory exists with correct permissions
+    mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace && \
+    # Clean up
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 2>/dev/null || true
 
 {% endmacro %}
 
@@ -326,28 +341,22 @@ COPY --chown=openhands:openhands ./code/pyproject.toml ./code/poetry.lock /openh
 # ================================================================
 # END: Build Runtime Image from Scratch
 # ================================================================
+
+# Setup VSCode server (only when building from scratch)
+{{ setup_vscode_server() }}
 {% endif %}
 
-# Ensure openhands user/group and base dirs exist even when not building from scratch
+# ================================================================
+# For versioned/lock builds: lightweight directory check only
+# User and dependencies already exist in base image - NO recursive chown!
+# This saves ~3-4GB by not duplicating layers
+# ================================================================
+{% if not build_from_scratch %}
 USER root
 RUN \
-    # Ensure group exists (prefer GID 1000 if available)
-    if ! getent group openhands >/dev/null 2>&1; then \
-        if getent group 1000 >/dev/null 2>&1; then groupadd openhands; else groupadd -g 1000 openhands; fi; \
-    fi && \
-    # Ensure user exists (prefer UID 1000 if available)
-    if ! id -u openhands >/dev/null 2>&1; then \
-        if getent passwd 1000 >/dev/null 2>&1; then useradd -m -s /bin/bash -g openhands openhands; else useradd -u 1000 -g openhands -m -s /bin/bash openhands; fi; \
-    fi && \
-    # Ensure home and required directories exist before later steps
-    mkdir -p /home/openhands && \
-    mkdir -p /openhands && \
-    mkdir -p $(dirname ${OPENVSCODE_SERVER_ROOT}) && \
-    # Ensure ownership is correct for all OpenHands paths
-    chown -R openhands:openhands /home/openhands || true && \
-    chown -R openhands:openhands /openhands || true
-
-{{ setup_vscode_server() }}
+    # Lightweight check: ensure directories exist (user already exists in base image)
+    mkdir -p /home/openhands /openhands $(dirname ${OPENVSCODE_SERVER_ROOT}) 2>/dev/null || true
+{% endif %}
 
 # ================================================================
 # Copy Project source files
@@ -357,8 +366,8 @@ COPY --chown=openhands:openhands ./code/pyproject.toml ./code/poetry.lock /openh
 RUN if [ -d /openhands/code/skills ]; then rm -rf /openhands/code/skills; fi
 COPY --chown=openhands:openhands ./code/skills /openhands/code/skills
 COPY --chown=openhands:openhands ./code/openhands /openhands/code/openhands
-RUN chmod a+rwx /openhands/code/openhands/__init__.py && \
-    chown -R openhands:openhands /openhands/code
+# Note: --chown in COPY already sets correct ownership, no need for recursive chown
+RUN chmod a+rwx /openhands/code/openhands/__init__.py
 
 # ================================================================
 # Install lumio-cli binary from GitHub release (architecture-specific)
@@ -387,7 +396,7 @@ RUN mkdir -p /openhands/bin && \
 # ================================================================
 RUN mkdir -p /openhands/microagents && rm -rf /workspace/.openhands
 COPY --chown=openhands:openhands ./code/.openhands/microagents /openhands/microagents
-RUN chown -R openhands:openhands /openhands/microagents
+# Note: --chown in COPY already sets correct ownership
 
 # Copy project templates to /openhands/templates (not visible in /workspace)
 COPY --chown=openhands:openhands ./code/templates /openhands/templates
@@ -433,11 +442,12 @@ RUN chmod +x /openhands/bin/lu
 
 
 # ================================================================
-# END: Build from versioned image
+# For versioned builds: update dependencies but skip recursive chown
+# Base image already has correct permissions - saves ~2.5GB!
 # ================================================================
 {% if build_from_versioned %}
 {{ install_dependencies_user() }}
-{{ install_dependencies_root() }}
+{{ install_dependencies_root_lightweight() }}
 {{ install_vscode_extensions() }}
 {% endif %}
 
