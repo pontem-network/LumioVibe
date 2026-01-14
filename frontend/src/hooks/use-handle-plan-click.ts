@@ -17,7 +17,7 @@ export const useHandlePlanClick = () => {
   const { t } = useTranslation();
   const { setConversationMode, setSubConversationTaskId } =
     useConversationStore();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { mutate: createConversation, isPending: isCreatingConversation } =
     useCreateConversation();
 

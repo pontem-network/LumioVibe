@@ -8,7 +8,7 @@ import { useAgentState } from "#/hooks/use-agent-state";
  * @returns boolean indicating if the runtime is ready
  */
 export const useRuntimeIsReady = (): boolean => {
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { curAgentState } = useAgentState();
 
   return (

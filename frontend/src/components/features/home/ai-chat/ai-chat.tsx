@@ -49,7 +49,7 @@ import ConfirmationModeEnabled from "../../chat/confirmation-mode-enabled";
  */
 export function AIHomeChat() {
   const { setMessageToSend, agentMode, skipTesting } = useConversationStore();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { isLoadingMessages } = useWsClient();
   const { isTask } = useTaskPolling();
   const conversationWebSocket = useConversationWebSocket();

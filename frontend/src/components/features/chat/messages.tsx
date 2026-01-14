@@ -56,7 +56,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
       throw new Error("conversationId is null");
     }
     const { data: conversation } = useUserConversation(conversationId);
-    const { data: activeConversation } = useActiveConversation();
+    const activeConversation = useActiveConversation()?.data;
 
     // TODO: Hide microagent actions for V1 conversations
     // This is a temporary measure and may be re-enabled in the future

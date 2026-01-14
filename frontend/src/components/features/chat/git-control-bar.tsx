@@ -18,7 +18,7 @@ interface GitControlBarProps {
 export function GitControlBar({ onSuggestionsClick }: GitControlBarProps) {
   const { t } = useTranslation();
 
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { repositoryInfo } = useTaskPolling();
   const webSocketStatus = useUnifiedWebSocketStatus();
 

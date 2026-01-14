@@ -19,7 +19,7 @@ export const useUnifiedGetGitChanges = () => {
   if (conversationId === null) {
     throw new Error("conversationId is null");
   }
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const [orderedChanges, setOrderedChanges] = React.useState<GitChange[]>([]);
   const previousDataRef = React.useRef<GitChange[] | null>(null);
   const runtimeIsReady = useRuntimeIsReady();

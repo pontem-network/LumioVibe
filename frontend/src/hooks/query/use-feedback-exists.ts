@@ -14,7 +14,7 @@ export const useFeedbackExists = (eventId?: number) => {
     throw new Error("conversationId is null");
   }
   const { data: config } = useConfig();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
 
   const isV1Conversation = conversation?.conversation_version === "V1";
 

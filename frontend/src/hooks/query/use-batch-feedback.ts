@@ -30,7 +30,7 @@ export const useBatchFeedback = () => {
     throw new Error("conversationId is null");
   }
   const { data: config } = useConfig();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const queryClient = useQueryClient();
   const runtimeIsReady = useRuntimeIsReady();
 

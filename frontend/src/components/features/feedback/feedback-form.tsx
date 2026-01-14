@@ -17,7 +17,7 @@ interface FeedbackFormProps {
 
 export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
   const { t } = useTranslation();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
 
   const copiedToClipboardToast = () => {
     hotToast(t(I18nKey.FEEDBACK$PASSWORD_COPIED_MESSAGE), {

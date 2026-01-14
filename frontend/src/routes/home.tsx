@@ -33,7 +33,7 @@ function HomeScreen() {
   const [hasConversationId, setHasConversationId] = useState<boolean>(false);
   const { mutate: createConversation, isPending: isCreating } =
     useCreateConversation();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const isV0Conversation = conversation?.conversation_version === "V0";
 
   // Check if conversationId exists, and create a new one if needed
@@ -67,7 +67,7 @@ function HomeScreen() {
       >
         <div className="flex flex-col items-center">
           <Spinner />
-          <p className="text-white/70 mt-2">Инициализация чата...</p>
+          <p className="text-white/70 mt-2">Initializing chat...</p>
         </div>
       </div>
     );

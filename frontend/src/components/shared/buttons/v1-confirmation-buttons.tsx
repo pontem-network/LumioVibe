@@ -22,7 +22,7 @@ export function V1ConfirmationButtons() {
   );
 
   const { t } = useTranslation();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { curAgentState } = useAgentState();
   const { mutate: respondToConfirmation } = useRespondToConfirmation();
   const events = useEventStore((state) => state.events);

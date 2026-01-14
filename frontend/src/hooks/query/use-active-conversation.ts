@@ -6,13 +6,10 @@ import ConversationService from "#/api/conversation-service/conversation-service
 export const useActiveConversation = () => {
   const conversationId: string | null =
     useConversationId()?.conversationId ?? null;
-  if (conversationId === null) {
-    throw new Error("conversationId is null");
-  }
 
   // Don't poll if this is a task ID (format: "task-{uuid}")
   // Task polling is handled by useTaskPolling hook
-  const isTaskId = conversationId.startsWith("task-");
+  const isTaskId = conversationId?.startsWith("task-");
   const actualConversationId = isTaskId ? null : conversationId;
 
   const userConversation = useUserConversation(
@@ -35,5 +32,5 @@ export const useActiveConversation = () => {
     userConversation.isFetched,
     userConversation?.data?.status,
   ]);
-  return userConversation;
+  return conversationId ? userConversation : null;
 };

@@ -45,7 +45,11 @@ function AppContent() {
   // Handle both task IDs (task-{uuid}) and regular conversation IDs
   const { isTask, taskStatus, taskDetail } = useTaskPolling();
 
-  const { data: conversation, isFetched, refetch } = useActiveConversation();
+  const {
+    data: conversation,
+    isFetched,
+    refetch,
+  } = useActiveConversation() ?? {};
   const { mutate: startConversation, isPending: isStarting } =
     useUnifiedResumeConversationSandbox();
   const isAuthed = useAuthWallet().connected;
@@ -103,7 +107,7 @@ function AppContent() {
   // 3. Auto-start Effect - handles conversation not found and auto-starting STOPPED conversations
   React.useEffect(() => {
     // Wait for data to be fetched
-    if (!isFetched || !isAuthed) return;
+    if (!isFetched || !isAuthed || !refetch) return;
 
     // Handle conversation not found
     if (!conversation) {

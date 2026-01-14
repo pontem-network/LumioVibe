@@ -39,7 +39,7 @@ function mapV1StatusToV0State(status: V1ExecutionStatus | null): AgentState {
  * - For V1 conversations: Returns mapped state from useV1ConversationStateStore
  */
 export function useAgentState() {
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const v0State = useAgentStore((state) => state.curAgentState);
   const v1Status = useV1ConversationStateStore(
     (state) => state.execution_status,

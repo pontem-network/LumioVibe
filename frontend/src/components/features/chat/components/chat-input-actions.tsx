@@ -18,7 +18,7 @@ export function ChatInputActions({
   disabled,
   handleResumeAgent,
 }: ChatInputActionsProps) {
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const pauseConversationSandboxMutation = useUnifiedPauseConversationSandbox();
   const v1PauseConversationMutation = useV1PauseConversation();
   const v1ResumeConversationMutation = useV1ResumeConversation();

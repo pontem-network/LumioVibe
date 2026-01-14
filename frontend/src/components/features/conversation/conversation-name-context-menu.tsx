@@ -53,7 +53,7 @@ export function ConversationNameContextMenu({
 
   const { t } = useTranslation();
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
 
   // TODO: Hide microagent menu items for V1 conversations
   // This is a temporary measure and may be re-enabled in the future

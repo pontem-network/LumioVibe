@@ -63,7 +63,7 @@ function getEntryPoint(
 export function ChatInterface() {
   const posthog = usePostHog();
   const { setMessageToSend, agentMode, skipTesting } = useConversationStore();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { errorMessage } = useErrorMessageStore();
   const { isLoadingMessages } = useWsClient();
   const { isTask } = useTaskPolling();

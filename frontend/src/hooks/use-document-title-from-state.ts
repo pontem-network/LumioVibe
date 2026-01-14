@@ -8,7 +8,7 @@ import { useActiveConversation } from "./query/use-active-conversation";
  * @param suffix Optional suffix to append to the title (default: "build")
  */
 export function useDocumentTitleFromState(suffix = "build") {
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const lastValidTitleRef = useRef<string | null>(null);
 
   useEffect(() => {

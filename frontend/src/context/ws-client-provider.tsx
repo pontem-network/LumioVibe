@@ -153,7 +153,7 @@ export function WsClientProvider({
 
   const messageRateHandler = useRate({ threshold: 250 });
   const { data: conversation, refetch: refetchConversation } =
-    useActiveConversation();
+    useActiveConversation() ?? {};
 
   function flushPendingEvents(socket: Socket | null = sioRef.current) {
     if (!socket || pendingEventsRef.current.length === 0) {
@@ -318,7 +318,7 @@ export function WsClientProvider({
     );
 
     // check if something went wrong with the conversation.
-    refetchConversation();
+    if (refetchConversation) refetchConversation();
   }
 
   React.useEffect(() => {

@@ -28,7 +28,7 @@ interface GitToolsSubmenuProps {
 export function GitToolsSubmenu({ onClose }: GitToolsSubmenuProps) {
   const { t } = useTranslation();
   const { setMessageToSend } = useConversationStore();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
 
   const currentGitProvider = conversation?.git_provider as Provider;
 

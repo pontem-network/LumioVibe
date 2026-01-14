@@ -15,7 +15,7 @@ import { useConversationId } from "#/hooks/use-conversation-id";
 export function ConversationNameWithStatus() {
   const conversationId: string | undefined =
     useConversationId()?.conversationId;
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { curAgentState } = useAgentState();
   const { isTask, taskStatus } = useTaskPolling();
   const { mutate: pauseConversationSandbox } =

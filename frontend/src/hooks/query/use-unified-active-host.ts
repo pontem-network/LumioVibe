@@ -21,7 +21,7 @@ export const useUnifiedActiveHost = () => {
     throw new Error("conversationId is null");
   }
   const runtimeIsReady = useRuntimeIsReady();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { data: conversationConfig, isLoading: isLoadingConfig } =
     useConversationConfig();
 

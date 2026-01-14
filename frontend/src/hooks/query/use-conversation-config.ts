@@ -92,7 +92,7 @@ export const useUnifiedConversationConfig = () => {
   if (conversationId === null) {
     throw new Error("conversationId is null");
   }
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const runtimeIsReady = useRuntimeIsReady();
   const isV1Conversation = conversation?.conversation_version === "V1";
 

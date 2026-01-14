@@ -13,7 +13,7 @@ export function Tools() {
   const { t } = useTranslation();
   const conversationId: string | undefined =
     useConversationId()?.conversationId ?? undefined;
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const [contextMenuOpen, setContextMenuOpen] = React.useState(false);
 
   const {

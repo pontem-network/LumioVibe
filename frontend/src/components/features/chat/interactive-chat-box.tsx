@@ -28,7 +28,7 @@ export function InteractiveChatBox({ onSubmit }: InteractiveChatBoxProps) {
     subConversationTaskId,
   } = useConversationStore();
   const { curAgentState } = useAgentState();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
 
   // Poll sub-conversation task to check if it's loading
   const { taskStatus: subConversationTaskStatus } =

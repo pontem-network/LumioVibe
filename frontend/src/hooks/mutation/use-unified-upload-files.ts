@@ -19,7 +19,7 @@ interface UnifiedUploadFilesVariables {
  * @returns Mutation hook with the same interface as useUploadFiles
  */
 export const useUnifiedUploadFiles = () => {
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const isV1Conversation = conversation?.conversation_version === "V1";
 
   // Initialize both hooks

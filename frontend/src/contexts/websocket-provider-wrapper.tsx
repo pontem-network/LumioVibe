@@ -36,7 +36,7 @@ export function WebSocketProviderWrapper({
   version,
 }: WebSocketProviderWrapperProps) {
   // Get conversation data for V1 provider
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   // Get sub-conversation data for V1 provider
   const { data: subConversations } = useSubConversations(
     conversation?.sub_conversation_ids ?? [],

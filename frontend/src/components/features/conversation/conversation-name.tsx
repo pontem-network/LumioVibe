@@ -19,7 +19,7 @@ export function ConversationName() {
   const { t } = useTranslation();
   const conversationId: string | undefined =
     useConversationId()?.conversationId;
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { mutate: updateConversation } = useUpdateConversation();
 
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");

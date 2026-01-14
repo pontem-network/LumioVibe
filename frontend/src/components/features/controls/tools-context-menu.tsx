@@ -38,7 +38,7 @@ export function ToolsContextMenu({
   shouldShowAgentTools = true,
 }: ToolsContextMenuProps) {
   const { t } = useTranslation();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { providers } = useUserProviders();
 
   // TODO: Hide microagent menu items for V1 conversations
