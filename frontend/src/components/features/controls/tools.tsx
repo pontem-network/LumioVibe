@@ -1,5 +1,4 @@
 import React from "react";
-import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import ToolsIcon from "#/icons/tools.svg?react";
@@ -8,10 +7,12 @@ import { useConversationNameContextMenu } from "#/hooks/use-conversation-name-co
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { SystemMessageModal } from "../conversation-panel/system-message-modal";
 import { MicroagentsModal } from "../conversation-panel/microagents-modal";
+import { useConversationId } from "#/hooks/use-conversation-id";
 
 export function Tools() {
   const { t } = useTranslation();
-  const { conversationId } = useParams<{ conversationId: string }>();
+  const conversationId: string | undefined =
+    useConversationId()?.conversationId ?? undefined;
   const { data: conversation } = useActiveConversation();
   const [contextMenuOpen, setContextMenuOpen] = React.useState(false);
 

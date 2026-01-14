@@ -1,5 +1,4 @@
 import React from "react";
-import { useParams } from "react-router";
 import { useAgentState } from "#/hooks/use-agent-state";
 import { useTaskPolling } from "#/hooks/query/use-task-polling";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
@@ -11,9 +10,11 @@ import { AgentState } from "#/types/agent-state";
 import DebugStackframeDot from "#/icons/debug-stackframe-dot.svg?react";
 import { ServerStatusContextMenu } from "../controls/server-status-context-menu";
 import { ConversationName } from "./conversation-name";
+import { useConversationId } from "#/hooks/use-conversation-id";
 
 export function ConversationNameWithStatus() {
-  const { conversationId } = useParams<{ conversationId: string }>();
+  const conversationId: string | undefined =
+    useConversationId()?.conversationId;
   const { data: conversation } = useActiveConversation();
   const { curAgentState } = useAgentState();
   const { isTask, taskStatus } = useTaskPolling();

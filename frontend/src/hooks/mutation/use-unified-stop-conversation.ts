@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { TOAST_OPTIONS } from "#/utils/custom-toast-handlers";
@@ -11,6 +11,7 @@ import {
   updateConversationStatusInCache,
   invalidateConversationQueries,
 } from "./conversation-mutation-utils";
+import { useConversationId } from "../use-conversation-id";
 
 /**
  * Unified hook that automatically routes to the correct pause conversation sandbox
@@ -27,7 +28,8 @@ export const useUnifiedPauseConversationSandbox = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const params = useParams<{ conversationId: string }>();
+  const conversationId: string | undefined =
+    useConversationId()?.conversationId;
 
   return useMutation({
     mutationKey: ["stop-conversation"],
@@ -92,7 +94,7 @@ export const useUnifiedPauseConversationSandbox = () => {
       );
 
       // Only redirect if we're stopping the conversation we're currently viewing
-      if (params.conversationId === variables.conversationId) {
+      if (conversationId === variables.conversationId) {
         navigate("/");
       }
     },
