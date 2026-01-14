@@ -45,7 +45,7 @@ import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bott
 import ConfirmationModeEnabled from "../../chat/confirmation-mode-enabled";
 
 /*
- * Чат для общения с ИИ на главной странице
+ * Chat for interacting with AI on the home page
  */
 export function AIHomeChat() {
   const { setMessageToSend, agentMode, skipTesting } = useConversationStore();
@@ -203,7 +203,7 @@ export function AIHomeChat() {
       </div>
 
       <div className="h-full flex flex-col justify-between pr-0 md:pr-4 relative">
-        {/* @todo Удалить? */}
+        {/* @todo Remove? */}
         {!hasSubstantiveAgentActions &&
           !optimisticUserMessage &&
           !userEventsExist && (
@@ -213,7 +213,7 @@ export function AIHomeChat() {
             // eslint-disable-next-line i18next/no-literal-string
           )}
 
-        {/* @todo Изменяемый размер этого блока? */}
+        {/* @todo Changeable size of this block? */}
         <div
           ref={scrollRef}
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
