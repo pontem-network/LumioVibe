@@ -1,4 +1,5 @@
 import { PrefetchPageLinks, useNavigate } from "react-router";
+import "./home.css";
 import { useEffect, useState } from "react";
 import { Spinner } from "@heroui/react";
 import { HomeHeader } from "#/components/features/home/home-header/home-header";
@@ -9,6 +10,10 @@ import { AIHomeChat } from "#/components/features/home/ai-chat/ai-chat";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useConversationId } from "#/hooks/use-conversation-id";
+import { EventHandler } from "#/wrapper/event-handler";
+import { WebSocketProviderWrapper } from "#/contexts/websocket-provider-wrapper";
+import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 <PrefetchPageLinks page="/conversations/:conversationId" />;
 
@@ -26,12 +31,15 @@ function HomeScreen() {
   const conversationId = useConversationId();
   const navigate = useNavigate();
   const [hasConversationId, setHasConversationId] = useState<boolean>(false);
-  const { mutate: createConversation } = useCreateConversation();
+  const { mutate: createConversation, isPending: isCreating } =
+    useCreateConversation();
+  const { data: conversation } = useActiveConversation();
+  const isV0Conversation = conversation?.conversation_version === "V0";
 
   // Check if conversationId exists, and create a new one if needed
   useEffect(() => {
     // If conversationId is not present (null), create a new conversation
-    if (!conversationId) {
+    if (conversationId === null) {
       createConversation(
         {},
         {
@@ -50,16 +58,31 @@ function HomeScreen() {
     }
   }, [conversationId, createConversation, navigate]);
 
-  if (conversationId == null) {
+  // We are showing the spinner while the conversation_id is being created or we have not received the ID yet.
+  if (conversationId === null && (isCreating || !hasConversationId)) {
     return (
       <div
         data-testid="loading-home-page"
         className="h-full flex items-center justify-center"
       >
-        <Spinner />
+        <div className="flex flex-col items-center">
+          <Spinner />
+          <p className="text-white/70 mt-2">Инициализация чата...</p>
+        </div>
       </div>
     );
   }
+
+  // Displaying templates for a project
+  const renderTemplateGrid = () => {
+    if (isInitialLoading) {
+      return <TemplateGrid />;
+    }
+    if (hasApps) {
+      return <TemplateGrid compact />;
+    }
+    return <TemplateGrid showNewAppButton />;
+  };
 
   return (
     <div
@@ -74,15 +97,27 @@ function HomeScreen() {
           className="flex flex-col gap-6 px-6 w-full lg:px-0 lg:max-w-[1000px]"
           data-testid="home-screen-new-conversation-section"
         >
-          {isInitialLoading && <TemplateGrid />}
-          {!isInitialLoading && hasApps && (
-            <>
-              <RecentConversations />
-              <TemplateGrid compact />
-            </>
+          {/* An input field for communicating with AI */}
+          {hasConversationId && conversationId?.conversationId && (
+            <div id="home_ai_chat">
+              <WebSocketProviderWrapper
+                version={isV0Conversation ? 0 : 1}
+                conversationId={conversationId?.conversationId}
+              >
+                <ConversationSubscriptionsProvider>
+                  <EventHandler>
+                    <AIHomeChat />
+                  </EventHandler>
+                </ConversationSubscriptionsProvider>
+              </WebSocketProviderWrapper>
+            </div>
           )}
-          {!isInitialLoading && !hasApps && <TemplateGrid showNewAppButton />}
-          {hasConversationId && <AIHomeChat />}
+
+          {/* list of recent chats */}
+          {!isInitialLoading && hasApps && <RecentConversations />}
+
+          {/* templates for the project */}
+          {renderTemplateGrid()}
         </div>
       </div>
     </div>

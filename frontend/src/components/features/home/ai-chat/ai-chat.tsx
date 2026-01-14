@@ -44,12 +44,13 @@ import { TrajectoryActions } from "#/components/features/trajectory/trajectory-a
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import ConfirmationModeEnabled from "../../chat/confirmation-mode-enabled";
 
+/*
+ * Чат для общения с ИИ на главной странице
+ */
 export function AIHomeChat() {
   const { setMessageToSend, agentMode, skipTesting } = useConversationStore();
   const { data: conversation } = useActiveConversation();
-
   const { isLoadingMessages } = useWsClient();
-
   const { isTask } = useTaskPolling();
   const conversationWebSocket = useConversationWebSocket();
 
@@ -100,7 +101,6 @@ export function AIHomeChat() {
 
     prevV1LoadingRef.current = isLoading;
   }, [conversationWebSocket?.isLoadingHistory]);
-
   // Filter V0 events
   const v0Events = storeEvents
     .filter(isV0Event)
@@ -194,6 +194,7 @@ export function AIHomeChat() {
 
   const h1 = "AI Chat";
   const h2 = "Ask about Move or React";
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -202,28 +203,26 @@ export function AIHomeChat() {
       </div>
 
       <div className="h-full flex flex-col justify-between pr-0 md:pr-4 relative">
+        {/* @todo Удалить? */}
         {!hasSubstantiveAgentActions &&
           !optimisticUserMessage &&
           !userEventsExist && (
             <ChatSuggestions
               onSuggestionsClick={(message) => setMessageToSend(message)}
             />
+            // eslint-disable-next-line i18next/no-literal-string
           )}
 
+        {/* @todo Изменяемый размер этого блока? */}
         <div
           ref={scrollRef}
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
           className="custom-scrollbar-always flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2 fast-smooth-scroll max-h-[400px]"
         >
-          {isLoadingMessages && !isV1Conversation && !isTask && (
-            <div className="flex justify-center">
-              <LoadingSpinner size="small" />
-            </div>
-          )}
-
-          {(conversationWebSocket?.isLoadingHistory || !showV1Messages) &&
-            isV1Conversation &&
-            !isTask && (
+          {!isTask &&
+            ((isLoadingMessages && !isV1Conversation) ||
+              ((conversationWebSocket?.isLoadingHistory || !showV1Messages) &&
+                isV1Conversation)) && (
               <div className="flex justify-center">
                 <LoadingSpinner size="small" />
               </div>
