@@ -1,6 +1,6 @@
 import { PrefetchPageLinks, useNavigate } from "react-router";
 import "./home.css";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Spinner } from "@heroui/react";
 import { HomeHeader } from "#/components/features/home/home-header/home-header";
 import { RecentConversations } from "#/components/features/home/recent-conversations/recent-conversations";
@@ -14,6 +14,9 @@ import { EventHandler } from "#/wrapper/event-handler";
 import { WebSocketProviderWrapper } from "#/contexts/websocket-provider-wrapper";
 import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { useUnifiedResumeConversationSandbox } from "#/hooks/mutation/use-unified-start-conversation";
+import { useUserProviders } from "#/hooks/use-user-providers";
+import { useAuthWallet } from "#/hooks/use-auth";
 
 <PrefetchPageLinks page="/conversations/:conversationId" />;
 
@@ -35,6 +38,13 @@ function HomeScreen() {
     useCreateConversation();
   const conversation = useActiveConversation()?.data;
   const isV0Conversation = conversation?.conversation_version === "V0";
+  const isAuthed = useAuthWallet().connected;
+  const { providers } = useUserProviders();
+  const { mutate: startConversation, isPending: isStarting } =
+    useUnifiedResumeConversationSandbox();
+
+  // Track which conversation ID we've auto-started to prevent auto-restart after manual stop
+  const processedConversationId = React.useRef<string | null>(null);
 
   // Check if conversationId exists, and create a new one if needed
   useEffect(() => {
@@ -57,6 +67,45 @@ function HomeScreen() {
       setHasConversationId(true);
     }
   }, [conversationId, createConversation, navigate]);
+
+  // Auto-start effect - handles auto-starting STOPPED conversations
+  useEffect(() => {
+    // Wait for data to be fetched
+    if (!conversation || !isAuthed) return;
+
+    const currentConversationId = conversation.conversation_id;
+    const currentStatus = conversation.status;
+
+    // Skip if we've already processed this conversation
+    if (processedConversationId.current === currentConversationId) {
+      return;
+    }
+
+    // Mark as processed immediately to prevent duplicate calls
+    processedConversationId.current = currentConversationId;
+
+    // Auto-start STOPPED conversations on initial load only
+    if (currentStatus === "STOPPED" && !isStarting) {
+      startConversation(
+        { conversationId: currentConversationId, providers },
+        {
+          onError: (error) => {
+            displayErrorToast(`Failed to start conversation: ${error.message}`);
+          },
+        },
+      );
+    }
+    // NOTE: conversation?.status is intentionally NOT in dependencies
+    // We only want to run when conversation ID changes, not when status changes
+    // This prevents duplicate calls when stale cache data is replaced with fresh data
+  }, [
+    conversation?.conversation_id,
+    isAuthed,
+    isStarting,
+    providers,
+    startConversation,
+    navigate,
+  ]);
 
   // We are showing the spinner while the conversation_id is being created or we have not received the ID yet.
   if (conversationId === null && (isCreating || !hasConversationId)) {
