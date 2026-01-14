@@ -1,14 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
-import { ChatSuggestions } from "#/components/features/chat/chat-suggestions";
 import { useSendMessage } from "#/hooks/use-send-message";
 import { createChatMessage } from "#/services/chat-service";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { useEventStore } from "#/stores/use-event-store";
 import { useConversationStore } from "#/state/conversation-store";
 import { useWsClient } from "#/context/ws-client-provider";
-import { useConfig } from "#/hooks/query/use-config";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { useUnifiedUploadFiles } from "#/hooks/mutation/use-unified-upload-files";
 import { validateFiles } from "#/utils/file-validation";
@@ -21,13 +19,8 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { useTaskPolling } from "#/hooks/query/use-task-polling";
 import { useConversationWebSocket } from "#/contexts/conversation-websocket-context";
-import {
-  isV0Event,
-  isV1Event,
-  isSystemPromptEvent,
-  isConversationStateUpdateEvent,
-} from "#/types/v1/type-guards";
-import { isActionOrObservation, isOpenHandsAction } from "#/types/core/guards";
+import { isV0Event, isV1Event } from "#/types/v1/type-guards";
+import { isActionOrObservation } from "#/types/core/guards";
 import {
   hasUserEvent,
   shouldRenderEvent,
@@ -38,9 +31,6 @@ import {
   hasUserEvent as hasV1UserEvent,
 } from "#/components/v1/chat";
 import { Messages as V0Messages } from "#/components/features/chat/messages";
-import { LumioModeToggles } from "#/components/features/chat/lumio-mode-toggles";
-import { FeedbackModal } from "#/components/features/feedback/feedback-modal";
-import { TrajectoryActions } from "#/components/features/trajectory/trajectory-actions";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import ConfirmationModeEnabled from "../../chat/confirmation-mode-enabled";
 
@@ -58,23 +48,15 @@ export function AIHomeChat() {
 
   const storeEvents = useEventStore((state) => state.events);
   const uiEvents = useEventStore((state) => state.uiEvents);
-  const { setOptimisticUserMessage, getOptimisticUserMessage } =
-    useOptimisticUserMessageStore();
+  const { setOptimisticUserMessage } = useOptimisticUserMessageStore();
   const { t } = useTranslation();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
-  const { data: config } = useConfig();
 
   const { curAgentState } = useAgentState();
 
-  const [feedbackPolarity, setFeedbackPolarity] = React.useState<
-    "positive" | "negative"
-  >("positive");
-  const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const { mutateAsync: uploadFiles } = useUnifiedUploadFiles();
-
-  const optimisticUserMessage = getOptimisticUserMessage();
 
   const isV1Conversation = conversation?.conversation_version === "V1";
 
@@ -112,32 +94,6 @@ export function AIHomeChat() {
 
   // Keep full v1 events for lookups (includes both actions and observations)
   const v1FullEvents = storeEvents.filter(isV1Event);
-
-  // Combined events count for tracking
-  const totalEvents = v0Events.length || v1UiEvents.length;
-
-  // Check if there are any substantive agent actions (not just system messages)
-  const hasSubstantiveAgentActions = React.useMemo(
-    () =>
-      storeEvents
-        .filter(isV0Event)
-        .filter(isActionOrObservation)
-        .some(
-          (event) =>
-            isOpenHandsAction(event) &&
-            event.source === "agent" &&
-            event.action !== "system",
-        ) ||
-      storeEvents
-        .filter(isV1Event)
-        .some(
-          (event) =>
-            event.source === "agent" &&
-            !isSystemPromptEvent(event) &&
-            !isConversationStateUpdateEvent(event),
-        ),
-    [storeEvents],
-  );
 
   const handleSendMessage = async (
     content: string,
@@ -181,16 +137,8 @@ export function AIHomeChat() {
     setMessageToSend("");
   };
 
-  const onClickShareFeedbackActionButton = async (
-    polarity: "positive" | "negative",
-  ) => {
-    setFeedbackModalIsOpen(true);
-    setFeedbackPolarity(polarity);
-  };
-
   const v0UserEventsExist = hasUserEvent(v0Events);
   const v1UserEventsExist = hasV1UserEvent(v1FullEvents);
-  const userEventsExist = v0UserEventsExist || v1UserEventsExist;
 
   const h1 = "AI Chat";
   const h2 = "Ask about Move or React";
@@ -203,16 +151,6 @@ export function AIHomeChat() {
       </div>
 
       <div className="h-full flex flex-col justify-between pr-0 md:pr-4 relative">
-        {/* @todo Remove? */}
-        {!hasSubstantiveAgentActions &&
-          !optimisticUserMessage &&
-          !userEventsExist && (
-            <ChatSuggestions
-              onSuggestionsClick={(message) => setMessageToSend(message)}
-            />
-            // eslint-disable-next-line i18next/no-literal-string
-          )}
-
         {/* @todo Changeable size of this block? */}
         <div
           ref={scrollRef}
@@ -246,17 +184,6 @@ export function AIHomeChat() {
           <div className="flex justify-between relative">
             <div className="flex items-center gap-1">
               <ConfirmationModeEnabled />
-              {totalEvents > 0 && !isV1Conversation && (
-                <TrajectoryActions
-                  onPositiveFeedback={() =>
-                    onClickShareFeedbackActionButton("positive")
-                  }
-                  onNegativeFeedback={() =>
-                    onClickShareFeedbackActionButton("negative")
-                  }
-                  isSaasMode={config?.APP_MODE === "saas"}
-                />
-              )}
             </div>
 
             <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
@@ -268,18 +195,11 @@ export function AIHomeChat() {
 
           <InteractiveChatBox onSubmit={handleSendMessage} />
 
-          <div className="flex justify-start px-1">
+          {/* @todo Удалить */}
+          {/* <div className="flex justify-start px-1">
             <LumioModeToggles />
-          </div>
+          </div> */}
         </div>
-
-        {config?.APP_MODE !== "saas" && !isV1Conversation && (
-          <FeedbackModal
-            isOpen={feedbackModalIsOpen}
-            onClose={() => setFeedbackModalIsOpen(false)}
-            polarity={feedbackPolarity}
-          />
-        )}
       </div>
     </div>
   );

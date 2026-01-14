@@ -1,15 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
-// import { Suggestions } from "#/components/features/suggestions/suggestions";
-// import { SUGGESTIONS } from "#/utils/suggestions";
 import { useConversationStore } from "#/state/conversation-store";
 import { Logo } from "#/components/features/logo/logo";
 
-interface ChatSuggestionsProps {
-  onSuggestionsClick: (value: string) => void;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function ChatSuggestions({ onSuggestionsClick }: ChatSuggestionsProps) {
+export function ChatSuggestions() {
   const { shouldHideSuggestions } = useConversationStore();
 
   return (
@@ -24,15 +17,6 @@ export function ChatSuggestions({ onSuggestionsClick }: ChatSuggestionsProps) {
           className="absolute top-0 left-0 right-0 bottom-[151px] flex flex-col items-center justify-center pointer-events-auto"
         >
           <Logo />
-          {/* <Suggestions
-            suggestions={Object.entries(SUGGESTIONS.repo)
-              .slice(0, 4)
-              .map(([label, value]) => ({
-                label,
-                value,
-              }))}
-            onSuggestionClick={onSuggestionsClick}
-          /> */}
         </motion.div>
       )}
     </AnimatePresence>
