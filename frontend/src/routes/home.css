@@ -1,3 +1,69 @@
 #home_ai_chat {
   margin-bottom: 5em;
 }
+
+/* Template toggle styles */
+.template-toggle-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: transparent;
+  padding: 1rem;
+  align-items: center;
+  z-index: 10;
+}
+
+.template-toggle-button {
+  display: flex;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.toggle-circle {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: #2d2d2d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-circle:hover {
+  background-color: #3d3d3d;
+}
+
+/* Arrow icon container */
+.toggle-arrow {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Arrow SVG styles */
+.toggle-arrow-svg {
+  width: 100%;
+  height: 100%;
+  stroke: white;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+/* Up arrow icon */
+.up-arrow .toggle-arrow-svg path {
+  d: path("M7 14L12 9L17 14");
+}
+
+/* Down arrow icon */
+.down-arrow .toggle-arrow-svg path {
+  d: path("M7 10L12 15L17 10");
+}

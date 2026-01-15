@@ -9,7 +9,7 @@ export interface ConversationIdReturn {
  *  - https://<DOMAIN_NAME>/conversations/<CONVERSATION_ID>
  *  - https://<DOMAIN_NAME>#conversationId=<CONVERSATION_ID>
  *
- * @returns {object | null} - An object with { conversationId: string } if found, otherwise null
+ * @returns {ConversationIdReturn | null} - An object with { conversationId: string } if found, otherwise null
  */
 export function useConversationId(): ConversationIdReturn | null {
   const { conversationId } = useParams<{ conversationId: string }>();
