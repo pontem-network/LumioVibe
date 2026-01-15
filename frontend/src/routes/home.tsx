@@ -20,6 +20,7 @@ import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { useAutoStartConversation } from "#/hooks/use-auto-start-conversation";
 
+// Prefetches resources for conversation pages to speed up navigation
 <PrefetchPageLinks page="/conversations/:conversationId" />;
 
 /**
