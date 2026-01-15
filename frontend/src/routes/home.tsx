@@ -198,11 +198,11 @@ function HomeScreen() {
               <div className="toggle-circle">
                 {templatesVisible ? (
                   <svg viewBox="0 0 24 24" className="up-arrow">
-                    <path d="M7 14L12 9L17 14" />
+                    <path d="M7 10L12 15L17 10" />
                   </svg>
                 ) : (
                   <svg viewBox="0 0 24 24" className="down-arrow">
-                    <path d="M7 10L12 15L17 10" />
+                    <path d="M7 14L12 9L17 14" />
                   </svg>
                 )}
               </div>

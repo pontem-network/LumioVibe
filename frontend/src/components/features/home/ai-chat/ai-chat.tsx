@@ -40,6 +40,8 @@ import ConfirmationModeEnabled from "../../chat/confirmation-mode-enabled";
 export function AIHomeChat() {
   const { setMessageToSend, agentMode, skipTesting } = useConversationStore();
   const conversation = useActiveConversation()?.data;
+  const conversationId = conversation?.conversation_id;
+
   const { isLoadingMessages } = useWsClient();
   const { isTask } = useTaskPolling();
   const conversationWebSocket = useConversationWebSocket();
@@ -83,6 +85,7 @@ export function AIHomeChat() {
 
     prevV1LoadingRef.current = isLoading;
   }, [conversationWebSocket?.isLoadingHistory]);
+
   // Filter V0 events
   const v0Events = storeEvents
     .filter(isV0Event)
@@ -100,6 +103,7 @@ export function AIHomeChat() {
     originalImages: File[],
     originalFiles: File[],
   ) => {
+    if (!conversationId) return;
     // Create mutable copies of the arrays
     const images = [...originalImages];
     const files = [...originalFiles];
@@ -120,7 +124,7 @@ export function AIHomeChat() {
 
     const { skipped_files: skippedFiles, uploaded_files: uploadedFiles } =
       files.length > 0
-        ? await uploadFiles({ conversationId: "ai-chat-conversation", files })
+        ? await uploadFiles({ conversationId, files })
         : { skipped_files: [], uploaded_files: [] };
 
     skippedFiles.forEach((f) => displayErrorToast(f.reason));
