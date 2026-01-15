@@ -176,28 +176,25 @@ export function AIHomeChat() {
   const v0UserEventsExist = hasUserEvent(v0Events);
   const v1UserEventsExist = hasV1UserEvent(v1FullEvents);
 
-  const h1 = "AI Chat";
-  const h2 = "Ask about Move or React";
-
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-white">{h1}</h2>
-        <div className="text-sm text-white/50">{h2}</div>
+    <div className="ai-chat">
+      <div className="ai-chat__header">
+        <h2 className="ai-chat__title">{t("AI_CHAT$TITLE")}</h2>
+        <div className="ai-chat__subtitle">{t("AI_CHAT$SUBTITLE")}</div>
       </div>
 
-      <div className="h-full flex flex-col justify-between pr-0 relative">
+      <div className="ai-chat__container">
         {/* @todo Changeable size of this block? */}
         <div
           ref={scrollRef}
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
-          className="custom-scrollbar-always flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2 fast-smooth-scroll max-h-[400px]"
+          className="ai-chat__messages custom-scrollbar-always fast-smooth-scroll"
         >
           {!isTask &&
             ((isLoadingMessages && !isV1Conversation) ||
               ((conversationWebSocket?.isLoadingHistory || !showV1Messages) &&
                 isV1Conversation)) && (
-              <div className="flex justify-center">
+              <div className="ai-chat__messages--loading">
                 <LoadingSpinner size="small" />
               </div>
             )}
@@ -216,13 +213,13 @@ export function AIHomeChat() {
           )}
         </div>
 
-        <div className="flex flex-col gap-[6px]">
-          <div className="flex justify-between relative">
-            <div className="flex items-center gap-1">
+        <div className="ai-chat__controls">
+          <div className="ai-chat__indicators">
+            <div className="ai-chat__confirmation">
               <ConfirmationModeEnabled />
             </div>
 
-            <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
+            <div className="ai-chat__typing-indicator">
               {curAgentState === AgentState.RUNNING && <TypingIndicator />}
             </div>
 

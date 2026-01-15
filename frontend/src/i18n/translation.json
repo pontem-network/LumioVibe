@@ -15294,5 +15294,37 @@
     "tr": "Test",
     "de": "Testen",
     "uk": "Тестування"
+  },
+  "AI_CHAT$TITLE": {
+    "en": "AI Chat",
+    "ja": "AI Chat",
+    "zh-CN": "AI Chat",
+    "zh-TW": "AI Chat",
+    "ko-KR": "AI Chat",
+    "no": "AI Chat",
+    "it": "AI Chat",
+    "pt": "AI Chat",
+    "es": "AI Chat",
+    "ar": "AI Chat",
+    "fr": "AI Chat",
+    "tr": "AI Chat",
+    "de": "AI Chat",
+    "uk": "AI Chat"
+  },
+  "AI_CHAT$SUBTITLE": {
+    "en": "Ask about Move or React",
+    "ja": "Ask about Move or React",
+    "zh-CN": "Ask about Move or React",
+    "zh-TW": "Ask about Move or React",
+    "ko-KR": "Ask about Move or React",
+    "no": "Ask about Move or React",
+    "it": "Ask about Move or React",
+    "pt": "Ask about Move or React",
+    "es": "Ask about Move or React",
+    "ar": "Ask about Move or React",
+    "fr": "Ask about Move or React",
+    "tr": "Ask about Move or React",
+    "de": "Ask about Move or React",
+    "uk": "Ask about Move or React"
   }
 }
