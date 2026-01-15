@@ -138,6 +138,67 @@ class LumioService:
             logger.error(f'Error getting token price: {e}')
             return 10_000
 
+    async def get_whitelist(self) -> list[str]:
+        """Get all whitelisted addresses from the contract.
+
+        Returns:
+            List of whitelisted addresses, empty list if error
+        """
+        if not self.contract_address:
+            logger.warning('VIBE_BALANCE_CONTRACT not configured')
+            return []
+
+        url = f'{self.rpc_url}/v1/view'
+        payload = {
+            'function': f'{self.contract_address}::vibe_balance::get_whitelist',
+            'type_arguments': [],
+            'arguments': [],
+        }
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload, timeout=30.0)
+                response.raise_for_status()
+                result = response.json()
+                # Result is [[addr1, addr2, ...]]
+                if isinstance(result, list) and len(result) > 0:
+                    addresses = result[0]
+                    if isinstance(addresses, list):
+                        logger.info(f'Got {len(addresses)} whitelisted addresses')
+                        return addresses
+                return []
+        except Exception as e:
+            logger.error(f'Error getting whitelist: {e}')
+            return []
+
+    async def get_whitelist_count(self) -> int:
+        """Get the number of whitelisted users.
+
+        Returns:
+            Number of whitelisted users, 0 if error
+        """
+        if not self.contract_address:
+            return 0
+
+        url = f'{self.rpc_url}/v1/view'
+        payload = {
+            'function': f'{self.contract_address}::vibe_balance::get_whitelist_count',
+            'type_arguments': [],
+            'arguments': [],
+        }
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload, timeout=10.0)
+                response.raise_for_status()
+                result = response.json()
+                if isinstance(result, list) and len(result) > 0:
+                    return int(result[0])
+                return 0
+        except Exception as e:
+            logger.error(f'Error getting whitelist count: {e}')
+            return 0
+
     def _init_admin_key(self, private_key_hex: str) -> None:
         """Initialize admin signing key from hex private key."""
         try:

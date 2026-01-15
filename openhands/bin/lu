@@ -204,10 +204,10 @@ class LumioCLI:
             shutil.rmtree(project_path, ignore_errors=True)
 
         project_path.mkdir(parents=True, exist_ok=True)
-        # Exclude node_modules and lock files - they cause issues with grpcfuse
-        # and will be reinstalled fresh by pnpm
+        # Exclude node_modules - causes issues with grpcfuse
+        # Keep pnpm-lock.yaml for faster installs
         ignore_patterns = shutil.ignore_patterns(
-            'node_modules', 'pnpm-lock.yaml', 'package-lock.json', 'bun.lockb'
+            'node_modules', 'package-lock.json', 'bun.lockb'
         )
         shutil.copytree(
             template_path / 'contract',

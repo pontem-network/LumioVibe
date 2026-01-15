@@ -59,8 +59,11 @@ def combine_lifespans(*lifespans):
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    print('>>> _lifespan: entering conversation_manager context')
     async with conversation_manager:
+        print('>>> _lifespan: conversation_manager context entered')
         yield
+    print('>>> _lifespan: exiting')
 
 
 lifespans = [_lifespan, mcp_app.lifespan]

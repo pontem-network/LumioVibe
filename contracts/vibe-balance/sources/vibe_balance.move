@@ -5,6 +5,7 @@ module vibe_balance::vibe_balance {
     use lumio_framework::lumio_coin::LumioCoin;
     use lumio_framework::event;
     use lumio_std::table::{Self, Table};
+    use lumio_std::smart_table::{Self, SmartTable};
 
     const E_NOT_INITIALIZED: u64 = 1;
     const E_ALREADY_INITIALIZED: u64 = 2;
@@ -17,7 +18,7 @@ module vibe_balance::vibe_balance {
 
     struct BalanceStore has key {
         balances: Table<address, u64>,
-        whitelist: Table<address, bool>,
+        whitelist: SmartTable<address, bool>,
         token_price_in_coins: u64,
         treasury: Coin<LumioCoin>,
     }
@@ -73,7 +74,7 @@ module vibe_balance::vibe_balance {
 
         let balance_store = BalanceStore {
             balances: table::new(),
-            whitelist: table::new(),
+            whitelist: smart_table::new(),
             token_price_in_coins: 10_000,
             treasury: coin::zero<LumioCoin>(),
         };
@@ -89,11 +90,11 @@ module vibe_balance::vibe_balance {
         let balance_store = borrow_global_mut<BalanceStore>(admin_addr);
 
         assert!(
-            !table::contains(&balance_store.whitelist, user),
+            !smart_table::contains(&balance_store.whitelist, user),
             error::already_exists(E_ALREADY_WHITELISTED)
         );
 
-        table::add(&mut balance_store.whitelist, user, true);
+        smart_table::add(&mut balance_store.whitelist, user, true);
 
         event::emit(WhitelistAddedEvent {
             user,
@@ -108,11 +109,11 @@ module vibe_balance::vibe_balance {
         let balance_store = borrow_global_mut<BalanceStore>(admin_addr);
 
         assert!(
-            table::contains(&balance_store.whitelist, user),
+            smart_table::contains(&balance_store.whitelist, user),
             error::not_found(E_NOT_IN_WHITELIST)
         );
 
-        table::remove(&mut balance_store.whitelist, user);
+        smart_table::remove(&mut balance_store.whitelist, user);
 
         event::emit(WhitelistRemovedEvent {
             user,
@@ -131,8 +132,8 @@ module vibe_balance::vibe_balance {
         while (i < total_users) {
             let user = *std::vector::borrow(&users, i);
 
-            if (!table::contains(&balance_store.whitelist, user)) {
-                table::add(&mut balance_store.whitelist, user, true);
+            if (!smart_table::contains(&balance_store.whitelist, user)) {
+                smart_table::add(&mut balance_store.whitelist, user, true);
 
                 event::emit(WhitelistAddedEvent {
                     user,
@@ -160,8 +161,8 @@ module vibe_balance::vibe_balance {
         while (i < total_users) {
             let user = *std::vector::borrow(&users, i);
 
-            if (table::contains(&balance_store.whitelist, user)) {
-                table::remove(&mut balance_store.whitelist, user);
+            if (smart_table::contains(&balance_store.whitelist, user)) {
+                smart_table::remove(&mut balance_store.whitelist, user);
 
                 event::emit(WhitelistRemovedEvent {
                     user,
@@ -186,7 +187,7 @@ module vibe_balance::vibe_balance {
         let balance_store = borrow_global_mut<BalanceStore>(admin_addr);
 
         assert!(
-            table::contains(&balance_store.whitelist, user_addr),
+            smart_table::contains(&balance_store.whitelist, user_addr),
             error::permission_denied(E_NOT_WHITELISTED)
         );
 
@@ -326,6 +327,34 @@ module vibe_balance::vibe_balance {
 
         let balance_store = borrow_global<BalanceStore>(admin_addr);
 
-        table::contains(&balance_store.whitelist, user_addr)
+        smart_table::contains(&balance_store.whitelist, user_addr)
+    }
+
+    #[view]
+    /// Get all whitelisted addresses
+    public fun get_whitelist(): vector<address> acquires BalanceStore {
+        let admin_addr = @vibe_balance;
+
+        if (!exists<BalanceStore>(admin_addr)) {
+            return std::vector::empty()
+        };
+
+        let balance_store = borrow_global<BalanceStore>(admin_addr);
+
+        smart_table::keys(&balance_store.whitelist)
+    }
+
+    #[view]
+    /// Get the number of whitelisted users
+    public fun get_whitelist_count(): u64 acquires BalanceStore {
+        let admin_addr = @vibe_balance;
+
+        if (!exists<BalanceStore>(admin_addr)) {
+            return 0
+        };
+
+        let balance_store = borrow_global<BalanceStore>(admin_addr);
+
+        smart_table::length(&balance_store.whitelist)
     }
 }

@@ -162,3 +162,51 @@ class ConversationManager(ABC):
         monitoring_listener: MonitoringListener,
     ) -> ConversationManager:
         """Get a conversation manager instance"""
+
+    # RuntimePool methods - optional, default to no-op
+    async def try_acquire_standby_conversation(self, user_id: str) -> str | None:
+        """Try to acquire a standby conversation for a user.
+
+        Args:
+            user_id: The user's ID (wallet address)
+
+        Returns:
+            Conversation ID if a standby was available and acquired, None otherwise
+        """
+        return None
+
+    async def mark_standby_as_active(
+        self, user_id: str, conversation_id: str
+    ) -> None:
+        """Mark a standby conversation as active (no longer standby).
+
+        Args:
+            user_id: The user's ID
+            conversation_id: The conversation ID to mark as active
+        """
+        pass
+
+    def has_standby_session(self, user_id: str) -> bool:
+        """Check if user has an available standby session.
+
+        Args:
+            user_id: The user's ID
+
+        Returns:
+            True if standby session is available
+        """
+        return False
+
+    async def initialize_template_on_standby(
+        self, user_id: str, template_id: str
+    ) -> bool:
+        """Initialize a template on an acquired standby session.
+
+        Args:
+            user_id: The user's ID
+            template_id: The template to initialize
+
+        Returns:
+            True if initialization succeeded, False otherwise
+        """
+        return False

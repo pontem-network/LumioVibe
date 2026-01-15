@@ -1,10 +1,15 @@
+import asyncio
 import uuid
 from types import MappingProxyType
 from typing import Any
 
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema.agent import AgentState
+from openhands.events.action import CmdRunAction
+from openhands.events.action.agent import ChangeAgentStateAction
 from openhands.events.action.message import MessageAction
+from openhands.events.event import EventSource
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE,
@@ -28,7 +33,204 @@ from openhands.storage.data_models.conversation_metadata import (
     ConversationTrigger,
 )
 from openhands.storage.data_models.secrets import Secrets
+from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.conversation_summary import get_default_conversation_title
+
+
+async def _run_init_command(
+    agent_session,
+    command: str,
+    timeout: int = 60,
+    hidden: bool = True,
+) -> tuple[bool, str]:
+    """Run a command during template init and return success status and output."""
+    cmd_action = CmdRunAction(command=command, blocking=True, hidden=hidden)
+    cmd_action.set_hard_timeout(timeout)
+
+    try:
+        obs = await call_sync_from_async(agent_session.runtime.run_action, cmd_action)
+        output = getattr(obs, 'content', str(obs))
+        exit_code = getattr(obs, 'exit_code', 1)
+        return exit_code == 0, output
+    except Exception as e:
+        logger.error(f'Command failed: {command} - {e}')
+        return False, str(e)
+
+
+async def _initialize_template_async(
+    conversation_id: str,
+    template_id: str,
+    agent_loop_info: 'AgentLoopInfo',
+) -> None:
+    """Initialize template asynchronously with progress tracking.
+
+    Runs lu init in background and polls lu init-status for progress updates.
+    """
+    from openhands.server.services.template_manager import TemplateManager
+
+    template_manager = TemplateManager()
+    template = template_manager.get_template(template_id)
+
+    if not template:
+        logger.warning(f'Template not found: {template_id}')
+        return
+
+    agent_session = conversation_manager.get_agent_session(conversation_id)
+    if not agent_session:
+        logger.warning(f'No agent session for conversation {conversation_id}')
+        return
+
+    # Wait for runtime to be ready
+    logger.info(f'Waiting for runtime to be ready for template init: {conversation_id}')
+    max_wait = 120
+    waited = 0
+    while waited < max_wait:
+        if agent_session.runtime and agent_session.runtime.runtime_initialized:
+            break
+        await asyncio.sleep(1)
+        waited += 1
+
+    if not agent_session.runtime or not agent_session.runtime.runtime_initialized:
+        logger.warning(f'Runtime not ready after {max_wait}s, skipping template init')
+        error_msg = MessageAction(
+            content=f'Runtime not ready. You can manually initialize the template by running:\n```\nlu init {template_id} app\n```'
+        )
+        agent_session.event_stream.add_event(error_msg, EventSource.AGENT)
+        return
+
+    logger.info(f'Starting template initialization: {template_id} for {conversation_id}')
+
+    project_name = 'app'
+    workspace = config.workspace_mount_path_in_sandbox
+    project_dir = f'{workspace}/{project_name}'
+
+    try:
+        # Start lu init in background
+        command = f'lu init {template_id} {project_name} --dir {project_dir} --background'
+        success, output = await _run_init_command(agent_session, command, timeout=30)
+
+        if not success:
+            error_msg = MessageAction(
+                content=f'Failed to start initialization: {output[:200]}'
+            )
+            agent_session.event_stream.add_event(error_msg, EventSource.AGENT)
+            return
+
+        # Poll for progress
+        last_step_num = 0
+        max_poll_time = 300  # 5 minutes max
+        poll_interval = 2
+        poll_elapsed = 0
+        deployer_address = None
+
+        step_messages = {
+            1: 'Creating Lumio account...',
+            2: 'Funding account from faucet...',
+            3: 'Copying template files...',
+            4: 'Configuring project...',
+            5: 'Deploying contract...',
+            6: 'Starting frontend...',
+        }
+
+        while poll_elapsed < max_poll_time:
+            await asyncio.sleep(poll_interval)
+            poll_elapsed += poll_interval
+
+            # Read status file directly
+            _, status_output = await _run_init_command(
+                agent_session, 'cat /tmp/lumiovibe-init-status 2>/dev/null || echo "starting"', timeout=5
+            )
+            status_output = status_output.strip()
+
+            # Check if completed
+            if status_output == 'complete':
+                # Show any remaining steps
+                while last_step_num < 6:
+                    last_step_num += 1
+                    if last_step_num in step_messages:
+                        step_msg = MessageAction(content=step_messages[last_step_num])
+                        agent_session.event_stream.add_event(step_msg, EventSource.AGENT)
+
+                # Get deployer address
+                _, config_content = await _run_init_command(
+                    agent_session, f'cat {workspace}/.lumio/config.yaml', timeout=5
+                )
+                if config_content:
+                    for line in config_content.split('\n'):
+                        if 'account:' in line:
+                            deployer_address = line.split(':')[-1].strip().strip('"\'')
+                            if deployer_address and not deployer_address.startswith('0x'):
+                                deployer_address = f'0x{deployer_address}'
+
+                success_msg = MessageAction(
+                    content=f'Project initialized successfully!\n\n'
+                    f'Project: `{project_dir}`\n'
+                    f'Contract: `{deployer_address or "unknown"}`'
+                )
+                agent_session.event_stream.add_event(success_msg, EventSource.AGENT)
+                logger.info(f'Template {template_id} initialized successfully')
+                break
+
+            # Check if failed
+            if status_output.startswith('error'):
+                error_msg = MessageAction(
+                    content=f'Template initialization failed: {status_output}'
+                )
+                agent_session.event_stream.add_event(error_msg, EventSource.AGENT)
+                logger.error(f'Template init failed: {status_output}')
+                break
+
+            # Parse step number from format: step:N/6:action
+            if status_output.startswith('step:'):
+                parts = status_output.split(':')
+                if len(parts) >= 2:
+                    try:
+                        current_step_num = int(parts[1].split('/')[0])
+
+                        # Show all steps up to current (including skipped ones)
+                        while last_step_num < current_step_num:
+                            last_step_num += 1
+                            if last_step_num in step_messages:
+                                step_msg = MessageAction(content=step_messages[last_step_num])
+                                agent_session.event_stream.add_event(step_msg, EventSource.AGENT)
+
+                            # Show account address after step 1
+                            if last_step_num == 1 and not deployer_address:
+                                _, config_content = await _run_init_command(
+                                    agent_session, f'cat {workspace}/.lumio/config.yaml', timeout=5
+                                )
+                                if config_content:
+                                    for line in config_content.split('\n'):
+                                        if 'account:' in line:
+                                            deployer_address = line.split(':')[-1].strip().strip('"\'')
+                                            if deployer_address and not deployer_address.startswith('0x'):
+                                                deployer_address = f'0x{deployer_address}'
+                                            if deployer_address:
+                                                addr_msg = MessageAction(content=f'Account: `{deployer_address}`')
+                                                agent_session.event_stream.add_event(addr_msg, EventSource.AGENT)
+                                            break
+                    except (ValueError, IndexError):
+                        pass
+        else:
+            # Timeout
+            logger.warning(f'Template init timed out after {max_poll_time}s')
+            timeout_msg = MessageAction(
+                content=f'Initialization timed out. Check status with `lu init-status`'
+            )
+            agent_session.event_stream.add_event(timeout_msg, EventSource.AGENT)
+
+    except Exception as e:
+        logger.error(f'Error during template init: {e}')
+        error_msg = MessageAction(
+            content=f'Error initializing template: {str(e)}\n\nYou can try manually: `lu init {template_id} app`'
+        )
+        agent_session.event_stream.add_event(error_msg, EventSource.AGENT)
+    finally:
+        # Set agent state back to AWAITING_USER_INPUT
+        agent_session.event_stream.add_event(
+            ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
+            EventSource.ENVIRONMENT,
+        )
 
 
 async def initialize_conversation(
@@ -78,7 +280,35 @@ async def initialize_conversation(
         await conversation_store.save_metadata(conversation_metadata)
         return conversation_metadata
 
+    # Conversation exists - check if it's a standby conversation that needs updating
     conversation_metadata = await conversation_store.get_metadata(conversation_id)
+
+    # If this is a standby conversation being activated, update its metadata
+    if conversation_metadata.is_standby:
+        logger.info(
+            f'Updating standby conversation {conversation_id} with new metadata',
+            extra={'user_id': user_id, 'session_id': conversation_id},
+        )
+
+        conversation_title = get_default_conversation_title(conversation_id)
+        if template_id:
+            from openhands.server.services.template_manager import TemplateManager
+
+            template_manager = TemplateManager()
+            template = template_manager.get_template(template_id)
+            if template:
+                conversation_title = template.name
+
+        conversation_metadata.trigger = conversation_trigger
+        conversation_metadata.title = conversation_title
+        conversation_metadata.selected_repository = selected_repository
+        conversation_metadata.selected_branch = selected_branch
+        conversation_metadata.git_provider = git_provider
+        conversation_metadata.template_id = template_id
+        # Note: is_standby will be set to False by mark_standby_as_active
+
+        await conversation_store.save_metadata(conversation_metadata)
+
     return conversation_metadata
 
 
@@ -201,6 +431,22 @@ async def create_new_conversation(
             template_id = default_template.id
             logger.info(f'Using default template: {template_id}')
 
+    # Try to acquire a standby conversation if user_id is provided and no specific
+    # conversation_id is requested
+    standby_conversation_id = None
+    if user_id and not conversation_id:
+        standby_conversation_id = await conversation_manager.try_acquire_standby_conversation(
+            user_id
+        )
+        if standby_conversation_id:
+            logger.info(
+                f'Using standby conversation {standby_conversation_id} for user {user_id[:16]}',
+                extra={'session_id': standby_conversation_id, 'user_id': user_id},
+            )
+            conversation_id = standby_conversation_id
+
+            # Template initialization will be done non-blocking after conversation starts
+
     conversation_metadata = await initialize_conversation(
         user_id,
         conversation_id,
@@ -211,7 +457,13 @@ async def create_new_conversation(
         template_id,
     )
 
-    return await start_conversation(
+    # Mark standby as active if we used one
+    if standby_conversation_id and user_id:
+        await conversation_manager.mark_standby_as_active(
+            user_id, standby_conversation_id
+        )
+
+    agent_loop_info = await start_conversation(
         user_id,
         git_provider_tokens,
         custom_secrets,
@@ -223,6 +475,46 @@ async def create_new_conversation(
         conversation_instructions,
         mcp_config,
     )
+
+    # Start template initialization in background (non-blocking)
+    if template_id:
+        logger.info(
+            f'Starting async template initialization for {agent_loop_info.conversation_id}',
+            extra={'session_id': agent_loop_info.conversation_id, 'template_id': template_id},
+        )
+
+        # Add initial message to event stream BEFORE async task
+        # This ensures it's in history when client loads
+        agent_session = conversation_manager.get_agent_session(
+            agent_loop_info.conversation_id
+        )
+        if agent_session and agent_session.event_stream:
+            from openhands.server.services.template_manager import TemplateManager
+
+            template_manager = TemplateManager()
+            template = template_manager.get_template(template_id)
+            template_name = template.name if template else template_id
+
+            init_msg = MessageAction(
+                content=f'Initializing project from template `{template_name}`...\n\nThis will set up a Lumio account, deploy the smart contract, and start the frontend.'
+            )
+            agent_session.event_stream.add_event(init_msg, EventSource.AGENT)
+
+            # Set RUNNING state to block user input during initialization
+            agent_session.event_stream.add_event(
+                ChangeAgentStateAction(AgentState.RUNNING),
+                EventSource.ENVIRONMENT,
+            )
+
+        asyncio.create_task(
+            _initialize_template_async(
+                agent_loop_info.conversation_id,
+                template_id,
+                agent_loop_info,
+            )
+        )
+
+    return agent_loop_info
 
 
 def create_provider_tokens_object(

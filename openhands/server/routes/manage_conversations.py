@@ -122,6 +122,8 @@ def _filter_conversations_by_age(
 ) -> list:
     """Filter conversations by age, removing those older than max_age_seconds.
 
+    Also filters out standby conversations (pre-created for fast startup).
+
     Args:
         conversations: List of conversations to filter
         max_age_seconds: Maximum age in seconds for conversations to be included
@@ -133,6 +135,10 @@ def _filter_conversations_by_age(
     filtered_results = []
 
     for conversation in conversations:
+        # Skip standby conversations (pre-created, not yet assigned)
+        if getattr(conversation, 'is_standby', False):
+            continue
+
         # Skip conversations without created_at or older than max_age
         if not hasattr(conversation, 'created_at'):
             continue
@@ -272,7 +278,9 @@ async def new_conversation(
             # Check against git_provider, otherwise check all provider apis
             await provider_handler.verify_repo_provider(repository, git_provider)
 
-        conversation_id = getattr(data, 'conversation_id', None) or uuid.uuid4().hex
+        # Don't generate conversation_id here - let create_new_conversation decide
+        # This allows it to use standby conversations from RuntimePool
+        requested_conversation_id = getattr(data, 'conversation_id', None)
         agent_loop_info = await create_new_conversation(
             user_id=user_id,
             git_provider_tokens=provider_tokens,
@@ -285,14 +293,14 @@ async def new_conversation(
             conversation_trigger=conversation_trigger,
             conversation_instructions=conversation_instructions,
             git_provider=git_provider,
-            conversation_id=conversation_id,
+            conversation_id=requested_conversation_id,
             mcp_config=data.mcp_config,
             template_id=data.template_id,
         )
 
         return ConversationResponse(
             status='ok',
-            conversation_id=conversation_id,
+            conversation_id=agent_loop_info.conversation_id,
             conversation_status=agent_loop_info.status,
         )
     except MissingSettingsError as e:

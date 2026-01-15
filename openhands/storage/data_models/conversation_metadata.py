@@ -41,3 +41,5 @@ class ConversationMetadata:
     conversation_version: str | None = None
     # Template for project initialization
     template_id: str | None = None
+    # Standby conversation (pre-created for fast startup)
+    is_standby: bool = False

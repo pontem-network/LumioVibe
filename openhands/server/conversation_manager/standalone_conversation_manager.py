@@ -15,6 +15,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.core.schema.observation import ObservationType
 from openhands.events.action import MessageAction
+from openhands.events.event import EventSource
 from openhands.events.observation.commands import CmdOutputObservation
 from openhands.events.stream import EventStreamSubscriber, session_exists
 from openhands.llm.llm_registry import LLMRegistry
@@ -47,9 +48,13 @@ from openhands.utils.utils import create_registry_and_conversation_stats
 
 from .conversation_manager import ConversationManager
 
+if True:  # TYPE_CHECKING workaround to avoid circular import
+    from openhands.server.runtime_pool import RuntimePool
+
 _CLEANUP_INTERVAL = 15
 UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 DELETE_CONTAINER_TIME_LIMIT = 60 * 60 * 24  # in seconds
+ENABLE_RUNTIME_POOL = True  # Enable pre-created standby conversations
 
 
 @dataclass
@@ -77,20 +82,76 @@ class StandaloneConversationManager(ConversationManager):
     _cleanup_task: asyncio.Task | None = None
     _conversation_store_class: type[ConversationStore] | None = None
     _loop: asyncio.AbstractEventLoop | None = None
+    _runtime_pool: 'RuntimePool | None' = None
 
     docker_client: docker.DockerClient = field(default_factory=docker.from_env)
 
     async def __aenter__(self):
+        print('>>> StandaloneConversationManager.__aenter__ called')
         # Grab a reference to the main event loop. This is the loop in which `await sio.emit` must be called
         self._loop = asyncio.get_event_loop()
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
         get_runtime_cls(self.config.runtime).setup(self.config)
+
+        # Initialize RuntimePool for pre-created standby conversations
+        print(f'>>> ENABLE_RUNTIME_POOL = {ENABLE_RUNTIME_POOL}')
+        if ENABLE_RUNTIME_POOL:
+            await self._initialize_runtime_pool()
+
         return self
+
+    async def _initialize_runtime_pool(self):
+        """Initialize the RuntimePool with standby conversations for whitelisted users."""
+        try:
+            # Import here to avoid circular imports
+            from openhands.server.runtime_pool import RuntimePool
+            from openhands.server.shared import lumio_service
+
+            print('>>> RuntimePool: Starting initialization...')
+            logger.info('Initializing RuntimePool...')
+
+            self._runtime_pool = RuntimePool(
+                config=self.config,
+                file_store=self.file_store,
+                lumio_service=lumio_service,
+            )
+
+            # Factory functions for RuntimePool
+            async def conversation_store_factory(user_id: str):
+                return await self._get_conversation_store(user_id)
+
+            async def session_factory(sid: str, settings: Settings, user_id: str):
+                return await self._start_agent_loop(sid, settings, user_id)
+
+            async def settings_factory(user_id: str):
+                # Import here to avoid circular imports
+                from openhands.server.shared import SettingsStoreImpl
+                settings_store = await SettingsStoreImpl.get_instance(self.config, user_id)
+                return await settings_store.load()
+
+            await self._runtime_pool.initialize(
+                conversation_store_factory=conversation_store_factory,
+                session_factory=session_factory,
+                settings_factory=settings_factory,
+            )
+
+            status = await self._runtime_pool.get_status()
+            logger.info(f'RuntimePool initialized: {status}')
+
+        except Exception as e:
+            logger.error(f'Failed to initialize RuntimePool: {e}')
+            self._runtime_pool = None
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if self._cleanup_task:
             self._cleanup_task.cancel()
             self._cleanup_task = None
+
+        # Shutdown RuntimePool
+        if self._runtime_pool:
+            await self._runtime_pool.shutdown()
+            self._runtime_pool = None
+
         get_runtime_cls(self.config.runtime).teardown(self.config)
 
     async def attach_to_conversation(
@@ -327,6 +388,24 @@ class StandaloneConversationManager(ConversationManager):
             session = await self._start_agent_loop(
                 sid, settings, user_id, initial_user_msg, replay_json
             )
+        else:
+            # Existing session (e.g., standby) - send current agent state directly to client
+            logger.info(f'Reusing existing session for {sid}', extra={'session_id': sid})
+            current_state = session.agent_session.get_state()
+            if current_state:
+                from openhands.events.observation.agent import AgentStateChangedObservation
+                from openhands.events.serialization import event_to_dict
+
+                state_event = AgentStateChangedObservation('', current_state)
+                event_dict = event_to_dict(state_event)
+                event_dict['source'] = EventSource.AGENT
+
+                # Send directly via sio.emit to ensure client receives it
+                await self.sio.emit('oh_event', event_dict, to=ROOM_KEY.format(sid=sid))
+                logger.info(
+                    f'Sent current agent state {current_state} for {sid}',
+                    extra={'session_id': sid},
+                )
         return self._agent_loop_info_from_session(session)
 
     async def _start_agent_loop(
@@ -599,8 +678,7 @@ class StandaloneConversationManager(ConversationManager):
         await conversation_store.save_metadata(conversation)
 
     def _is_git_related_event(self, event) -> bool:
-        """
-        Determine if an event is related to git operations that could change the branch.
+        """Determine if an event is related to git operations that could change the branch.
 
         Args:
             event: The event to check
@@ -644,8 +722,7 @@ class StandaloneConversationManager(ConversationManager):
         return False
 
     async def _update_conversation_branch(self, conversation: ConversationMetadata):
-        """
-        Update the conversation's current branch if it has changed.
+        """Update the conversation's current branch if it has changed.
 
         Args:
             conversation: The conversation metadata to update
@@ -677,8 +754,7 @@ class StandaloneConversationManager(ConversationManager):
     def _get_session_and_runtime(
         self, conversation_id: str
     ) -> tuple[Session | None, Any | None]:
-        """
-        Get the session and runtime for a conversation.
+        """Get the session and runtime for a conversation.
 
         Args:
             conversation_id: The conversation ID
@@ -694,8 +770,7 @@ class StandaloneConversationManager(ConversationManager):
     def _get_current_workspace_branch(
         self, runtime: Any, selected_repository: str | None
     ) -> str | None:
-        """
-        Get the current branch from the workspace.
+        """Get the current branch from the workspace.
 
         Args:
             runtime: The runtime instance
@@ -716,8 +791,7 @@ class StandaloneConversationManager(ConversationManager):
     def _should_update_branch(
         self, current_branch: str | None, new_branch: str | None
     ) -> bool:
-        """
-        Determine if the branch should be updated.
+        """Determine if the branch should be updated.
 
         Args:
             current_branch: The current branch in conversation metadata
@@ -731,8 +805,7 @@ class StandaloneConversationManager(ConversationManager):
     def _update_branch_in_conversation(
         self, conversation: ConversationMetadata, new_branch: str | None
     ):
-        """
-        Update the branch in the conversation metadata.
+        """Update the branch in the conversation metadata.
 
         Args:
             conversation: The conversation metadata to update
@@ -772,6 +845,94 @@ class StandaloneConversationManager(ConversationManager):
 
     def _get_conversation_url(self, conversation_id: str):
         return f'/api/conversations/{conversation_id}'
+
+    async def try_acquire_standby_conversation(self, user_id: str) -> str | None:
+        """Try to acquire a standby conversation for a user.
+
+        Args:
+            user_id: The user's ID (wallet address)
+
+        Returns:
+            Conversation ID if a standby was available and acquired, None otherwise
+        """
+        if not self._runtime_pool:
+            return None
+
+        conversation_id = await self._runtime_pool.acquire(user_id)
+        if conversation_id:
+            logger.info(
+                f'Acquired standby conversation {conversation_id} for user {user_id[:16]}',
+                extra={'session_id': conversation_id, 'user_id': user_id},
+            )
+        return conversation_id
+
+    async def mark_standby_as_active(
+        self, user_id: str, conversation_id: str
+    ) -> None:
+        """Mark a standby conversation as active (no longer standby).
+
+        This should be called after the user actually starts using the conversation.
+
+        Args:
+            user_id: The user's ID
+            conversation_id: The conversation ID to mark as active
+        """
+        if not self._runtime_pool:
+            return
+
+        await self._runtime_pool.mark_conversation_active(
+            user_id,
+            conversation_id,
+            self._get_conversation_store,
+        )
+        logger.info(
+            f'Marked standby conversation {conversation_id} as active for user {user_id[:16]}',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+
+    def has_standby_session(self, user_id: str) -> bool:
+        """Check if user has an available standby session.
+
+        Args:
+            user_id: The user's ID
+
+        Returns:
+            True if standby session is available
+        """
+        if not self._runtime_pool:
+            return False
+        return self._runtime_pool.has_available_standby(user_id)
+
+    async def get_standby_session(self, user_id: str) -> Session | None:
+        """Get the session for a user's standby conversation if available.
+
+        Args:
+            user_id: The user's ID
+
+        Returns:
+            Session if standby is available, None otherwise
+        """
+        if not self._runtime_pool:
+            return None
+        return await self._runtime_pool.get_session(user_id)
+
+    async def initialize_template_on_standby(
+        self, user_id: str, template_id: str
+    ) -> bool:
+        """Initialize a template on an acquired standby session.
+
+        Args:
+            user_id: The user's ID
+            template_id: The template to initialize
+
+        Returns:
+            True if initialization succeeded, False otherwise
+        """
+        if not self._runtime_pool:
+            return False
+        return await self._runtime_pool.initialize_template_on_standby(
+            user_id, template_id
+        )
 
 
 def _get_status_from_session(session: Session) -> ConversationStatus:

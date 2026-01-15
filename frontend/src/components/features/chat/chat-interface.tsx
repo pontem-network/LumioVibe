@@ -270,14 +270,15 @@ export function ChatInterface() {
               </div>
             )}
 
-          {!isLoadingMessages && v0UserEventsExist && (
-            <V0Messages
-              messages={v0Events}
-              isAwaitingUserConfirmation={
-                curAgentState === AgentState.AWAITING_USER_CONFIRMATION
-              }
-            />
-          )}
+          {!isLoadingMessages &&
+            (v0UserEventsExist || hasSubstantiveAgentActions) && (
+              <V0Messages
+                messages={v0Events}
+                isAwaitingUserConfirmation={
+                  curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+                }
+              />
+            )}
 
           {showV1Messages && v1UserEventsExist && (
             <V1Messages messages={v1UiEvents} allEvents={v1FullEvents} />
