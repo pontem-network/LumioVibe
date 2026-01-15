@@ -1,6 +1,6 @@
 import { PrefetchPageLinks, useNavigate } from "react-router";
 import "./home.css";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Spinner } from "@heroui/react";
 import { HomeHeader } from "#/components/features/home/home-header/home-header";
 import { RecentConversations } from "#/components/features/home/recent-conversations/recent-conversations";
@@ -14,17 +14,27 @@ import { EventHandler } from "#/wrapper/event-handler";
 import { WebSocketProviderWrapper } from "#/contexts/websocket-provider-wrapper";
 import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
-import { useUnifiedResumeConversationSandbox } from "#/hooks/mutation/use-unified-start-conversation";
 import { useUserProviders } from "#/hooks/use-user-providers";
-import { useAuthWallet } from "#/hooks/use-auth";
+import { useAutoStartConversation } from "#/hooks/use-auto-start-conversation";
 
 <PrefetchPageLinks page="/conversations/:conversationId" />;
 
+/**
+ * Main home screen component that handles conversation management,
+ * AI chat interface, and template display.
+ *
+ * This component manages the creation of new conversations, auto-starts
+ * stopped conversations, and displays the appropriate UI elements based
+ * on the current state.
+ */
 function HomeScreen() {
   const { data: conversationsList, isPending } = usePaginatedConversations(10);
 
-  const conversations =
-    conversationsList?.pages.flatMap((page) => page.results) ?? [];
+  const conversations = useMemo(
+    () => conversationsList?.pages.flatMap((page) => page.results) ?? [],
+    [conversationsList],
+  );
+
   const hasApps = conversations.length > 0;
 
   // Wait for initial load to determine layout
@@ -33,18 +43,17 @@ function HomeScreen() {
   // https://<DOMAIN_NAME>#conversationId=<CONVERSATION_ID>
   const conversationId = useConversationId();
   const navigate = useNavigate();
-  const [hasConversationId, setHasConversationId] = useState<boolean>(false);
   const { mutate: createConversation, isPending: isCreating } =
     useCreateConversation();
   const conversation = useActiveConversation()?.data;
   const isV0Conversation = conversation?.conversation_version === "V0";
-  const isAuthed = useAuthWallet().connected;
-  const { providers } = useUserProviders();
-  const { mutate: startConversation, isPending: isStarting } =
-    useUnifiedResumeConversationSandbox();
+  const { providers: userProviders } = useUserProviders();
 
-  // Track which conversation ID we've auto-started to prevent auto-restart after manual stop
-  const processedConversationId = React.useRef<string | null>(null);
+  // Memoize providers to prevent unnecessary re-renders
+  const providers = useMemo(() => userProviders, [userProviders]);
+
+  // Handle auto-starting stopped conversations
+  useAutoStartConversation(providers);
 
   // Check if conversationId exists, and create a new one if needed
   useEffect(() => {
@@ -56,56 +65,16 @@ function HomeScreen() {
           onSuccess: (data) => {
             // Add conversation_id to the URL as a hash
             navigate(`#conversationId=${data.conversation_id}`);
-            setHasConversationId(true);
           },
           onError: (error) =>
             displayErrorToast(`Error creating conversation: ${error.message}`),
         },
       );
-    } else {
-      // If conversationId already exists, set the flag
-      setHasConversationId(true);
     }
   }, [conversationId, createConversation, navigate]);
 
-  // Auto-start effect - handles auto-starting STOPPED conversations
-  useEffect(() => {
-    // Wait for data to be fetched
-    if (!conversation || !isAuthed) return;
-
-    const currentConversationId = conversation.conversation_id;
-    const currentStatus = conversation.status;
-
-    // Skip if we've already processed this conversation
-    if (processedConversationId.current === currentConversationId) {
-      return;
-    }
-
-    // Mark as processed immediately to prevent duplicate calls
-    processedConversationId.current = currentConversationId;
-
-    // Auto-start STOPPED conversations on initial load only
-    if (currentStatus === "STOPPED" && !isStarting) {
-      startConversation(
-        { conversationId: currentConversationId, providers },
-        {
-          onError: (error) => {
-            displayErrorToast(`Failed to start conversation: ${error.message}`);
-          },
-        },
-      );
-    }
-  }, [
-    conversation?.conversation_id,
-    isAuthed,
-    isStarting,
-    providers,
-    startConversation,
-    navigate,
-  ]);
-
   // We are showing the spinner while the conversationId is being created or we have not received the ID yet.
-  if (conversationId === null && (isCreating || !hasConversationId)) {
+  if (conversationId === null && isCreating) {
     return (
       <div
         data-testid="loading-home-page"
@@ -121,13 +90,12 @@ function HomeScreen() {
 
   // Displaying templates for a project
   const renderTemplateGrid = () => {
-    if (isInitialLoading) {
-      return <TemplateGrid />;
-    }
-    if (hasApps) {
-      return <TemplateGrid compact />;
-    }
-    return <TemplateGrid showNewAppButton />;
+    if (isInitialLoading) return <TemplateGrid />;
+    return hasApps ? (
+      <TemplateGrid compact />
+    ) : (
+      <TemplateGrid showNewAppButton />
+    );
   };
 
   return (
@@ -144,11 +112,11 @@ function HomeScreen() {
           data-testid="home-screen-new-conversation-section"
         >
           {/* An input field for communicating with AI */}
-          {hasConversationId && conversationId?.conversationId && (
+          {conversationId?.conversationId && (
             <div id="home_ai_chat">
               <WebSocketProviderWrapper
                 version={isV0Conversation ? 0 : 1}
-                conversationId={conversationId?.conversationId}
+                conversationId={conversationId.conversationId}
               >
                 <ConversationSubscriptionsProvider>
                   <EventHandler>
