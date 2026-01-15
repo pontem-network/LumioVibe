@@ -95,9 +95,6 @@ function HomeScreen() {
         },
       );
     }
-    // NOTE: conversation?.status is intentionally NOT in dependencies
-    // We only want to run when conversation ID changes, not when status changes
-    // This prevents duplicate calls when stale cache data is replaced with fresh data
   }, [
     conversation?.conversation_id,
     isAuthed,
@@ -107,7 +104,7 @@ function HomeScreen() {
     navigate,
   ]);
 
-  // We are showing the spinner while the conversation_id is being created or we have not received the ID yet.
+  // We are showing the spinner while the conversationId is being created or we have not received the ID yet.
   if (conversationId === null && (isCreating || !hasConversationId)) {
     return (
       <div
