@@ -3,9 +3,7 @@ import "./home.css";
 import React, { useEffect, useMemo } from "react";
 import { Spinner } from "@heroui/react";
 import { HomeHeader } from "#/components/features/home/home-header/home-header";
-import { RecentConversations } from "#/components/features/home/recent-conversations/recent-conversations";
 import { TemplateGrid } from "#/components/features/home/templates";
-import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversations";
 import { AIHomeChat } from "#/components/features/home/ai-chat/ai-chat";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
@@ -32,18 +30,6 @@ import { useAutoStartConversation } from "#/hooks/use-auto-start-conversation";
  * on the current state.
  */
 function HomeScreen() {
-  const { data: conversationsList, isPending } = usePaginatedConversations(10);
-
-  const conversations = useMemo(
-    () => conversationsList?.pages.flatMap((page) => page.results) ?? [],
-    [conversationsList],
-  );
-
-  const hasApps = conversations.length > 0;
-
-  // Wait for initial load to determine layout
-  const isInitialLoading = isPending && !conversationsList;
-
   // https://<DOMAIN_NAME>#conversationId=<CONVERSATION_ID>
   const conversationId: ConversationIdReturn | null = useConversationId();
   const navigate = useNavigate();
@@ -92,16 +78,6 @@ function HomeScreen() {
     );
   }
 
-  // Displaying templates for a project
-  const renderTemplateGrid = () => {
-    if (isInitialLoading) return <TemplateGrid />;
-    return hasApps ? (
-      <TemplateGrid compact />
-    ) : (
-      <TemplateGrid showNewAppButton />
-    );
-  };
-
   return (
     <div
       data-testid="home-screen"
@@ -131,11 +107,7 @@ function HomeScreen() {
             </div>
           )}
 
-          {/* list of recent chats */}
-          {!isInitialLoading && hasApps && <RecentConversations />}
-
-          {/* templates for the project */}
-          {renderTemplateGrid()}
+          <TemplateGrid showNewAppButton compact />
         </div>
       </div>
     </div>
