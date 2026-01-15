@@ -34,6 +34,57 @@ import { Messages as V0Messages } from "#/components/features/chat/messages";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import ConfirmationModeEnabled from "../../chat/confirmation-mode-enabled";
 
+/**
+ * Custom hook that controls the visibility of V1 messages with proper timing
+ * to avoid layout issues during history loading.
+ *
+ * Purpose:
+ * - Prevents flickering or incorrect layout when rendering loaded messages.
+ * - Ensures messages are only shown *after* the DOM has fully rendered
+ *   the chat container by deferring visibility to the next animation frame.
+ *
+ * State transitions:
+ * - When loading starts: hides messages immediately.
+ * - When loading finishes: waits for next frame (via rAF) before showing messages.
+ *
+ * @param isLoadingHistory - Indicates if message history is currently being loaded
+ * @returns Boolean indicating whether V1 messages should be visible
+ *
+ * @example
+ * const showV1Messages = useV1MessagesVisibility(conversationWebSocket?.isLoadingHistory);
+ * return <div>{showV1Messages && <MessageList />}</div>;
+ */
+function useV1MessagesVisibility(
+  isLoadingHistory: boolean | undefined,
+): boolean {
+  // Internal state to control message visibility
+  const [showV1Messages, setShowV1Messages] = React.useState(false);
+
+  // Persist previous loading state across renders
+  const prevLoadingRef = React.useRef<boolean>(false);
+
+  React.useEffect(() => {
+    const wasLoading = prevLoadingRef.current;
+    const isLoading = !!isLoadingHistory;
+
+    // Case: Loading just completed → show messages on next frame
+    if (wasLoading && !isLoading) {
+      requestAnimationFrame(() => {
+        setShowV1Messages(true);
+      });
+    }
+    // Case: Loading started → hide messages immediately
+    else if (isLoading) {
+      setShowV1Messages(false);
+    }
+
+    // Update ref for next render
+    prevLoadingRef.current = isLoading;
+  }, [isLoadingHistory]);
+
+  return showV1Messages;
+}
+
 /*
  * Chat for interacting with AI on the home page
  */
@@ -62,29 +113,10 @@ export function AIHomeChat() {
 
   const isV1Conversation = conversation?.conversation_version === "V1";
 
-  // Track when we should show V1 messages (after DOM has rendered)
-  const [showV1Messages, setShowV1Messages] = React.useState(false);
-  const prevV1LoadingRef = React.useRef(
+  // Wait for DOM to render before showing V1 messages
+  const showV1Messages = useV1MessagesVisibility(
     conversationWebSocket?.isLoadingHistory,
   );
-
-  // Wait for DOM to render before showing V1 messages
-  React.useEffect(() => {
-    const wasLoading = prevV1LoadingRef.current;
-    const isLoading = conversationWebSocket?.isLoadingHistory;
-
-    if (wasLoading && !isLoading) {
-      // Loading just finished - wait for next frame to ensure DOM is ready
-      requestAnimationFrame(() => {
-        setShowV1Messages(true);
-      });
-    } else if (isLoading) {
-      // Reset when loading starts
-      setShowV1Messages(false);
-    }
-
-    prevV1LoadingRef.current = isLoading;
-  }, [conversationWebSocket?.isLoadingHistory]);
 
   // Filter V0 events
   const v0Events = storeEvents
@@ -199,7 +231,7 @@ export function AIHomeChat() {
 
           <InteractiveChatBox onSubmit={handleSendMessage} />
 
-          {/* @todo Удалить */}
+          {/* Выбор режимов общения */}
           {/* <div className="flex justify-start px-1">
             <LumioModeToggles />
           </div> */}

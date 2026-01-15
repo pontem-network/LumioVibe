@@ -189,7 +189,7 @@ function HomeScreen() {
               </WebSocketProviderWrapper>
             </div>
           )}
-
+          {/* Шаблоны для нового проекта */}
           <div className="template-toggle-container">
             <div
               className="template-toggle-button"
