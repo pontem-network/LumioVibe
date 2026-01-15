@@ -1,6 +1,6 @@
 import { useLocation, useParams } from "react-router";
 
-interface ConversationIdReturn {
+export interface ConversationIdReturn {
   conversationId: string;
 }
 /**

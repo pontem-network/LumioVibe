@@ -9,7 +9,10 @@ import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversat
 import { AIHomeChat } from "#/components/features/home/ai-chat/ai-chat";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { useConversationId } from "#/hooks/use-conversation-id";
+import {
+  ConversationIdReturn,
+  useConversationId,
+} from "#/hooks/use-conversation-id";
 import { EventHandler } from "#/wrapper/event-handler";
 import { WebSocketProviderWrapper } from "#/contexts/websocket-provider-wrapper";
 import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
@@ -41,7 +44,7 @@ function HomeScreen() {
   const isInitialLoading = isPending && !conversationsList;
 
   // https://<DOMAIN_NAME>#conversationId=<CONVERSATION_ID>
-  const conversationId = useConversationId();
+  const conversationId: ConversationIdReturn | null = useConversationId();
   const navigate = useNavigate();
   const { mutate: createConversation, isPending: isCreating } =
     useCreateConversation();
