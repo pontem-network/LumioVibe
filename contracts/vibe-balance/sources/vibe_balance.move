@@ -16,6 +16,9 @@ module vibe_balance::vibe_balance {
     const E_ALREADY_WHITELISTED: u64 = 7;
     const E_NOT_IN_WHITELIST: u64 = 8;
 
+    /// Initial credit amount when user is added to whitelist (1 LUM = 1_000_000 with 6 decimals)
+    const INITIAL_CREDIT_AMOUNT: u64 = 1_000_000;
+
     struct BalanceStore has key {
         balances: Table<address, u64>,
         whitelist: SmartTable<address, bool>,
@@ -67,6 +70,12 @@ module vibe_balance::vibe_balance {
         added: bool,
     }
 
+    #[event]
+    struct InitialCreditEvent has drop, store {
+        user: address,
+        amount: u64,
+    }
+
     public entry fun initialize(admin: &signer) {
         let admin_addr = signer::address_of(admin);
 
@@ -96,8 +105,21 @@ module vibe_balance::vibe_balance {
 
         smart_table::add(&mut balance_store.whitelist, user, true);
 
+        // Credit initial 1 LUM to user's balance
+        if (table::contains(&balance_store.balances, user)) {
+            let current_balance = *table::borrow(&balance_store.balances, user);
+            *table::borrow_mut(&mut balance_store.balances, user) = current_balance + INITIAL_CREDIT_AMOUNT;
+        } else {
+            table::add(&mut balance_store.balances, user, INITIAL_CREDIT_AMOUNT);
+        };
+
         event::emit(WhitelistAddedEvent {
             user,
+        });
+
+        event::emit(InitialCreditEvent {
+            user,
+            amount: INITIAL_CREDIT_AMOUNT,
         });
     }
 
@@ -135,8 +157,21 @@ module vibe_balance::vibe_balance {
             if (!smart_table::contains(&balance_store.whitelist, user)) {
                 smart_table::add(&mut balance_store.whitelist, user, true);
 
+                // Credit initial 1 LUM to user's balance
+                if (table::contains(&balance_store.balances, user)) {
+                    let current_balance = *table::borrow(&balance_store.balances, user);
+                    *table::borrow_mut(&mut balance_store.balances, user) = current_balance + INITIAL_CREDIT_AMOUNT;
+                } else {
+                    table::add(&mut balance_store.balances, user, INITIAL_CREDIT_AMOUNT);
+                };
+
                 event::emit(WhitelistAddedEvent {
                     user,
+                });
+
+                event::emit(InitialCreditEvent {
+                    user,
+                    amount: INITIAL_CREDIT_AMOUNT,
                 });
             };
 
