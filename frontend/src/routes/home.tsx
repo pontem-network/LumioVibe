@@ -1,4 +1,5 @@
 import { PrefetchPageLinks, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import "./home.css";
 import React, { useEffect, useMemo, useState } from "react";
 import { Spinner } from "@heroui/react";
@@ -28,6 +29,13 @@ import { shouldRenderEvent as shouldRenderV0Event } from "#/components/features/
 /**
  * Custom hook to handle initial conversation creation
  * if no conversationId is present in the URL.
+ *
+ * This hook manages the creation of a new conversation when the user
+ * navigates to the home page without an existing conversation ID.
+ *
+ * @param conversationId - The current conversation ID from URL
+ * @param createConversation - Mutation function to create new conversation
+ * @param navigate - React Router navigation function
  */
 function useInitializeConversation(
   conversationId: ConversationIdReturn | null,
@@ -39,11 +47,13 @@ function useInitializeConversation(
   navigate: ReturnType<typeof useNavigate>,
 ) {
   useEffect(() => {
+    // If no conversation ID is present, create a new one
     if (conversationId === null) {
       createConversation(
         {},
         {
           onSuccess: (data) => {
+            // Navigate to the newly created conversation
             navigate(`#conversationId=${data.conversation_id}`);
           },
           onError: (error) =>
@@ -58,9 +68,13 @@ function useInitializeConversation(
  * Custom hook to determine if there are user messages in the conversation
  * and manage template visibility accordingly.
  *
- * @param conversation - Current conversation object
+ * This hook manages the visibility of project templates based on user interaction
+ * in the conversation. Templates are hidden when user has started a conversation
+ * and shown when the conversation is new.
+ *
+ * @param conversation_id - Current conversation ID
  * @param isV0Conversation - Whether the conversation uses V0 version
- * @returns {{ hasMessages: boolean | null; templatesVisible: boolean; setTemplatesVisible: React.Dispatch<React.SetStateAction<boolean>> }}
+ * @returns Object with hasMessages, templatesVisible state and setter
  */
 function useTemplatesVisibilityWithMessages(
   conversation_id: string | undefined,
@@ -68,8 +82,9 @@ function useTemplatesVisibilityWithMessages(
 ) {
   const storeEvents = useEventStore((state) => state.events);
 
-  // Determine if there are any user messages
+  // Determine if there are any user messages in the conversation
   const hasMessages = useMemo(() => {
+    // Return null if no conversation ID
     if (!conversation_id) return null;
 
     if (isV0Conversation) {
@@ -92,16 +107,21 @@ function useTemplatesVisibilityWithMessages(
   const [prevHasMessages, setPrevHasMessages] = useState<boolean | null>(null);
 
   useEffect(() => {
+    // Initialize visibility based on initial message state
     if (prevHasMessages === null && hasMessages !== null) {
       setTemplatesVisible(!hasMessages);
       setPrevHasMessages(hasMessages);
-    } else if (
+    }
+    // Hide templates when user starts a conversation
+    else if (
       (prevHasMessages === false || prevHasMessages === null) &&
       hasMessages === true
     ) {
       setTemplatesVisible(false);
       setPrevHasMessages(hasMessages);
-    } else if (
+    }
+    // Show templates when conversation becomes empty again
+    else if (
       prevHasMessages === true &&
       (hasMessages === false || hasMessages === null)
     ) {
@@ -117,12 +137,19 @@ function useTemplatesVisibilityWithMessages(
  * Main home screen component that handles conversation management,
  * AI chat interface, and template display.
  *
- * This component manages the creation of new conversations, auto-starts
+ * This is the primary entry point for the LumioVibe application where users:
+ * - Start new conversations
+ * - Interact with AI assistant
+ * - Access project templates
+ * - Manage conversation state
+ *
+ * The component manages the creation of new conversations, auto-starts
  * stopped conversations, and displays the appropriate UI elements based
  * on the current state.
  */
 function HomeScreen() {
-  // https://<DOMAIN_NAME>#conversationId=<CONVERSATION_ID>
+  const { t } = useTranslation();
+  // Extract conversation ID from URL hash (https://<DOMAIN_NAME>#conversationId=<CONVERSATION_ID>)
   const conversationId: ConversationIdReturn | null = useConversationId();
   const navigate = useNavigate();
   const { mutate: createConversation, isPending: isCreating } =
@@ -146,37 +173,32 @@ function HomeScreen() {
       isV0Conversation,
     );
 
-  // We are showing the spinner while the conversationId is being created or we have not received the ID yet.
+  // Show loading spinner while conversation ID is being created or not yet received
   if (conversationId === null && isCreating) {
     return (
       <div
-        data-testid="loading-home-page"
-        className="h-full flex items-center justify-center"
+        data-testid="home-screen-loading"
+        className="home-screen__loading-container"
       >
-        <div className="flex flex-col items-center">
+        <div className="home-screen__loading-content">
           <Spinner />
-          <p className="text-white/70 mt-2">Initializing chat...</p>
+          <p className="home-screen__loading-text">Initializing chat...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      data-testid="home-screen"
-      className="px-0 pt-4 bg-transparent h-full flex flex-col pt-[35px] overflow-y-auto rounded-xl lg:px-[42px] lg:pt-[42px] custom-scrollbar-always"
-    >
-      <HomeHeader />
+    <div data-testid="home-screen" className="home-screen">
+      <header className="home-screen__header">
+        <HomeHeader />
+      </header>
 
-      <div className="pt-[25px] flex justify-center">
-        <div
-          id="new_conversation_section"
-          className="flex flex-col gap-6 px-6 w-full lg:px-0 lg:max-w-[1000px]"
-          data-testid="home-screen-new-conversation-section"
-        >
-          {/* An input field for communicating with AI */}
+      <main className="home-screen__main">
+        <div className="home-screen__content-container">
+          {/* AI chat interface for conversation with AI assistant */}
           {conversationId?.conversationId && (
-            <div id="home_ai_chat">
+            <section className="home-screen__chat-section" id="home_ai_chat">
               <WebSocketProviderWrapper
                 version={isV0Conversation ? 0 : 1}
                 conversationId={conversationId.conversationId}
@@ -187,30 +209,52 @@ function HomeScreen() {
                   </EventHandler>
                 </ConversationSubscriptionsProvider>
               </WebSocketProviderWrapper>
-            </div>
+            </section>
           )}
-          {/* Шаблоны для нового проекта */}
-          <div className="template-toggle-container">
-            <div
-              className="template-toggle-button"
-              onClick={() => setTemplatesVisible(!templatesVisible)}
-            >
-              <div className="toggle-circle">
-                {templatesVisible ? (
-                  <svg viewBox="0 0 24 24" className="up-arrow">
-                    <path d="M7 10L12 15L17 10" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" className="down-arrow">
-                    <path d="M7 14L12 9L17 14" />
-                  </svg>
-                )}
-              </div>
+
+          {/* Template grid section with toggle functionality */}
+          <section className="home-screen__templates-section">
+            <div className="home-screen__templates-toggle-container">
+              <button
+                type="button"
+                className="home-screen__templates-toggle-button"
+                onClick={() => setTemplatesVisible(!templatesVisible)}
+                aria-label={
+                  templatesVisible
+                    ? t("AI_CHAT$HIDE_TEMPLATE")
+                    : t("AI_CHAT$SHOW_TEMPLATE")
+                }
+              >
+                <div className="home-screen__templates-toggle-circle">
+                  {templatesVisible ? (
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="home-screen__templates-toggle-arrow home-screen__templates-toggle-arrow--up"
+                      aria-hidden="true"
+                    >
+                      <path d="M7 10L12 15L17 10" />
+                    </svg>
+                  ) : (
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="home-screen__templates-toggle-arrow home-screen__templates-toggle-arrow--down"
+                      aria-hidden="true"
+                    >
+                      <path d="M7 14L12 9L17 14" />
+                    </svg>
+                  )}
+                </div>
+              </button>
+
+              {templatesVisible && (
+                <div className="home-screen__templates-grid">
+                  <TemplateGrid showNewAppButton compact />
+                </div>
+              )}
             </div>
-            {templatesVisible && <TemplateGrid showNewAppButton compact />}
-          </div>
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

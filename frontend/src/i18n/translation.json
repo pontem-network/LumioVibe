@@ -15326,5 +15326,37 @@
     "tr": "Ask about Move or React",
     "de": "Ask about Move or React",
     "uk": "Ask about Move or React"
+  },
+  "AI_CHAT$HIDE_TEMPLATE": {
+    "en": "Hide templates",
+    "ja": "Hide templates",
+    "zh-CN": "Hide templates",
+    "zh-TW": "Hide templates",
+    "ko-KR": "Hide templates",
+    "no": "Hide templates",
+    "it": "Hide templates",
+    "pt": "Hide templates",
+    "es": "Hide templates",
+    "ar": "Hide templates",
+    "fr": "Hide templates",
+    "tr": "Hide templates",
+    "de": "Hide templates",
+    "uk": "Hide templates"
+  },
+  "AI_CHAT$SHOW_TEMPLATE": {
+    "en": "Show templates",
+    "ja": "Show templates",
+    "zh-CN": "Show templates",
+    "zh-TW": "Show templates",
+    "ko-KR": "Show templates",
+    "no": "Show templates",
+    "it": "Show templates",
+    "pt": "Show templates",
+    "es": "Show templates",
+    "ar": "Show templates",
+    "fr": "Show templates",
+    "tr": "Show templates",
+    "de": "Show templates",
+    "uk": "Show templates"
   }
 }
