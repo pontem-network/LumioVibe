@@ -150,7 +150,7 @@ export function AIHomeChat() {
         <div className="text-sm text-white/50">{h2}</div>
       </div>
 
-      <div className="h-full flex flex-col justify-between pr-0 md:pr-4 relative">
+      <div className="h-full flex flex-col justify-between pr-0 relative">
         {/* @todo Changeable size of this block? */}
         <div
           ref={scrollRef}
