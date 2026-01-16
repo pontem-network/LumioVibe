@@ -18,10 +18,7 @@ import { ConversationSubscriptionsProvider } from "#/context/conversation-subscr
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { useAutoStartConversation } from "#/hooks/use-auto-start-conversation";
-import { useEventStore } from "#/stores/use-event-store";
-import { isV0Event, isV1Event } from "#/types/v1/type-guards";
-import { isOpenHandsAction, isActionOrObservation } from "#/types/core/guards";
-import { shouldRenderEvent as shouldRenderV0Event } from "#/components/features/chat/event-content-helpers/should-render-event";
+import { useHasMessageConversation } from "../hooks/chat/useHasMessageConversation";
 
 // Prefetches resources for conversation pages to speed up navigation
 <PrefetchPageLinks page="/conversations/:conversationId" />;
@@ -66,44 +63,6 @@ function useInitializeConversation(
 
 /**
  * Custom hook to determine if there are user messages in the conversation
- *
- * This hook checks the event store for any user-generated messages in both
- * V0 and V1 conversation formats. It returns null when no conversation ID
- * is provided, indicating the state is not yet initialized.
- *
- * @param conversationId - The ID of the conversation to check
- * @param isV0Conversation - Flag indicating if this is a V0 format conversation
- * @returns boolean | null - True if user messages exist, false if none, null if not initialized
- */
-function useConversationHasMessage(
-  conversationId: string | undefined,
-  isV0Conversation: boolean,
-): boolean | null {
-  const storeEvents = useEventStore((state) => state.events);
-
-  // Determine if there are any user messages in the conversation
-  return useMemo(() => {
-    // Return null if no conversation ID
-    if (!conversationId) return null;
-
-    if (isV0Conversation) {
-      const v0Events = storeEvents
-        .filter(isV0Event)
-        .filter(isActionOrObservation)
-        .filter(shouldRenderV0Event);
-
-      return v0Events.some(
-        (event) => isOpenHandsAction(event) && event.source === "user",
-      );
-    }
-
-    const v1Events = storeEvents.filter(isV1Event);
-    return v1Events.some((event) => event.source === "user");
-  }, [storeEvents, conversationId, isV0Conversation]);
-}
-
-/**
- * Custom hook to determine if there are user messages in the conversation
  * and manage template visibility accordingly.
  *
  * This hook manages the visibility of project templates based on user interaction
@@ -122,7 +81,7 @@ function useTemplatesVisibility(
   const [prevHasMessages, setPrevHasMessages] = useState<boolean | null>(null);
 
   // Determine if there are any user messages in the conversation
-  const hasMessages = useConversationHasMessage(
+  const hasMessages = useHasMessageConversation(
     conversation_id,
     isV0Conversation,
   );
