@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Spinner } from "@heroui/react";
 import { HomeHeader } from "#/components/features/home/home-header/home-header";
 import { TemplateGrid } from "#/components/features/home/templates";
-import { AIHomeChat } from "#/components/features/home/ai-chat/ai-chat";
+import { AIHomeChat } from "#/components/features/home/ai-chat";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import {

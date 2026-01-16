@@ -32,7 +32,7 @@ import {
 } from "#/components/v1/chat";
 import { Messages as V0Messages } from "#/components/features/chat/messages";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
-import ConfirmationModeEnabled from "../../chat/confirmation-mode-enabled";
+import ConfirmationModeEnabled from "../chat/confirmation-mode-enabled";
 
 /**
  * Custom hook that controls the visibility of V1 messages with proper timing
@@ -101,6 +101,7 @@ export function AIHomeChat() {
 
   const storeEvents = useEventStore((state) => state.events);
   const uiEvents = useEventStore((state) => state.uiEvents);
+
   const { setOptimisticUserMessage } = useOptimisticUserMessageStore();
   const { t } = useTranslation();
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -175,6 +176,9 @@ export function AIHomeChat() {
 
   const v0UserEventsExist = hasUserEvent(v0Events);
   const v1UserEventsExist = hasV1UserEvent(v1FullEvents);
+
+  console.log("storeEvents: ", storeEvents);
+  console.log("uiEvents: ", uiEvents);
 
   return (
     <div className="ai-chat">
