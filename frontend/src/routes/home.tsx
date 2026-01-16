@@ -66,26 +66,25 @@ function useInitializeConversation(
 
 /**
  * Custom hook to determine if there are user messages in the conversation
- * and manage template visibility accordingly.
  *
- * This hook manages the visibility of project templates based on user interaction
- * in the conversation. Templates are hidden when user has started a conversation
- * and shown when the conversation is new.
+ * This hook checks the event store for any user-generated messages in both
+ * V0 and V1 conversation formats. It returns null when no conversation ID
+ * is provided, indicating the state is not yet initialized.
  *
- * @param conversation_id - Current conversation ID
- * @param isV0Conversation - Whether the conversation uses V0 version
- * @returns Object with hasMessages, templatesVisible state and setter
+ * @param conversationId - The ID of the conversation to check
+ * @param isV0Conversation - Flag indicating if this is a V0 format conversation
+ * @returns boolean | null - True if user messages exist, false if none, null if not initialized
  */
-function useTemplatesVisibilityWithMessages(
-  conversation_id: string | undefined,
+function useConversationHasMessage(
+  conversationId: string | undefined,
   isV0Conversation: boolean,
-) {
+): boolean | null {
   const storeEvents = useEventStore((state) => state.events);
 
   // Determine if there are any user messages in the conversation
-  const hasMessages = useMemo(() => {
+  return useMemo(() => {
     // Return null if no conversation ID
-    if (!conversation_id) return null;
+    if (!conversationId) return null;
 
     if (isV0Conversation) {
       const v0Events = storeEvents
@@ -100,34 +99,44 @@ function useTemplatesVisibilityWithMessages(
 
     const v1Events = storeEvents.filter(isV1Event);
     return v1Events.some((event) => event.source === "user");
-  }, [storeEvents, conversation_id, isV0Conversation]);
+  }, [storeEvents, conversationId, isV0Conversation]);
+}
 
-  // Manage template visibility based on message state
-  const [templatesVisible, setTemplatesVisible] = useState(true);
+/**
+ * Custom hook to determine if there are user messages in the conversation
+ * and manage template visibility accordingly.
+ *
+ * This hook manages the visibility of project templates based on user interaction
+ * in the conversation. Templates are hidden when user has started a conversation
+ * and shown when the conversation is new.
+ *
+ * @param conversation_id - Current conversation ID
+ * @param isV0Conversation - Whether the conversation uses V0 version
+ * @returns Object with hasMessages, templatesVisible state and setter
+ */
+function useTemplatesVisibility(
+  conversation_id: string | undefined,
+  isV0Conversation: boolean,
+) {
+  const [templatesVisible, setTemplatesVisible] = useState<boolean>(true);
   const [prevHasMessages, setPrevHasMessages] = useState<boolean | null>(null);
 
+  // Determine if there are any user messages in the conversation
+  const hasMessages = useConversationHasMessage(
+    conversation_id,
+    isV0Conversation,
+  );
+
   useEffect(() => {
-    // Initialize visibility based on initial message state
-    if (prevHasMessages === null && hasMessages !== null) {
-      setTemplatesVisible(!hasMessages);
-      setPrevHasMessages(hasMessages);
-    }
-    // Hide templates when user starts a conversation
-    else if (
-      (prevHasMessages === false || prevHasMessages === null) &&
-      hasMessages === true
-    ) {
-      setTemplatesVisible(false);
-      setPrevHasMessages(hasMessages);
-    }
-    // Show templates when conversation becomes empty again
-    else if (
-      prevHasMessages === true &&
-      (hasMessages === false || hasMessages === null)
-    ) {
-      setTemplatesVisible(true);
-      setPrevHasMessages(hasMessages);
-    }
+    if (
+      prevHasMessages === hasMessages ||
+      prevHasMessages === true ||
+      templatesVisible === false
+    )
+      return;
+
+    setPrevHasMessages(prevHasMessages);
+    setTemplatesVisible(!hasMessages);
   }, [hasMessages, prevHasMessages]);
 
   return { hasMessages, templatesVisible, setTemplatesVisible };
@@ -167,11 +176,10 @@ function HomeScreen() {
   // Check if conversationId exists, and create a new one if needed
   useInitializeConversation(conversationId, createConversation, navigate);
 
-  const { templatesVisible, setTemplatesVisible } =
-    useTemplatesVisibilityWithMessages(
-      conversation?.conversation_id,
-      isV0Conversation,
-    );
+  const { templatesVisible, setTemplatesVisible } = useTemplatesVisibility(
+    conversation?.conversation_id,
+    isV0Conversation,
+  );
 
   // Show loading spinner while conversation ID is being created or not yet received
   if (conversationId === null && isCreating) {
