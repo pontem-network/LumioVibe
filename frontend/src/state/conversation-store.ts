@@ -12,6 +12,9 @@ export type ConversationTab =
 export type ConversationMode = "code" | "plan";
 
 export type AgentMode = "chat" | "planning" | "development";
+export function isAgentMode(value: string): value is AgentMode {
+  return ["chat", "planning", "development"].includes(value);
+}
 
 export interface IMessageToSend {
   text: string;
