@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { useConversationStore } from "#/state/conversation-store";
@@ -27,6 +27,13 @@ export function ChatInputField({
   );
 
   const isPlanMode = conversationMode === "plan";
+
+  // Set focus on the input field after component mounting
+  useEffect(() => {
+    if (chatInputRef.current) {
+      chatInputRef.current.focus();
+    }
+  }, [chatInputRef]);
 
   return (
     <div

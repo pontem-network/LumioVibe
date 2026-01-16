@@ -36,7 +36,7 @@ export function AgentStatus({
   const { curAgentState } = useAgentState();
   const { curStatusMessage } = useStatusStore();
   const webSocketStatus = useUnifiedWebSocketStatus();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { taskStatus } = useTaskPolling();
 
   const { subConversationTaskId } = useConversationStore();

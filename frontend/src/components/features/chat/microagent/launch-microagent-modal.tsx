@@ -33,7 +33,7 @@ export function LaunchMicroagentModal({
 }: LaunchMicroagentModalProps) {
   const { t } = useTranslation();
   const { runtimeActive } = useHandleRuntimeActive();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { data: prompt, isLoading: promptIsLoading } =
     useMicroagentPrompt(eventId);
 

@@ -63,7 +63,7 @@ function getEntryPoint(
 export function ChatInterface() {
   const posthog = usePostHog();
   const { setMessageToSend, agentMode, skipTesting } = useConversationStore();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { errorMessage } = useErrorMessageStore();
   const { isLoadingMessages } = useWsClient();
   const { isTask } = useTaskPolling();
@@ -244,12 +244,7 @@ export function ChatInterface() {
       <div className="h-full flex flex-col justify-between pr-0 md:pr-4 relative">
         {!hasSubstantiveAgentActions &&
           !optimisticUserMessage &&
-          !userEventsExist && (
-            <ChatSuggestions
-              onSuggestionsClick={(message) => setMessageToSend(message)}
-            />
-          )}
-        {/* Note: We only hide chat suggestions when there's a user message */}
+          !userEventsExist && <ChatSuggestions />}
 
         <div
           ref={scrollRef}

@@ -18,11 +18,15 @@ export function ChatInputActions({
   disabled,
   handleResumeAgent,
 }: ChatInputActionsProps) {
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const pauseConversationSandboxMutation = useUnifiedPauseConversationSandbox();
   const v1PauseConversationMutation = useV1PauseConversation();
   const v1ResumeConversationMutation = useV1ResumeConversation();
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
   const { send } = useSendMessage();
 
   const isV1Conversation = conversation?.conversation_version === "V1";

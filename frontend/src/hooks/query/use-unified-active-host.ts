@@ -15,9 +15,13 @@ import { useConversationConfig } from "./use-conversation-config";
  */
 export const useUnifiedActiveHost = () => {
   const [activeHost, setActiveHost] = React.useState<string | null>(null);
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
   const runtimeIsReady = useRuntimeIsReady();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { data: conversationConfig, isLoading: isLoadingConfig } =
     useConversationConfig();
 

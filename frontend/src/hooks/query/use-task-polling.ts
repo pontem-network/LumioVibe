@@ -20,7 +20,11 @@ import { useConversationId } from "#/hooks/use-conversation-id";
  * Note: This hook does NOT fetch conversation data. It only handles task polling and navigation.
  */
 export const useTaskPolling = () => {
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
   const navigate = useNavigate();
 
   // Check if this is a task ID (format: "task-{uuid}")

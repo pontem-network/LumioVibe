@@ -16,8 +16,12 @@ interface VSCodeUrlResult {
 
 export const useVSCodeUrl = () => {
   const { t } = useTranslation();
-  const { conversationId } = useConversationId();
-  const { data: conversation } = useActiveConversation();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
+  const conversation = useActiveConversation()?.data;
   const runtimeIsReady = useRuntimeIsReady();
 
   const isV1Conversation = conversation?.conversation_version === "V1";

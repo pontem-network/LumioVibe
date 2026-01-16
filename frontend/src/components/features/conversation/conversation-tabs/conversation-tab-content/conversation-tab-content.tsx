@@ -19,7 +19,11 @@ const PlannerTab = lazy(() => import("#/routes/planner-tab"));
 
 export function ConversationTabContent() {
   const { selectedTab, shouldShownAgentLoading } = useConversationStore();
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
 
   const { t } = useTranslation();
 

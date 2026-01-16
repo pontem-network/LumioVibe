@@ -10,7 +10,7 @@ import { V1MessageContent } from "#/api/conversation-service/v1-conversation-ser
  * - For V1 conversations: Uses native WebSocket via ConversationWebSocketProvider
  */
 export function useSendMessage() {
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { send: v0Send } = useWsClient();
 
   // Get V1 context (will be null if not in V1 provider)

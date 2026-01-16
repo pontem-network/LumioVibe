@@ -11,7 +11,11 @@ export function VSCodeTooltipContent() {
   const { curAgentState } = useAgentState();
 
   const { t } = useTranslation();
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
 
   const handleVSCodeClick = async (e: React.MouseEvent) => {
     e.preventDefault();

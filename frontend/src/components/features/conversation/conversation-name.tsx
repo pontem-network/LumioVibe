@@ -1,5 +1,4 @@
 import React from "react";
-import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
@@ -14,11 +13,13 @@ import { ConfirmDeleteModal } from "../conversation-panel/confirm-delete-modal";
 import { ConfirmStopModal } from "../conversation-panel/confirm-stop-modal";
 import { MetricsModal } from "./metrics-modal/metrics-modal";
 import { ConversationVersionBadge } from "../conversation-panel/conversation-card/conversation-version-badge";
+import { useConversationId } from "#/hooks/use-conversation-id";
 
 export function ConversationName() {
   const { t } = useTranslation();
-  const { conversationId } = useParams<{ conversationId: string }>();
-  const { data: conversation } = useActiveConversation();
+  const conversationId: string | undefined =
+    useConversationId()?.conversationId;
+  const conversation = useActiveConversation()?.data;
   const { mutate: updateConversation } = useUpdateConversation();
 
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");

@@ -18,7 +18,7 @@ export function GitControlBarPullButton({
   const { t } = useTranslation();
   const { trackPullButtonClick } = useTracking();
 
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const { providers } = useUserProviders();
 
   const providersAreSet = providers.length > 0;

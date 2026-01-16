@@ -34,7 +34,7 @@ export function ChangeAgentButton() {
 
   const isAgentRunning = curAgentState === AgentState.RUNNING;
 
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
 
   // Poll sub-conversation task and invalidate parent conversation when ready
   useSubConversationTaskPolling(

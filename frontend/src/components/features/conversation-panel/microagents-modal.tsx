@@ -20,7 +20,7 @@ interface MicroagentsModalProps {
 export function MicroagentsModal({ onClose }: MicroagentsModalProps) {
   const { t } = useTranslation();
   const { curAgentState } = useAgentState();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
   const [expandedAgents, setExpandedAgents] = useState<Record<string, boolean>>(
     {},
   );

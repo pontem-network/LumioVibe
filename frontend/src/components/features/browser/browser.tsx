@@ -6,7 +6,11 @@ import { useBrowserStore } from "#/stores/browser-store";
 
 export function BrowserPanel() {
   const { url, screenshotSrc, reset } = useBrowserStore();
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
 
   useEffect(() => {
     reset();

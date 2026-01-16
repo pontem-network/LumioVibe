@@ -24,7 +24,7 @@ export function LikertScale({
   initialReason,
 }: LikertScaleProps) {
   const { t } = useTranslation();
-  const { data: conversation } = useActiveConversation();
+  const conversation = useActiveConversation()?.data;
 
   const [selectedRating, setSelectedRating] = useState<number | null>(
     initialRating || null,

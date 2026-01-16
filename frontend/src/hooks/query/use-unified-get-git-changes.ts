@@ -14,8 +14,12 @@ import type { GitChange } from "#/api/open-hands.types";
  * - V1: Uses the V1GitService.getGitChanges API endpoint with runtime URL
  */
 export const useUnifiedGetGitChanges = () => {
-  const { conversationId } = useConversationId();
-  const { data: conversation } = useActiveConversation();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
+  const conversation = useActiveConversation()?.data;
   const [orderedChanges, setOrderedChanges] = React.useState<GitChange[]>([]);
   const previousDataRef = React.useRef<GitChange[] | null>(null);
   const runtimeIsReady = useRuntimeIsReady();

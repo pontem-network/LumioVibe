@@ -5,7 +5,11 @@ import { AgentState } from "#/types/agent-state";
 import { useAgentState } from "#/hooks/use-agent-state";
 
 export const useConversationMicroagents = () => {
-  const { conversationId } = useConversationId();
+  const conversationId: string | null =
+    useConversationId()?.conversationId ?? null;
+  if (conversationId === null) {
+    throw new Error("conversationId is null");
+  }
   const { curAgentState } = useAgentState();
 
   return useQuery({
