@@ -135,10 +135,8 @@ function HomeScreen() {
   // Check if conversationId exists, and create a new one if needed
   useInitializeConversation(conversationId, createConversation, navigate);
 
-  const { templatesVisible, setTemplatesVisible } = useTemplatesVisibility(
-    conversation?.conversation_id,
-    isV0Conversation,
-  );
+  const { hasMessages, templatesVisible, setTemplatesVisible } =
+    useTemplatesVisibility(conversation?.conversation_id, isV0Conversation);
 
   // Show loading spinner while conversation ID is being created or not yet received
   if (conversationId === null && isCreating) {
@@ -156,13 +154,13 @@ function HomeScreen() {
   }
 
   return (
-    <div data-testid="home-screen" className="home-screen">
-      <header className="home-screen__header">
-        <HomeHeader />
-      </header>
-
+    <div
+      data-testid="home-screen"
+      className={`home-screen ${hasMessages ? "fullsize" : "minsize"}`}
+    >
       <main className="home-screen__main">
         <div className="home-screen__content-container">
+          <HomeHeader />
           {/* AI chat interface for conversation with AI assistant */}
           {conversationId?.conversationId && (
             <section className="home-screen__chat-section" id="home_ai_chat">
@@ -178,49 +176,49 @@ function HomeScreen() {
               </WebSocketProviderWrapper>
             </section>
           )}
-
-          {/* Template grid section with toggle functionality */}
-          <section className="home-screen__templates-section">
-            <div className="home-screen__templates-toggle-container">
-              <button
-                type="button"
-                className="home-screen__templates-toggle-button"
-                onClick={() => setTemplatesVisible(!templatesVisible)}
-                aria-label={
-                  templatesVisible
-                    ? t("AI_CHAT$HIDE_TEMPLATE")
-                    : t("AI_CHAT$SHOW_TEMPLATE")
-                }
-              >
-                <div className="home-screen__templates-toggle-circle">
-                  {templatesVisible ? (
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="home-screen__templates-toggle-arrow home-screen__templates-toggle-arrow--up"
-                      aria-hidden="true"
-                    >
-                      <path d="M7 10L12 15L17 10" />
-                    </svg>
-                  ) : (
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="home-screen__templates-toggle-arrow home-screen__templates-toggle-arrow--down"
-                      aria-hidden="true"
-                    >
-                      <path d="M7 14L12 9L17 14" />
-                    </svg>
-                  )}
-                </div>
-              </button>
-
-              {templatesVisible && (
-                <div className="home-screen__templates-grid">
-                  <TemplateGrid showNewAppButton compact />
-                </div>
-              )}
-            </div>
-          </section>
         </div>
+
+        {/* Template grid section with toggle functionality */}
+        <section className="home-screen__templates-section">
+          <div className="home-screen__templates-toggle-container">
+            <button
+              type="button"
+              className="home-screen__templates-toggle-button"
+              onClick={() => setTemplatesVisible(!templatesVisible)}
+              aria-label={
+                templatesVisible
+                  ? t("AI_CHAT$HIDE_TEMPLATE")
+                  : t("AI_CHAT$SHOW_TEMPLATE")
+              }
+            >
+              <div className="home-screen__templates-toggle-circle">
+                {templatesVisible ? (
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="home-screen__templates-toggle-arrow home-screen__templates-toggle-arrow--up"
+                    aria-hidden="true"
+                  >
+                    <path d="M7 10L12 15L17 10" />
+                  </svg>
+                ) : (
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="home-screen__templates-toggle-arrow home-screen__templates-toggle-arrow--down"
+                    aria-hidden="true"
+                  >
+                    <path d="M7 14L12 9L17 14" />
+                  </svg>
+                )}
+              </div>
+            </button>
+
+            {templatesVisible && (
+              <div className="home-screen__templates-grid">
+                <TemplateGrid showNewAppButton compact />
+              </div>
+            )}
+          </div>
+        </section>
       </main>
     </div>
   );

@@ -9,8 +9,8 @@
   overflow-y: auto;
 }
 
-.home-screen__header {
-  padding-top: 1rem;
+.home-screen header {
+  padding-top: 5rem;
   padding-bottom: 1rem;
 }
 
@@ -18,28 +18,38 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   padding: 1rem 0;
-}
-
-.home-screen__content-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
   width: 100%;
   max-width: 1000px;
   margin: 0 auto;
-  padding: 0 1rem;
 }
 
-.home-screen__conversation-section {
+.home-screen__content-container {
+  gap: 1.5rem;
+  padding: 0 1rem 5rem;
+  width: 100%;
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
 }
 
-.home-screen__ai-chat-container {
-  margin-bottom: 5em;
+.home-screen.minsize .home-screen__content-container {
+  justify-content: center;
+}
+.home-screen.fullsize .home-screen__content-container {
+  justify-content: space-between;
+}
+
+.home-screen__chat-section {
+  display: flex;
+  width: 100%;
+}
+.home-screen.minsize .home-screen__chat-section {
+  flex-grow: unset;
+}
+.home-screen.fullsize .home-screen__chat-section {
+  flex-grow: 1;
 }
 
 /* Templates Toggle Styles */
@@ -47,7 +57,6 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
@@ -130,11 +139,24 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  width: 100%;
+  flex-grow: 1;
+
+  vertical-align: middle;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .ai-chat__header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+}
+
+.ai-chat__container {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
   justify-content: space-between;
 }
 
@@ -147,15 +169,6 @@
 .ai-chat__subtitle {
   font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.5);
-}
-
-.ai-chat__container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding-right: 0;
-  position: relative;
 }
 
 .ai-chat__messages {
