@@ -1,7 +1,7 @@
+import "./home.css";
 import { PrefetchPageLinks, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import "./home.css";
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Spinner } from "@heroui/react";
 import { HomeHeader } from "#/components/features/home/home-header/home-header";
 import { TemplateGrid } from "#/components/features/home/templates";
@@ -118,28 +118,31 @@ function useTemplatesVisibility(
 function HomeScreen() {
   const { t } = useTranslation();
   // Extract conversation ID from URL hash (https://<DOMAIN_NAME>#conversationId=<CONVERSATION_ID>)
-  const conversationId: ConversationIdReturn | null = useConversationId();
+  const conversation: ConversationIdReturn | null = useConversationId();
   const navigate = useNavigate();
   const { mutate: createConversation, isPending: isCreating } =
     useCreateConversation();
-  const conversation = useActiveConversation()?.data;
-  const isV0Conversation = conversation?.conversation_version === "V0";
+  const conversationActive = useActiveConversation()?.data;
+  const isV0Conversation = conversationActive?.conversation_version === "V0";
   const { providers: userProviders } = useUserProviders();
 
   // Memoize providers to prevent unnecessary re-renders
   const providers = useMemo(() => userProviders, [userProviders]);
 
+  // Check if conversationId exists, and create a new one if needed
+  useInitializeConversation(conversation, createConversation, navigate);
+
   // Handle auto-starting stopped conversations
   useAutoStartConversation(providers);
 
-  // Check if conversationId exists, and create a new one if needed
-  useInitializeConversation(conversationId, createConversation, navigate);
-
   const { hasMessages, templatesVisible, setTemplatesVisible } =
-    useTemplatesVisibility(conversation?.conversation_id, isV0Conversation);
+    useTemplatesVisibility(
+      conversationActive?.conversation_id,
+      isV0Conversation,
+    );
 
   // Show loading spinner while conversation ID is being created or not yet received
-  if (conversationId === null && isCreating) {
+  if (conversation === null && isCreating) {
     return (
       <div
         data-testid="home-screen-loading"
@@ -162,20 +165,26 @@ function HomeScreen() {
         <div className="home-screen__content-container">
           <HomeHeader />
           {/* AI chat interface for conversation with AI assistant */}
-          {conversationId?.conversationId && (
-            <section className="home-screen__chat-section" id="home_ai_chat">
-              <WebSocketProviderWrapper
-                version={isV0Conversation ? 0 : 1}
-                conversationId={conversationId.conversationId}
-              >
-                <ConversationSubscriptionsProvider>
-                  <EventHandler>
-                    <AIHomeChat />
-                  </EventHandler>
-                </ConversationSubscriptionsProvider>
-              </WebSocketProviderWrapper>
-            </section>
-          )}
+          {conversation?.conversationId &&
+            conversationActive?.conversation_version && (
+              <section className="home-screen__chat-section" id="home_ai_chat">
+                <WebSocketProviderWrapper
+                  version={isV0Conversation ? 0 : 1}
+                  conversationId={conversation.conversationId}
+                >
+                  <ConversationSubscriptionsProvider>
+                    <EventHandler>
+                      <AIHomeChat
+                        conversationId={conversation.conversationId}
+                        conversationVersion={
+                          conversationActive.conversation_version
+                        }
+                      />
+                    </EventHandler>
+                  </ConversationSubscriptionsProvider>
+                </WebSocketProviderWrapper>
+              </section>
+            )}
         </div>
 
         {/* Template grid section with toggle functionality */}

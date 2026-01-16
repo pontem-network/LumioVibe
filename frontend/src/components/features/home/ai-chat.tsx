@@ -1,11 +1,17 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
+import { isV1Event, isV0Event } from "#/types/v1/type-guards";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
 import { useSendMessage } from "#/hooks/use-send-message";
 import { createChatMessage } from "#/services/chat-service";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { useEventStore } from "#/stores/use-event-store";
-import { useConversationStore } from "#/state/conversation-store";
+import {
+  AgentMode,
+  isAgentMode,
+  useConversationStore,
+} from "#/state/conversation-store";
 import { useWsClient } from "#/context/ws-client-provider";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { useUnifiedUploadFiles } from "#/hooks/mutation/use-unified-upload-files";
@@ -13,13 +19,9 @@ import { validateFiles } from "#/utils/file-validation";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useAgentState } from "#/hooks/use-agent-state";
 import { AgentState } from "#/types/agent-state";
-import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { TypingIndicator } from "#/components/features/chat/typing-indicator";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
-import { useTaskPolling } from "#/hooks/query/use-task-polling";
 import { useConversationWebSocket } from "#/contexts/conversation-websocket-context";
-import { isV0Event, isV1Event } from "#/types/v1/type-guards";
 import { isActionOrObservation } from "#/types/core/guards";
 import {
   hasUserEvent,
@@ -33,6 +35,16 @@ import {
 import { Messages as V0Messages } from "#/components/features/chat/messages";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import ConfirmationModeEnabled from "../chat/confirmation-mode-enabled";
+
+interface AIHomeChatProp {
+  conversationId: string;
+  conversationVersion: "V0" | "V1";
+}
+
+interface ExtractAgentModeResult {
+  agentMode: AgentMode;
+  skipTesting?: boolean;
+}
 
 /**
  * Custom hook that controls the visibility of V1 messages with proper timing
@@ -54,9 +66,7 @@ import ConfirmationModeEnabled from "../chat/confirmation-mode-enabled";
  * const showV1Messages = useV1MessagesVisibility(conversationWebSocket?.isLoadingHistory);
  * return <div>{showV1Messages && <MessageList />}</div>;
  */
-function useV1MessagesVisibility(
-  isLoadingHistory: boolean | undefined,
-): boolean {
+function useMessagesVisibility(isLoadingHistory: boolean | undefined): boolean {
   // Internal state to control message visibility
   const [showV1Messages, setShowV1Messages] = React.useState(false);
 
@@ -85,51 +95,123 @@ function useV1MessagesVisibility(
   return showV1Messages;
 }
 
+/**
+ * Извлечь из текста message.
+ * С событиями зоопарк. Пришлось делать такой обходной путь.
+ * @param event - Событие из хранилища
+ * @returns Текстовое содержимое сообщения или null, если извлечение не удалось
+ */
+function extractEventMessageContent(event: unknown): string | null {
+  // Проверка на null/undefined
+  if (!event || typeof event !== "object") {
+    return null;
+  }
+
+  // Проверяем, есть ли свойство message у объекта и является ли оно строкой
+  if (
+    "message" in event &&
+    typeof (event as { message?: unknown }).message === "string"
+  ) {
+    return (event as { message: string }).message;
+  }
+
+  // Если не удалось извлечь сообщение
+  return null;
+}
+
+/**
+ * @todo добавить комментарий
+ *
+ * @param message - @todo
+ * @returns boolean | null - @todo
+ */
+function extractAgentMode(message: string): ExtractAgentModeResult | null {
+  // Защита от null/undefined
+  if (typeof message !== "string") return null;
+
+  // Экземпляр сообщений которые нужно искать в истории:
+  // <lumio-settings mode="planning" skip-tests="true" />
+  // пользователь этой командой устанавливает настройки режим работы агента, и включает/выключает тестирование
+  if (/^\s*<lumio-settings/.test(message)) {
+    const modeMatch = message.match(/mode\s*=\s*"([^"]+)"/);
+    const modeStr = modeMatch?.[1];
+    const agentMode: AgentMode | null =
+      modeStr && isAgentMode(modeStr) ? modeStr : null;
+
+    if (agentMode === null) return null;
+
+    const skipMatch = message.match(/skip-tests\s*=\s*"([^"]+)"/);
+    const skipStr = skipMatch?.[1];
+    const skipTesting = skipStr?.trim().toLowerCase() !== "false";
+
+    return { agentMode, skipTesting };
+  }
+
+  // Второй вариант которы может прийти от бэкенда
+  // <switch-mode>development</switch-mode>
+
+  const switchMatch = message.match(
+    /<switch-mode[^>]*>([^<]+)<\/switch-mode>/i,
+  );
+  const switchMode = switchMatch?.[1]?.trim();
+
+  const agentModeSystem: AgentMode | null =
+    switchMode && isAgentMode(switchMode) ? switchMode : null;
+
+  if (agentModeSystem) return { agentMode: agentModeSystem };
+
+  return null;
+}
+
 /*
  * Chat for interacting with AI on the home page
  */
-export function AIHomeChat() {
-  const { setMessageToSend, agentMode, skipTesting } = useConversationStore();
-  const conversation = useActiveConversation()?.data;
-  const conversationId = conversation?.conversation_id;
+export function AIHomeChat({
+  conversationId,
+  conversationVersion,
+}: AIHomeChatProp) {
+  if (!conversationId || !conversationVersion)
+    throw new Error("Неверный conversation id");
 
   const { isLoadingMessages } = useWsClient();
-  const { isTask } = useTaskPolling();
   const conversationWebSocket = useConversationWebSocket();
-
   const { send } = useSendMessage();
 
+  // events
+
+  // Filter V1 events - use uiEvents for rendering (actions replaced by observations)
+  const v1UiEvents = useEventStore((state) => state.uiEvents)
+    .filter(isV1Event)
+    .filter(shouldRenderV1Event);
   const storeEvents = useEventStore((state) => state.events);
-  const uiEvents = useEventStore((state) => state.uiEvents);
-
-  const { setOptimisticUserMessage } = useOptimisticUserMessageStore();
-  const { t } = useTranslation();
-  const scrollRef = React.useRef<HTMLDivElement>(null);
-  const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
-    useScrollToBottom(scrollRef);
-
-  const { curAgentState } = useAgentState();
-
-  const { mutateAsync: uploadFiles } = useUnifiedUploadFiles();
-
-  const isV1Conversation = conversation?.conversation_version === "V1";
-
-  // Wait for DOM to render before showing V1 messages
-  const showV1Messages = useV1MessagesVisibility(
-    conversationWebSocket?.isLoadingHistory,
-  );
-
   // Filter V0 events
   const v0Events = storeEvents
     .filter(isV0Event)
     .filter(isActionOrObservation)
     .filter(shouldRenderEvent);
-
-  // Filter V1 events - use uiEvents for rendering (actions replaced by observations)
-  const v1UiEvents = uiEvents.filter(isV1Event).filter(shouldRenderV1Event);
-
   // Keep full v1 events for lookups (includes both actions and observations)
   const v1FullEvents = storeEvents.filter(isV1Event);
+
+  const {
+    setMessageToSend,
+    agentMode, // Переключатель режим агента.  Нужно поменять когда прогрузиться история. Иначе тут дефолтное значение
+    skipTesting, // Переключатель пропускать тесты при работе проекта. Нужно поменять когда прогрузиться история. Иначе тут дефолтовое значение
+    setAgentMode, // Метод для смены режима агента
+    setSkipTesting, // Метода для переключения пропуска тестирования
+  } = useConversationStore();
+  const { setOptimisticUserMessage } = useOptimisticUserMessageStore();
+  const { curAgentState } = useAgentState();
+  const { mutateAsync: uploadFiles } = useUnifiedUploadFiles();
+  // Wait for DOM to render before showing V1 messages
+  const showV1Messages = useMessagesVisibility(
+    conversationWebSocket?.isLoadingHistory,
+  );
+
+  const { t } = useTranslation();
+
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
+    useScrollToBottom(scrollRef);
 
   const handleSendMessage = async (
     content: string,
@@ -166,7 +248,9 @@ export function AIHomeChat() {
     let prompt =
       uploadedFiles.length > 0 ? `${content}\n\n${filePrompt}` : content;
 
-    const lumioSettings = `<lumio-settings mode="${agentMode}" skip-tests="${skipTesting}" />`;
+    // Первое сообщение в чате от пользователя должно быть с префиксом переключения на режим планирования
+    // <lumio-settings mode="planning" skip-tests="true" />
+    const lumioSettings = `<lumio-settings mode="planning" skip-tests="true" />`;
     prompt = `${lumioSettings}\n${prompt}`;
 
     send(createChatMessage(prompt, imageUrls, uploadedFiles, timestamp));
@@ -176,9 +260,33 @@ export function AIHomeChat() {
 
   const v0UserEventsExist = hasUserEvent(v0Events);
   const v1UserEventsExist = hasV1UserEvent(v1FullEvents);
+  const navigate = useNavigate(); // Получаем функцию навигации
 
-  console.log("storeEvents: ", storeEvents);
-  console.log("uiEvents: ", uiEvents);
+  // проанализировать текущий режим из истории сообщений и установить режим и тестирование связи с ними.
+  // Инициализировать только когда будут доступны все сообщения для обработки.
+  if (!isLoadingMessages) {
+    const lastMode = storeEvents
+      .map(extractEventMessageContent)
+      .filter((x): x is string => x !== null)
+      .map(extractAgentMode)
+      .filter((x): x is ExtractAgentModeResult => x !== null)
+      .at(-1); // взять последний статус если он есть
+
+    if (lastMode) {
+      // Сравнить найденный режим с тем что установлено в agentMode. Если они не совпадают, то установить через setAgentMode.
+      if (agentMode !== lastMode.agentMode) setAgentMode(lastMode.agentMode); // установить режим из истории сообщений
+      // Сравнить найдены режим тестирования, c тем что установлено в skipTesting. Ecли они не совпадают, то установить через setSkipTesting.
+      if (
+        lastMode.skipTesting !== undefined &&
+        lastMode.skipTesting !== skipTesting
+      )
+        setSkipTesting(lastMode.skipTesting); // установить режим тестирования из истории сообщений
+
+      // Режим разработке только на странице диалога. Только если режим был устновлен или пользователем или бэкэндом
+      if (agentMode === "development")
+        navigate(`/conversations/${conversationId}`);
+    }
+  }
 
   return (
     <div className="ai-chat">
@@ -188,21 +296,11 @@ export function AIHomeChat() {
       </div>
 
       <div className="ai-chat__container">
-        {/* @todo Changeable size of this block? */}
         <div
           ref={scrollRef}
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
           className="ai-chat__messages custom-scrollbar-always fast-smooth-scroll"
         >
-          {!isTask &&
-            ((isLoadingMessages && !isV1Conversation) ||
-              ((conversationWebSocket?.isLoadingHistory || !showV1Messages) &&
-                isV1Conversation)) && (
-              <div className="ai-chat__messages--loading">
-                <LoadingSpinner size="small" />
-              </div>
-            )}
-
           {!isLoadingMessages && v0UserEventsExist && (
             <V0Messages
               messages={v0Events}
