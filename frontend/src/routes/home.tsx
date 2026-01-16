@@ -156,7 +156,7 @@ function HomeScreen() {
   return (
     <div
       data-testid="home-screen"
-      className={`home-screen ${hasMessages ? "fullsize" : "minsize"}`}
+      className={`home-screen ${hasMessages ? "full_size" : "min_size"}`}
     >
       <main className="home-screen__main">
         <div className="home-screen__content-container">

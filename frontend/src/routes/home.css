@@ -34,10 +34,10 @@
   flex-direction: column;
 }
 
-.home-screen.minsize .home-screen__content-container {
+.home-screen.min_size .home-screen__content-container {
   justify-content: center;
 }
-.home-screen.fullsize .home-screen__content-container {
+.home-screen.full_size .home-screen__content-container {
   justify-content: space-between;
 }
 
@@ -45,10 +45,10 @@
   display: flex;
   width: 100%;
 }
-.home-screen.minsize .home-screen__chat-section {
+.home-screen.min_size .home-screen__chat-section {
   flex-grow: unset;
 }
-.home-screen.fullsize .home-screen__chat-section {
+.home-screen.full_size .home-screen__chat-section {
   flex-grow: 1;
 }
 
